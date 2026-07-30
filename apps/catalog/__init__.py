@@ -1,0 +1,1 @@
+"""Catalog and inventory application."""

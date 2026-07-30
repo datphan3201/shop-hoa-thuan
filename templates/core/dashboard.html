@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Tổng quan — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Tổng quan{% endblock %}
+
+{% block content %}
+<section class="welcome-panel mb-4">
+  <div>
+    <p class="eyebrow mb-2">Hôm nay</p>
+    <h2 class="h3 mb-2">Chào mừng trở lại</h2>
+    <p class="mb-0 text-secondary">Các số liệu kinh doanh sẽ xuất hiện sau Phase 5.</p>
+  </div>
+  <a class="btn btn-primary btn-lg" href="{% url 'sale-create' %}">Tạo giao dịch</a>
+</section>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-md-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Sản phẩm hoạt động</span>
+      <strong class="metric-value">0</strong>
+      <span class="metric-note">Chưa có dữ liệu</span>
+    </article>
+  </div>
+  <div class="col-12 col-md-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Tổng số lượng tồn</span>
+      <strong class="metric-value">0</strong>
+      <span class="metric-note">Theo từng size</span>
+    </article>
+  </div>
+  <div class="col-12 col-md-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Doanh thu hôm nay</span>
+      <strong class="metric-value">0 ₫</strong>
+      <span class="metric-note">Giao dịch hoàn thành</span>
+    </article>
+  </div>
+  <div class="col-12 col-md-6 col-xl-3">
+    <article class="metric-card metric-card-locked">
+      <span class="metric-label">Tổng vốn tồn kho</span>
+      <strong class="metric-value metric-value-sm">•••••• ₫</strong>
+      <a href="{% url 'security-settings' %}" class="metric-note">Mở khóa giá vốn</a>
+    </article>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-xl-7">
+    <section class="panel">
+      <div class="panel-heading">
+        <h2 class="h5 mb-0">Giao dịch gần đây</h2>
+        <a href="{% url 'sale-list' %}">Xem tất cả</a>
+      </div>
+      <div class="empty-state">
+        <strong>Chưa có giao dịch</strong>
+        <span>Giao dịch đầu tiên sẽ xuất hiện tại đây.</span>
+      </div>
+    </section>
+  </div>
+  <div class="col-12 col-xl-5">
+    <section class="panel">
+      <div class="panel-heading">
+        <h2 class="h5 mb-0">Cảnh báo tồn kho</h2>
+        <a href="{% url 'inventory-list' %}">Xem kho</a>
+      </div>
+      <div class="empty-state">
+        <strong>Chưa có sản phẩm</strong>
+        <span>Thêm sản phẩm để bắt đầu theo dõi tồn kho.</span>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

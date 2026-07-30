@@ -1,0 +1,11 @@
+{
+  "name": "Shop Hoà Thuận",
+  "short_name": "Hoà Thuận",
+  "description": "Ứng dụng quản lý nội bộ Shop Hoà Thuận",
+  "lang": "vi",
+  "start_url": "/dashboard/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffaf5",
+  "theme_color": "#7c2d12"
+}

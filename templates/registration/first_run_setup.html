@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Thiết lập lần đầu — Shop Hoà Thuận{% endblock %}
+
+{% block public_content %}
+<main class="login-page">
+  <section class="login-card" aria-labelledby="setup-title">
+    <div class="brand justify-content-center mb-4">
+      <span class="brand-mark">HT</span>
+      <span>
+        <strong>Shop Hoà Thuận</strong>
+        <small>Thiết lập lần đầu</small>
+      </span>
+    </div>
+    <h1 class="h4 text-center mb-2" id="setup-title">Tạo tài khoản chủ shop</h1>
+    <p class="text-secondary text-center mb-4">
+      Tài khoản này có toàn quyền sử dụng ứng dụng.
+    </p>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text|safe }}</div>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+      {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">{{ error }}</div>
+      {% endfor %}
+      <button class="btn btn-primary btn-lg w-100" type="submit">Hoàn tất thiết lập</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

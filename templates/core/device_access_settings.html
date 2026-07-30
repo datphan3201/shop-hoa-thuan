@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Thiết bị và sao lưu — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Thiết bị và sao lưu{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading">
+        <h2 class="h5 mb-0">Truy cập từ điện thoại</h2>
+      </div>
+      <p class="text-secondary">
+        Địa chỉ Wi-Fi nội bộ và Tailscale sẽ được phát hiện tự động trong bản đóng gói.
+      </p>
+      <div class="notice-box">Chỉ chia sẻ địa chỉ với thiết bị của chủ shop.</div>
+    </section>
+  </div>
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading">
+        <h2 class="h5 mb-0">Sao lưu dữ liệu</h2>
+      </div>
+      <p class="text-secondary">
+        Database, ảnh sản phẩm và manifest sẽ được đóng thành một file backup.
+      </p>
+      <form method="post" action="{% url 'backup-create' %}" class="d-inline">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Tạo bản sao lưu</button>
+      </form>
+      <button class="btn btn-outline-secondary" type="button" disabled>Khôi phục</button>
+      {% if backups %}
+        <div class="list-group mt-3">
+          {% for backup in backups|slice:":5" %}
+            <a class="list-group-item list-group-item-action d-flex justify-content-between"
+               href="{% url 'backup-download' backup.path.name %}">
+              <span>{{ backup.path.name }}</span>
+              <small class="text-secondary">{{ backup.size|filesizeformat }}</small>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

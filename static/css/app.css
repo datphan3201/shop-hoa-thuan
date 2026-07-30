@@ -1,0 +1,259 @@
+:root {
+  --app-bg: #f8f5f2;
+  --app-panel: #ffffff;
+  --app-border: #e8e1da;
+  --app-text: #292524;
+  --app-muted: #78716c;
+  --app-accent: #9a3412;
+  --app-accent-dark: #7c2d12;
+}
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #fff;
+  border-right: 1px solid var(--app-border);
+  bottom: 0;
+  padding: 1.25rem;
+  position: fixed;
+  top: 0;
+  width: 260px;
+}
+
+.brand {
+  align-items: center;
+  color: var(--app-text);
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  text-decoration: none;
+}
+
+.brand span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand small {
+  color: var(--app-muted);
+}
+
+.brand-mark,
+.empty-state-mark {
+  align-items: center;
+  background: var(--app-accent-dark);
+  border-radius: 12px;
+  color: #fff;
+  display: inline-flex;
+  font-weight: 800;
+  height: 44px;
+  justify-content: center;
+  letter-spacing: -0.04em;
+  width: 44px;
+}
+
+.app-nav {
+  gap: 0.25rem;
+}
+
+.app-nav .nav-link {
+  border-radius: 10px;
+  color: #57534e;
+  font-weight: 600;
+  padding: 0.65rem 0.8rem;
+}
+
+.app-nav .nav-link:hover {
+  background: #f5f1ed;
+  color: var(--app-accent-dark);
+}
+
+.app-nav .nav-link-primary {
+  background: #fff1e9;
+  color: var(--app-accent-dark);
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--app-border);
+  padding-top: 1rem;
+}
+
+.app-main {
+  margin-left: 260px;
+  min-height: 100vh;
+}
+
+.topbar {
+  align-items: center;
+  background: rgb(255 255 255 / 94%);
+  border-bottom: 1px solid var(--app-border);
+  display: flex;
+  min-height: 72px;
+  padding: 0.75rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.content-area {
+  margin: 0 auto;
+  max-width: 1600px;
+  padding: 1.5rem;
+}
+
+.welcome-panel,
+.panel,
+.metric-card {
+  background: var(--app-panel);
+  border: 1px solid var(--app-border);
+  border-radius: 16px;
+}
+
+.welcome-panel {
+  align-items: center;
+  background: linear-gradient(135deg, #fff, #fff3e8);
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem;
+}
+
+.eyebrow {
+  color: var(--app-accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 148px;
+  padding: 1.1rem;
+}
+
+.metric-label,
+.metric-note {
+  color: var(--app-muted);
+  font-size: 0.875rem;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  margin: auto 0 0.25rem;
+}
+
+.metric-value-sm {
+  font-size: 1.45rem;
+}
+
+.metric-card-locked {
+  background: #fafaf9;
+}
+
+.panel {
+  overflow: hidden;
+  padding: 1.25rem;
+}
+
+.panel-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--app-border);
+  display: flex;
+  justify-content: space-between;
+  margin: -0.1rem -0.1rem 1rem;
+  padding: 0 0.1rem 1rem;
+}
+
+.narrow-panel {
+  max-width: 760px;
+}
+
+.empty-state {
+  align-items: center;
+  color: var(--app-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  justify-content: center;
+  min-height: 180px;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: var(--app-text);
+}
+
+.empty-state-tall {
+  min-height: 50vh;
+}
+
+.empty-state-mark {
+  margin-bottom: 0.5rem;
+}
+
+.notice-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  color: #9a3412;
+  padding: 1rem;
+}
+
+.login-page {
+  align-items: center;
+  background:
+    radial-gradient(circle at 15% 15%, #ffedd5 0, transparent 32%),
+    radial-gradient(circle at 85% 85%, #f5d0a9 0, transparent 30%),
+    var(--app-bg);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.login-card {
+  background: #fff;
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgb(67 35 18 / 10%);
+  max-width: 420px;
+  padding: 2rem;
+  width: 100%;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--app-accent-dark);
+  --bs-btn-border-color: var(--app-accent-dark);
+  --bs-btn-hover-bg: #65230e;
+  --bs-btn-hover-border-color: #65230e;
+}
+
+@media (max-width: 991.98px) {
+  .app-main {
+    margin-left: 0;
+  }
+
+  .content-area {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .welcome-panel {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .login-card {
+    padding: 1.5rem;
+  }
+}

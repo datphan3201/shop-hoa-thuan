@@ -1,0 +1,82 @@
+{% load static %}
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#7c2d12">
+  <title>{% block title %}{{ application_name }}{% endblock %}</title>
+  <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% if request.user.is_authenticated %}
+    <div class="app-shell">
+      <aside class="sidebar d-none d-lg-flex flex-column">
+        <a class="brand" href="{% url 'dashboard' %}">
+          <span class="brand-mark">HT</span>
+          <span>
+            <strong>Shop Hoà Thuận</strong>
+            <small>Quản lý nội bộ</small>
+          </span>
+        </a>
+        {% include "includes/navigation.html" %}
+        <div class="mt-auto sidebar-footer">
+          <div class="small text-secondary mb-2">Đang đăng nhập</div>
+          <div class="fw-semibold text-truncate mb-3">{{ request.user.username }}</div>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-secondary w-100" type="submit">Đăng xuất</button>
+          </form>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="topbar">
+          <button class="btn btn-light d-lg-none" type="button" data-bs-toggle="offcanvas"
+                  data-bs-target="#mobileNavigation" aria-label="Mở menu">☰</button>
+          <div>
+            <div class="text-secondary small">Shop Hoà Thuận</div>
+            <h1 class="h5 mb-0">{% block page_heading %}Tổng quan{% endblock %}</h1>
+          </div>
+          <div class="ms-auto">
+            {% if cost_price_unlocked %}
+              <a class="btn btn-outline-danger btn-sm" href="{% url 'security-settings' %}">
+                Khóa giá vốn
+              </a>
+            {% else %}
+              <a class="btn btn-outline-primary btn-sm" href="{% url 'security-settings' %}">
+                Mở khóa giá vốn
+              </a>
+            {% endif %}
+          </div>
+        </header>
+
+        <main class="content-area">
+          {% include "includes/messages.html" %}
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNavigation"
+         aria-labelledby="mobileNavigationLabel">
+      <div class="offcanvas-header">
+        <h2 class="offcanvas-title h5" id="mobileNavigationLabel">Shop Hoà Thuận</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                aria-label="Đóng"></button>
+      </div>
+      <div class="offcanvas-body d-flex flex-column">
+        {% include "includes/navigation.html" %}
+      </div>
+    </div>
+  {% else %}
+    {% block public_content %}{% endblock %}
+  {% endif %}
+  <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

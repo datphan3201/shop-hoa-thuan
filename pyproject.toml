@@ -1,0 +1,75 @@
+[project]
+name = "shop-hoa-thuan"
+version = "0.1.0"
+description = "Ứng dụng quản lý nội bộ Shop Hoà Thuận"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "django>=5.2,<5.3",
+  "django-htmx>=1.23,<2",
+  "pillow>=11,<13",
+  "waitress>=3,<4",
+  "whitenoise>=6.9,<7",
+]
+
+[dependency-groups]
+dev = [
+  "django-stubs[compatible-mypy]>=5.2,<6",
+  "mypy>=1.18,<2",
+  "pre-commit>=4.3,<5",
+  "pytest>=8.4,<9",
+  "pytest-cov>=6.2,<7",
+  "pytest-django>=4.11,<5",
+  "ruff>=0.12,<1",
+  "types-waitress>=3,<4",
+]
+windows-build = [
+  "pyinstaller>=6.15,<7",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ", "RUF"]
+ignore = ["DJ001", "RUF012"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "shop_hoa_thuan.settings"
+python_files = ["test_*.py", "*_tests.py"]
+addopts = "--strict-markers --strict-config --reuse-db"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["mypy_django_plugin.main"]
+exclude = "(^|/)migrations/"
+
+[[tool.mypy.overrides]]
+module = ["PIL.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["apps.catalog.admin", "apps.core.admin", "apps.core.forms", "apps.sales.admin"]
+disallow_any_generics = false
+
+[tool.django-stubs]
+django_settings_module = "shop_hoa_thuan.settings"
+
+[tool.coverage.run]
+branch = true
+source = ["apps", "shop_hoa_thuan"]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
