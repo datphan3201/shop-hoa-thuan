@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load money %}
+
+{% block title %}Tồn kho — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Tồn kho{% endblock %}
+
+{% block content %}
+<section class="panel mb-3">
+  <form class="row g-2" method="get">
+    <div class="col-12 col-md-6"><input class="form-control" name="q" value="{{ query }}" placeholder="Tên sản phẩm hoặc SKU"></div>
+    <div class="col-8 col-md-3">
+      <select class="form-select" name="status">
+        <option value="">Mọi trạng thái</option>
+        <option value="available" {% if status == "available" %}selected{% endif %}>Còn hàng</option>
+        <option value="low" {% if status == "low" %}selected{% endif %}>Sắp hết</option>
+        <option value="out" {% if status == "out" %}selected{% endif %}>Hết hàng</option>
+      </select>
+    </div>
+    <div class="col-4 col-md-3"><button class="btn btn-outline-secondary w-100">Lọc</button></div>
+  </form>
+</section>
+<section class="panel p-0">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Sản phẩm</th><th>Loại</th><th>Màu</th><th>Size</th><th>SKU</th><th>Giá vốn</th><th>Giá bán</th><th>Tồn</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>
+        {% for variant in variants %}
+          <tr>
+            <td><a href="{% url 'product-detail' variant.product_id %}">{{ variant.product.name }}</a></td>
+            <td>{{ variant.product.category.name }}</td><td>{{ variant.product.color|default:"—" }}</td>
+            <td class="fw-semibold">{{ variant.size }}</td><td>{{ variant.sku|default:"—" }}</td>
+            <td>•••••• ₫</td><td>{{ variant.selling_price|vnd }}</td><td class="fw-semibold">{{ variant.quantity }}</td>
+            <td>{% if variant.stock_status == "out_of_stock" %}<span class="badge text-bg-danger">Hết hàng</span>{% elif variant.stock_status == "low_stock" %}<span class="badge text-bg-warning">Sắp hết</span>{% else %}<span class="badge text-bg-success">Còn hàng</span>{% endif %}</td>
+            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'inventory-adjust' variant.id %}">Điều chỉnh</a></td>
+          </tr>
+        {% empty %}<tr><td colspan="10"><div class="empty-state">Không có size phù hợp.</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

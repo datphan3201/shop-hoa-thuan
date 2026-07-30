@@ -1,0 +1,17 @@
+<div class="variant-form border rounded-3 p-3 mb-3">
+  {{ variant_form.id }}
+  <div class="row g-2">
+    {% for field in variant_form.visible_fields %}
+      <div class="{% if field.name == 'active' %}col-12 col-md-1 d-flex align-items-end{% else %}col-6 col-md{% endif %}">
+        <div class="w-100">
+          {% if field.name == "active" %}
+            <div class="form-check mb-2">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">Dùng</label></div>
+          {% else %}
+            <label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+          {% endif %}
+          {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>

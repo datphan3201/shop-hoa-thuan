@@ -4,7 +4,7 @@ Cập nhật gần nhất: 2026-07-31
 
 ## Trạng thái hiện tại
 
-Phase 1 — Nền tảng: **hoàn thành**
+Phase 2 — Sản phẩm và tồn kho: **hoàn thành**
 
 ## Quyết định kiến trúc
 
@@ -60,11 +60,14 @@ Phase 1 — Nền tảng: **hoàn thành**
 
 ### Phase 2 — Sản phẩm và tồn kho
 
-- CRUD/soft-disable loại mặt hàng, sản phẩm và size.
-- Upload/resize ảnh và thumbnail.
-- Tìm kiếm, lọc, phân trang và trạng thái tồn kho.
-- Inventory service nguyên tử và lịch sử mọi biến động.
-- Unit/integration tests cho constraints và tồn kho.
+- [x] CRUD/soft-disable loại mặt hàng, sản phẩm và size.
+- [x] Upload/resize ảnh và tạo thumbnail.
+- [x] Tìm kiếm/lọc theo tên, SKU, loại, size, màu, tồn kho và trạng thái.
+- [x] Hiển thị size còn hàng, sắp hết và hết hàng từ biến thể hiện tại.
+- [x] Inventory service nguyên tử cho nhập, trừ và đặt số lượng.
+- [x] Bắt buộc lý do và tạo lịch sử cho mọi biến động.
+- [x] Unit/integration tests cho constraints, ảnh, sản phẩm và tồn kho.
+- [x] Commit Phase 2.
 
 ### Phase 3 — Khóa giá vốn và thống kê tồn
 
@@ -114,3 +117,14 @@ Phase 1 — Nền tảng: **hoàn thành**
 - Restore từ giao diện và kiểm thử bộ cài Windows sạch vẫn thuộc Phase 6.
 
 Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 1.
+
+### Phase 2 — 2026-07-31
+
+- `ruff format --check` và `ruff check`: đạt.
+- `mypy --strict`: đạt, 50 source files.
+- Django system/migration checks: đạt.
+- `pytest`: 29 test đạt.
+- Waitress smoke test: đạt sau migration mới.
+- Ảnh test và database development tạm đã được dọn khỏi workspace.
+
+Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 2.

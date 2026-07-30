@@ -36,6 +36,9 @@ class Product(TimeStampedModel):
     color = models.CharField("Màu sắc", max_length=120, blank=True)
     description = models.TextField("Mô tả", blank=True)
     image = models.ImageField("Ảnh sản phẩm", upload_to="products/%Y/%m/", blank=True)
+    thumbnail = models.ImageField(
+        "Ảnh thu nhỏ", upload_to="thumbnails/", blank=True, editable=False
+    )
     active = models.BooleanField("Đang hoạt động", default=True)
 
     class Meta:
@@ -120,6 +123,10 @@ class ProductVariant(TimeStampedModel):
         if self.quantity <= self.low_stock_threshold:
             return "low_stock"
         return "in_stock"
+
+    @property
+    def projected_sales_value(self) -> int:
+        return self.quantity * self.selling_price
 
     def __str__(self) -> str:
         return f"{self.product.name} — {self.size}"

@@ -60,7 +60,13 @@ module = ["PIL.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["apps.catalog.admin", "apps.core.admin", "apps.core.forms", "apps.sales.admin"]
+module = [
+  "apps.catalog.admin",
+  "apps.catalog.forms",
+  "apps.core.admin",
+  "apps.core.forms",
+  "apps.sales.admin",
+]
 disallow_any_generics = false
 
 [tool.django-stubs]

@@ -207,6 +207,40 @@ body {
   padding: 1rem;
 }
 
+.product-thumb {
+  border-radius: 10px;
+  height: 48px;
+  object-fit: cover;
+  width: 48px;
+}
+
+.product-thumb-empty,
+.product-image-empty {
+  align-items: center;
+  background: #f5f1ed;
+  color: var(--app-accent-dark);
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.product-image {
+  border-radius: 14px;
+  height: 240px;
+  object-fit: cover;
+  width: 240px;
+}
+
+.size-summary {
+  font-size: 0.875rem;
+  min-width: 220px;
+}
+
+.sensitive-value {
+  color: var(--app-muted);
+  letter-spacing: 0.04em;
+}
+
 .login-page {
   align-items: center;
   background:
@@ -255,5 +289,11 @@ body {
 
   .login-card {
     padding: 1.5rem;
+  }
+
+  .product-image {
+    height: auto;
+    max-height: 360px;
+    width: 100%;
   }
 }

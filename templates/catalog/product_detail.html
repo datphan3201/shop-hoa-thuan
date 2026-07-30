@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load money %}
+
+{% block title %}{{ product.name }} — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Chi tiết sản phẩm{% endblock %}
+
+{% block content %}
+<section class="panel mb-3">
+  <div class="d-flex flex-column flex-md-row gap-4">
+    {% if product.image %}
+      <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+    {% else %}
+      <div class="product-image product-image-empty">HT</div>
+    {% endif %}
+    <div class="flex-grow-1">
+      <div class="d-flex flex-wrap gap-2 justify-content-between">
+        <div>
+          <p class="eyebrow mb-1">{{ product.category.name }}</p>
+          <h2 class="h3">{{ product.name }}</h2>
+          <p class="text-secondary">{{ product.brand|default:"Chưa nhập thương hiệu" }} · {{ product.color|default:"Chưa nhập màu" }}</p>
+        </div>
+        <div class="d-flex gap-2 align-items-start">
+          <a class="btn btn-outline-secondary" href="{% url 'product-update' product.id %}">Sửa</a>
+          <form method="post" action="{% url 'product-toggle' product.id %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-secondary" type="submit">{% if product.active %}Ngừng hoạt động{% else %}Kích hoạt{% endif %}</button>
+          </form>
+        </div>
+      </div>
+      <p>{{ product.description|default:"Chưa có mô tả."|linebreaksbr }}</p>
+      <div class="d-flex gap-4"><div><small class="text-secondary d-block">Tổng tồn</small><strong class="h4">{{ total_quantity }}</strong></div><div><small class="text-secondary d-block">Trạng thái</small>{% if product.active %}<span class="badge text-bg-success">Hoạt động</span>{% else %}<span class="badge text-bg-secondary">Đã ngừng</span>{% endif %}</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel p-0 mb-3">
+  <div class="panel-heading p-3 mb-0">
+    <h2 class="h5 mb-0">Các size</h2>
+    <a class="btn btn-primary btn-sm" href="{% url 'variant-create' product.id %}">Thêm size</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Size</th><th>SKU</th><th>Giá vốn</th><th>Giá bán</th><th>Tồn</th><th>Trạng thái</th><th>Giá trị dự kiến bán</th><th></th></tr></thead>
+      <tbody>
+        {% for variant in variants %}
+          <tr>
+            <td class="fw-semibold">{{ variant.size }}</td>
+            <td>{{ variant.sku|default:"—" }}</td>
+            <td><span class="sensitive-value">•••••• ₫</span></td>
+            <td>{{ variant.selling_price|vnd }}</td>
+            <td>{{ variant.quantity }}</td>
+            <td>
+              {% if variant.stock_status == "out_of_stock" %}<span class="badge text-bg-danger">Hết hàng</span>
+              {% elif variant.stock_status == "low_stock" %}<span class="badge text-bg-warning">Sắp hết</span>
+              {% else %}<span class="badge text-bg-success">Còn hàng</span>{% endif %}
+            </td>
+            <td>{{ variant.projected_sales_value|vnd }}</td>
+            <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'variant-update' variant.id %}">Sửa</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8"><div class="empty-state">Chưa có size.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel p-0">
+  <div class="panel-heading p-3 mb-0"><h2 class="h5 mb-0">Lịch sử tồn kho gần đây</h2></div>
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>Thời gian</th><th>Size</th><th>Loại</th><th>Trước</th><th>Thay đổi</th><th>Sau</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        {% for movement in movements %}
+          <tr><td>{{ movement.created_at|date:"d/m/Y H:i" }}</td><td>{{ movement.product_variant.size }}</td><td>{{ movement.get_movement_type_display }}</td><td>{{ movement.quantity_before }}</td><td class="{% if movement.quantity_change > 0 %}text-success{% elif movement.quantity_change < 0 %}text-danger{% endif %}">{{ movement.quantity_change|stringformat:"+d" }}</td><td>{{ movement.quantity_after }}</td><td>{{ movement.note }}</td></tr>
+        {% empty %}<tr><td colspan="7"><div class="empty-state">Chưa có biến động tồn kho.</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

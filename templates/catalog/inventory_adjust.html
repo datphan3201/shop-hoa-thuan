@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Điều chỉnh tồn kho — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Điều chỉnh tồn kho{% endblock %}
+
+{% block content %}
+<section class="panel narrow-panel">
+  <div class="notice-box mb-3">
+    <strong>{{ variant.product.name }} — {{ variant.size }}</strong><br>
+    Tồn hiện tại: {{ variant.quantity }}
+  </div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">Xác nhận điều chỉnh</button>
+    <a class="btn btn-outline-secondary" href="{% url 'inventory-list' %}">Hủy</a>
+  </form>
+</section>
+{% endblock %}

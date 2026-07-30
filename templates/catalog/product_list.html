@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load money %}
+
+{% block title %}Sản phẩm — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Sản phẩm{% endblock %}
+
+{% block content %}
+<section class="panel mb-3">
+  <form class="row g-2 align-items-end" method="get">
+    <div class="col-12 col-lg-3">
+      <label class="form-label">Tìm kiếm</label>
+      <input class="form-control" name="q" value="{{ filters.q }}" placeholder="Tên hoặc SKU">
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label">Loại</label>
+      <select class="form-select" name="category">
+        <option value="">Tất cả</option>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if filters.category == category.id|stringformat:"s" %}selected{% endif %}>
+            {{ category.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label">Size</label>
+      <select class="form-select" name="size">
+        <option value="">Tất cả</option>
+        {% for size in sizes %}<option {% if filters.size == size %}selected{% endif %}>{{ size }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label">Tồn kho</label>
+      <select class="form-select" name="stock">
+        <option value="">Tất cả</option>
+        <option value="available" {% if filters.stock == "available" %}selected{% endif %}>Còn hàng</option>
+        <option value="low" {% if filters.stock == "low" %}selected{% endif %}>Sắp hết</option>
+        <option value="out" {% if filters.stock == "out" %}selected{% endif %}>Hết hàng</option>
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label">Màu</label>
+      <input class="form-control" name="color" value="{{ filters.color }}" placeholder="Ví dụ: Trắng">
+    </div>
+    <div class="col-6 col-lg-1">
+      <label class="form-label">Trạng thái</label>
+      <select class="form-select" name="active">
+        <option value="1" {% if filters.active == "1" %}selected{% endif %}>Đang bán</option>
+        <option value="0" {% if filters.active == "0" %}selected{% endif %}>Đã ngừng</option>
+        <option value="" {% if filters.active == "" %}selected{% endif %}>Tất cả</option>
+      </select>
+    </div>
+    <div class="col-12 col-lg-2 d-flex gap-2">
+      <button class="btn btn-outline-secondary flex-fill" type="submit">Lọc</button>
+      <a class="btn btn-primary flex-fill" href="{% url 'product-create' %}">Thêm</a>
+    </div>
+  </form>
+</section>
+
+<section class="panel p-0">
+  {% if rows %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>Sản phẩm</th><th>Loại / màu</th><th>Giá bán</th><th>Tổng tồn</th><th>Size</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                <a class="d-flex align-items-center gap-2 text-decoration-none fw-semibold"
+                   href="{% url 'product-detail' row.product.id %}">
+                  {% if row.product.thumbnail %}
+                    <img class="product-thumb" src="{{ row.product.thumbnail.url }}" alt="">
+                  {% else %}<span class="product-thumb product-thumb-empty">HT</span>{% endif %}
+                  {{ row.product.name }}
+                </a>
+              </td>
+              <td>{{ row.product.category.name }}<br><small class="text-secondary">{{ row.product.color|default:"Chưa nhập màu" }}</small></td>
+              <td>
+                {% if row.min_price == row.max_price %}{{ row.min_price|vnd }}
+                {% else %}{{ row.min_price|vnd }} – {{ row.max_price|vnd }}{% endif %}
+              </td>
+              <td class="fw-semibold">{{ row.total_quantity }}</td>
+              <td class="size-summary">
+                {% if row.in_stock %}<div><span class="text-success">Còn:</span> {% for v in row.in_stock %}{{ v.size }} ({{ v.quantity }}){% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+                {% if row.low_stock %}<div><span class="text-warning-emphasis">Sắp hết:</span> {% for v in row.low_stock %}{{ v.size }} ({{ v.quantity }}){% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+                {% if row.out_of_stock %}<div><span class="text-danger">Hết:</span> {% for v in row.out_of_stock %}{{ v.size }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+              </td>
+              <td>{% if row.product.active %}<span class="badge text-bg-success">Hoạt động</span>{% else %}<span class="badge text-bg-secondary">Đã ngừng</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state"><strong>Không có sản phẩm phù hợp</strong><span>Thử thay đổi bộ lọc hoặc thêm sản phẩm mới.</span></div>
+  {% endif %}
+</section>
+{% endblock %}

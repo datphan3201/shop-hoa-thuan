@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <section class="panel mb-3">
+    <h2 class="h5 mb-3">Thông tin sản phẩm</h2>
+    <div class="row g-3">
+      {% for field in form %}
+        <div class="{% if field.name == 'description' %}col-12{% elif field.name == 'active' %}col-12{% else %}col-12 col-md-6{% endif %}">
+          {% if field.name == "active" %}
+            <div class="form-check">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+          {% else %}
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+          {% endif %}
+          {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel mb-3">
+    <div class="panel-heading">
+      <div><h2 class="h5 mb-1">Size và giá</h2><p class="text-secondary mb-0">Mỗi dòng là một size riêng.</p></div>
+      <button class="btn btn-outline-primary" id="add-variant" type="button">Thêm size</button>
+    </div>
+    {{ formset.management_form }}
+    {% for error in formset.non_form_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+    <div id="variant-forms">
+      {% for variant_form in formset %}
+        {% include "catalog/variant_form_row.html" with variant_form=variant_form %}
+      {% endfor %}
+    </div>
+    <template id="empty-variant-form">
+      {% include "catalog/variant_form_row.html" with variant_form=formset.empty_form %}
+    </template>
+  </section>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary btn-lg" type="submit">Lưu sản phẩm</button>
+    <a class="btn btn-outline-secondary btn-lg" href="{% url 'product-list' %}">Hủy</a>
+  </div>
+</form>
+<datalist id="default-sizes">
+  <option value="XS"><option value="S"><option value="M"><option value="L">
+  <option value="XL"><option value="XXL"><option value="XXXL"><option value="Free size">
+</datalist>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById("add-variant").addEventListener("click", () => {
+    const total = document.getElementById("id_variants-TOTAL_FORMS");
+    const index = Number(total.value);
+    const html = document.getElementById("empty-variant-form").innerHTML.replaceAll("__prefix__", index);
+    document.getElementById("variant-forms").insertAdjacentHTML("beforeend", html);
+    total.value = index + 1;
+  });
+</script>
+{% endblock %}

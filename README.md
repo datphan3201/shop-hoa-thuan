@@ -3,6 +3,9 @@
 Ứng dụng quản lý nội bộ cho một chủ shop quần áo: sản phẩm theo size, tồn kho, bán hàng,
 doanh thu, báo cáo và khóa bảo vệ giá vốn.
 
+Hiện đã có quản lý loại mặt hàng, sản phẩm nhiều size, ảnh/thumbnail, tìm kiếm/lọc và
+điều chỉnh tồn kho nguyên tử kèm lịch sử.
+
 ## Trạng thái
 
 Dự án đang ở Phase 1. Không dùng cho dữ liệu thật cho đến khi Phase 6 được nghiệm thu.

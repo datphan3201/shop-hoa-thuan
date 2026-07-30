@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Loại mặt hàng — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}Loại mặt hàng{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row gap-3 justify-content-between mb-3">
+  <form class="d-flex gap-2" method="get">
+    <input class="form-control" type="search" name="q" value="{{ query }}"
+           placeholder="Tìm loại mặt hàng" aria-label="Tìm loại mặt hàng">
+    <button class="btn btn-outline-secondary" type="submit">Tìm</button>
+  </form>
+  <a class="btn btn-primary" href="{% url 'category-create' %}">Thêm loại mặt hàng</a>
+</div>
+
+<section class="panel p-0">
+  {% if categories %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Tên loại</th>
+            <th>Mô tả</th>
+            <th>Sản phẩm</th>
+            <th>Trạng thái</th>
+            <th class="text-end">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in categories %}
+            <tr>
+              <td class="fw-semibold">{{ category.name }}</td>
+              <td class="text-secondary">{{ category.description|default:"—"|truncatechars:80 }}</td>
+              <td>{{ category.product_count }}</td>
+              <td>
+                {% if category.active %}
+                  <span class="badge text-bg-success">Hoạt động</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Đã ngừng</span>
+                {% endif %}
+              </td>
+              <td class="text-end text-nowrap">
+                <a class="btn btn-sm btn-outline-secondary"
+                   href="{% url 'category-update' category.id %}">Sửa</a>
+                <form class="d-inline" method="post"
+                      action="{% url 'category-toggle' category.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-secondary" type="submit">
+                    {% if category.active %}Ngừng{% else %}Kích hoạt{% endif %}
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <strong>Chưa có loại mặt hàng</strong>
+      <span>Thêm loại đầu tiên để bắt đầu quản lý sản phẩm.</span>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

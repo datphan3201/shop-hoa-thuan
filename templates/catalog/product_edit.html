@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — Shop Hoà Thuận{% endblock %}
+{% block page_heading %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<section class="panel narrow-panel">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="{% if field.name == 'active' %}form-check mb-3{% else %}mb-3{% endif %}">
+        {% if field.name == "active" %}
+          {{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% else %}
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% endif %}
+        {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+    <a class="btn btn-outline-secondary" href="{% url 'product-detail' product.id %}">Hủy</a>
+  </form>
+</section>
+{% endblock %}
