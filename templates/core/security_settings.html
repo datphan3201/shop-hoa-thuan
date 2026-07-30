@@ -4,17 +4,57 @@
 {% block page_heading %}Bảo mật giá vốn{% endblock %}
 
 {% block content %}
-<section class="panel narrow-panel">
-  <div class="panel-heading">
-    <div>
-      <h2 class="h5 mb-1">Khóa giá vốn</h2>
-      <p class="text-secondary mb-0">Giá vốn đang được bảo vệ.</p>
-    </div>
-    <span class="badge text-bg-secondary">Đang khóa</span>
+<div class="row g-3">
+  <div class="col-12 col-xl-7">
+    <section class="panel">
+      <div class="panel-heading">
+        <div><h2 class="h5 mb-1">Trạng thái giá vốn</h2><p class="text-secondary mb-0">Phiên mở khóa chỉ tồn tại trong session trình duyệt.</p></div>
+        {% if unlocked %}<span class="badge text-bg-success">Đang mở khóa</span>{% else %}<span class="badge text-bg-secondary">Đang khóa</span>{% endif %}
+      </div>
+
+      {% if not has_pin %}
+        <div class="notice-box mb-3">Thiết lập mã PIN riêng để bảo vệ giá vốn. PIN phải có từ 4 đến 12 chữ số.</div>
+        <form method="post" action="{% url 'security-action' %}">
+          {% csrf_token %}<input type="hidden" name="action" value="setup">
+          {% for field in setup_form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+          <button class="btn btn-primary" type="submit">Thiết lập mã PIN</button>
+        </form>
+      {% elif not unlocked %}
+        <form method="post" action="{% url 'security-action' %}" class="mb-4">
+          {% csrf_token %}<input type="hidden" name="action" value="unlock">
+          <label class="form-label" for="{{ unlock_form.pin.id_for_label }}">{{ unlock_form.pin.label }}</label>
+          <div class="d-flex gap-2">{{ unlock_form.pin }}<button class="btn btn-primary text-nowrap" type="submit">Mở khóa giá vốn</button></div>
+        </form>
+        <p class="text-secondary mb-0">Sau 5 lần nhập sai liên tiếp, hệ thống tạm khóa thử PIN trong 5 phút.</p>
+      {% else %}
+        <form method="post" action="{% url 'security-action' %}">
+          {% csrf_token %}<input type="hidden" name="action" value="lock">
+          <button class="btn btn-danger" type="submit">Khóa giá vốn ngay</button>
+        </form>
+      {% endif %}
+    </section>
   </div>
-  <div class="notice-box">
-    Chức năng thiết lập PIN và phiên mở khóa 10 phút sẽ được hoàn thiện trong Phase 3.
-    Hiện tại hệ thống không hiển thị giá vốn trên giao diện quản lý.
+
+  <div class="col-12 col-xl-5">
+    <section class="panel mb-3">
+      <h2 class="h5 mb-3">Thời gian tự khóa</h2>
+      <form method="post" action="{% url 'security-action' %}">
+        {% csrf_token %}<input type="hidden" name="action" value="timeout">
+        {{ timeout_form.cost_price_lock_timeout_minutes }}
+        <button class="btn btn-outline-primary mt-3" type="submit">Lưu thời gian</button>
+      </form>
+    </section>
+
+    {% if has_pin %}
+      <section class="panel">
+        <h2 class="h5 mb-3">Đổi mã PIN</h2>
+        <form method="post" action="{% url 'security-action' %}">
+          {% csrf_token %}<input type="hidden" name="action" value="change">
+          {% for field in change_form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+          <button class="btn btn-outline-secondary" type="submit">Đổi mã PIN</button>
+        </form>
+      </section>
+    {% endif %}
   </div>
-</section>
+</div>
 {% endblock %}

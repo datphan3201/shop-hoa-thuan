@@ -4,7 +4,7 @@ Cập nhật gần nhất: 2026-07-31
 
 ## Trạng thái hiện tại
 
-Phase 2 — Sản phẩm và tồn kho: **hoàn thành**
+Phase 3 — Khóa giá vốn và thống kê tồn: **hoàn thành**
 
 ## Quyết định kiến trúc
 
@@ -71,10 +71,15 @@ Phase 2 — Sản phẩm và tồn kho: **hoàn thành**
 
 ### Phase 3 — Khóa giá vốn và thống kê tồn
 
-- Thiết lập/đổi PIN, hash Django và rate limit.
-- Session mở khóa ngắn hạn, browser-session và khóa thủ công.
-- Tách query/context nhạy cảm ở server.
-- Thống kê tồn kho, giá trị bán và lợi nhuận.
+- [x] Thiết lập/đổi PIN và chỉ lưu hash Django.
+- [x] Giới hạn 5 lần thử sai và tạm khóa 5 phút.
+- [x] Session HTTP-only mở khóa ngắn hạn, browser-session và khóa thủ công.
+- [x] Tự khóa khi hết hạn, đăng xuất hoặc đổi thời gian.
+- [x] Chặn tạo/sửa giá vốn và tải backup khi đang khóa.
+- [x] Defer giá vốn khỏi queryset và không render số liệu nhạy cảm khi khóa.
+- [x] Thống kê vốn tồn, giá trị bán, lợi nhuận và tỷ suất theo từng size.
+- [x] Unit/integration tests cho PIN, expiry, logout, rate limit và response.
+- [x] Commit Phase 3.
 
 ### Phase 4 — Bán hàng
 
@@ -128,3 +133,14 @@ Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 1.
 - Ảnh test và database development tạm đã được dọn khỏi workspace.
 
 Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 2.
+
+### Phase 3 — 2026-07-31
+
+- `ruff format --check`, `ruff check`, `mypy --strict`: đạt.
+- Django system/migration checks: đạt.
+- `pytest`: 38 test đạt.
+- Waitress smoke test: đạt.
+- Không sử dụng `localStorage`; phiên mở khóa chỉ nằm trong Django session.
+- Backup chứa database chỉ tạo/tải được khi giá vốn đã mở khóa.
+
+Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 3.

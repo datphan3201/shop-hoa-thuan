@@ -23,6 +23,7 @@ from apps.catalog.services import (
     adjust_inventory,
     process_product_image,
 )
+from apps.core.security import cost_price_unlock_required, is_cost_price_unlocked
 
 
 @login_required
@@ -155,6 +156,7 @@ def product_list(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@cost_price_unlock_required
 def product_create(request: HttpRequest) -> HttpResponse:
     product = Product()
     form = ProductForm(request.POST or None, request.FILES or None, instance=product)
@@ -195,9 +197,13 @@ def product_create(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def product_detail(request: HttpRequest, product_id: int) -> HttpResponse:
+    unlocked = is_cost_price_unlocked(request)
+    variant_queryset = ProductVariant.objects.order_by("size")
+    if not unlocked:
+        variant_queryset = variant_queryset.defer("cost_price")
     product = get_object_or_404(
         Product.objects.select_related("category").prefetch_related(
-            Prefetch("variants", queryset=ProductVariant.objects.order_by("size"))
+            Prefetch("variants", queryset=variant_queryset)
         ),
         pk=product_id,
     )
@@ -254,6 +260,7 @@ def product_toggle(request: HttpRequest, product_id: int) -> HttpResponse:
 
 
 @login_required
+@cost_price_unlock_required
 def variant_create(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(Product, pk=product_id)
     form = ProductVariantForm(request.POST or None)
@@ -282,6 +289,7 @@ def variant_create(request: HttpRequest, product_id: int) -> HttpResponse:
 
 
 @login_required
+@cost_price_unlock_required
 def variant_update(request: HttpRequest, variant_id: int) -> HttpResponse:
     variant = get_object_or_404(ProductVariant.objects.select_related("product"), pk=variant_id)
     form = ProductVariantForm(request.POST or None, instance=variant)
@@ -301,6 +309,8 @@ def inventory_list(request: HttpRequest) -> HttpResponse:
     variants = ProductVariant.objects.select_related("product", "product__category").order_by(
         "product__name", "size"
     )
+    if not is_cost_price_unlocked(request):
+        variants = variants.defer("cost_price")
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "")
     if query:

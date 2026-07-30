@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from io import BytesIO
 from pathlib import Path
 
@@ -12,12 +13,16 @@ from PIL import Image
 
 from apps.catalog.models import Category, InventoryMovement, Product, ProductVariant
 from apps.catalog.services import InsufficientStockError, adjust_inventory
+from apps.core.security import UNLOCKED_UNTIL_KEY
 
 
 @pytest.fixture
 def owner_client(db: None, client: Client) -> Client:
     owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
     client.force_login(owner)
+    session = client.session
+    session[UNLOCKED_UNTIL_KEY] = time.time() + 600
+    session.save()
     return client
 
 
@@ -236,6 +241,9 @@ def test_cost_price_is_not_rendered_on_product_and_inventory_pages(
     owner_client: Client,
     variant: ProductVariant,
 ) -> None:
+    session = owner_client.session
+    session.pop(UNLOCKED_UNTIL_KEY, None)
+    session.save()
     product_response = owner_client.get(reverse("product-detail", args=[variant.product_id]))
     inventory_response = owner_client.get(reverse("inventory-list"))
 

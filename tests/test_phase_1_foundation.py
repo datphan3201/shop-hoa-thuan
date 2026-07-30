@@ -86,7 +86,6 @@ def test_authenticated_owner_can_open_all_phase_one_routes(client: Client) -> No
         "dashboard",
         "category-list",
         "product-list",
-        "product-create",
         "inventory-list",
         "sale-list",
         "sale-create",

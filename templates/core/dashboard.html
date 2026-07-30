@@ -17,29 +17,34 @@
   <div class="col-12 col-md-6 col-xl-3">
     <article class="metric-card">
       <span class="metric-label">Sản phẩm hoạt động</span>
-      <strong class="metric-value">0</strong>
-      <span class="metric-note">Chưa có dữ liệu</span>
+      <strong class="metric-value">{{ active_product_count }}</strong>
+      <span class="metric-note">{{ variant_count }} size đang quản lý</span>
     </article>
   </div>
   <div class="col-12 col-md-6 col-xl-3">
     <article class="metric-card">
       <span class="metric-label">Tổng số lượng tồn</span>
-      <strong class="metric-value">0</strong>
-      <span class="metric-note">Theo từng size</span>
+      <strong class="metric-value">{{ total_quantity }}</strong>
+      <span class="metric-note">{{ low_stock_count }} sắp hết · {{ out_of_stock_count }} hết</span>
     </article>
   </div>
   <div class="col-12 col-md-6 col-xl-3">
     <article class="metric-card">
-      <span class="metric-label">Doanh thu hôm nay</span>
-      <strong class="metric-value">0 ₫</strong>
-      <span class="metric-note">Giao dịch hoàn thành</span>
+      <span class="metric-label">Giá trị dự kiến bán</span>
+      {% load money %}<strong class="metric-value">{{ projected_sales_value|vnd }}</strong>
+      <span class="metric-note">Theo giá niêm yết hiện tại</span>
     </article>
   </div>
   <div class="col-12 col-md-6 col-xl-3">
     <article class="metric-card metric-card-locked">
       <span class="metric-label">Tổng vốn tồn kho</span>
-      <strong class="metric-value metric-value-sm">•••••• ₫</strong>
-      <a href="{% url 'security-settings' %}" class="metric-note">Mở khóa giá vốn</a>
+      {% if cost_price_unlocked %}
+        <strong class="metric-value metric-value-sm">{{ inventory_cost|vnd }}</strong>
+        <span class="metric-note">Lợi nhuận: {{ projected_gross_profit|vnd }}{% if has_projected_margin %} · {{ projected_margin|floatformat:1 }}%{% endif %}</span>
+      {% else %}
+        <strong class="metric-value metric-value-sm">•••••• ₫</strong>
+        <a href="{% url 'security-settings' %}" class="metric-note">Mở khóa giá vốn</a>
+      {% endif %}
     </article>
   </div>
 </div>

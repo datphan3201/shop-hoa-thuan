@@ -128,6 +128,14 @@ class ProductVariant(TimeStampedModel):
     def projected_sales_value(self) -> int:
         return self.quantity * self.selling_price
 
+    @property
+    def inventory_cost_value(self) -> int:
+        return self.quantity * self.cost_price
+
+    @property
+    def projected_gross_profit(self) -> int:
+        return self.projected_sales_value - self.inventory_cost_value
+
     def __str__(self) -> str:
         return f"{self.product.name} — {self.size}"
 

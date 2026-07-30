@@ -7,6 +7,7 @@ urlpatterns = [
     path("", RedirectView.as_view(pattern_name="dashboard", permanent=False)),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("settings/security/", views.security_settings, name="security-settings"),
+    path("settings/security/action/", views.security_action, name="security-action"),
     path(
         "settings/device-access/",
         views.device_access_settings,

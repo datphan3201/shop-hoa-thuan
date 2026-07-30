@@ -40,13 +40,13 @@
   </div>
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
-      <thead><tr><th>Size</th><th>SKU</th><th>Giá vốn</th><th>Giá bán</th><th>Tồn</th><th>Trạng thái</th><th>Giá trị dự kiến bán</th><th></th></tr></thead>
+      <thead><tr><th>Size</th><th>SKU</th><th>Giá vốn</th><th>Giá bán</th><th>Tồn</th><th>Trạng thái</th>{% if cost_price_unlocked %}<th>Vốn tồn</th><th>Lợi nhuận dự kiến</th>{% endif %}<th>Giá trị dự kiến bán</th><th></th></tr></thead>
       <tbody>
         {% for variant in variants %}
           <tr>
             <td class="fw-semibold">{{ variant.size }}</td>
             <td>{{ variant.sku|default:"—" }}</td>
-            <td><span class="sensitive-value">•••••• ₫</span></td>
+            <td>{% if cost_price_unlocked %}{{ variant.cost_price|vnd }}{% else %}<span class="sensitive-value">•••••• ₫</span>{% endif %}</td>
             <td>{{ variant.selling_price|vnd }}</td>
             <td>{{ variant.quantity }}</td>
             <td>
@@ -54,11 +54,12 @@
               {% elif variant.stock_status == "low_stock" %}<span class="badge text-bg-warning">Sắp hết</span>
               {% else %}<span class="badge text-bg-success">Còn hàng</span>{% endif %}
             </td>
+            {% if cost_price_unlocked %}<td>{{ variant.inventory_cost_value|vnd }}</td><td>{{ variant.projected_gross_profit|vnd }}</td>{% endif %}
             <td>{{ variant.projected_sales_value|vnd }}</td>
             <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'variant-update' variant.id %}">Sửa</a></td>
           </tr>
         {% empty %}
-          <tr><td colspan="8"><div class="empty-state">Chưa có size.</div></td></tr>
+          <tr><td colspan="10"><div class="empty-state">Chưa có size.</div></td></tr>
         {% endfor %}
       </tbody>
     </table>

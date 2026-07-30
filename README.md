@@ -6,6 +6,9 @@ doanh thu, báo cáo và khóa bảo vệ giá vốn.
 Hiện đã có quản lý loại mặt hàng, sản phẩm nhiều size, ảnh/thumbnail, tìm kiếm/lọc và
 điều chỉnh tồn kho nguyên tử kèm lịch sử.
 
+Giá vốn mặc định bị khóa bằng PIN riêng ở server. Khi khóa, giao diện không nhận giá vốn
+hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đăng xuất/đóng trình duyệt.
+
 ## Trạng thái
 
 Dự án đang ở Phase 1. Không dùng cho dữ liệu thật cho đến khi Phase 6 được nghiệm thu.

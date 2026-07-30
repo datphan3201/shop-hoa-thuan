@@ -1,7 +1,11 @@
 from typing import Any, cast
 
+from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+from apps.core.models import ShopSecuritySettings
 
 
 class OwnerAuthenticationForm(AuthenticationForm):
@@ -42,3 +46,60 @@ class OwnerSetupForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class PinUnlockForm(forms.Form):
+    pin = forms.CharField(
+        label="Mã PIN",
+        min_length=4,
+        max_length=12,
+        strip=True,
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control", "inputmode": "numeric", "autocomplete": "off"}
+        ),
+    )
+
+
+class PinSetupForm(forms.Form):
+    new_pin = forms.CharField(
+        label="Mã PIN mới",
+        min_length=4,
+        max_length=12,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+    )
+    confirm_pin = forms.CharField(
+        label="Nhập lại mã PIN",
+        min_length=4,
+        max_length=12,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+    )
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean() or {}
+        new_pin = str(cleaned_data.get("new_pin", ""))
+        if not new_pin.isdigit():
+            self.add_error("new_pin", "Mã PIN chỉ được gồm chữ số.")
+        if new_pin != cleaned_data.get("confirm_pin"):
+            self.add_error("confirm_pin", "Mã PIN nhập lại không khớp.")
+        return cleaned_data
+
+
+class PinChangeForm(PinSetupForm):
+    current_pin = forms.CharField(
+        label="Mã PIN hiện tại",
+        min_length=4,
+        max_length=12,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+    )
+
+
+class SecurityTimeoutForm(forms.ModelForm):
+    cost_price_lock_timeout_minutes = forms.IntegerField(
+        label="Tự khóa sau (phút)",
+        validators=[MinValueValidator(1), MaxValueValidator(120)],
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 120}),
+    )
+
+    class Meta:
+        model = ShopSecuritySettings
+        fields = ("cost_price_lock_timeout_minutes",)
