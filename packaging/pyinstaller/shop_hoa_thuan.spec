@@ -1,9 +1,13 @@
 # PyInstaller spec — chạy trên Windows, không cross-compile từ WSL.
 from pathlib import Path
+import sys
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 project_root = Path(SPECPATH).parent.parent
+# ``collect_submodules`` resolves packages before Analysis applies ``pathex``.
+# Prefer this checkout's ``apps`` package over an unrelated installed package.
+sys.path.insert(0, str(project_root))
 
 datas = [
     (str(project_root / "templates"), "templates"),
