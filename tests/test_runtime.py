@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from unittest.mock import patch
 
-from shop_hoa_thuan.runtime import ensure_runtime_layout, migrate_legacy_layout, runtime_paths
+from shop_hoa_thuan.runtime import (
+    ensure_runtime_layout,
+    migrate_legacy_layout,
+    production_allowed_hosts,
+    runtime_paths,
+)
 
 
 def test_runtime_uses_production_like_tree_in_development(
@@ -43,3 +49,13 @@ def test_legacy_database_is_copied_and_verified_before_source_is_retained(
     with sqlite3.connect(paths.database) as database:
         assert database.execute("SELECT value FROM sample").fetchone() == ("ok",)
     assert migrate_legacy_layout(paths) is False
+
+
+def test_default_production_hosts_include_discovered_lan_ip(monkeypatch: object) -> None:
+    monkeypatch.delenv("DJANGO_ALLOWED_HOSTS", raising=False)  # type: ignore[attr-defined]
+    with patch("shop_hoa_thuan.runtime.lan_ipv4_addresses", return_value=["192.168.1.10"]):
+        hosts = production_allowed_hosts()
+
+    assert "localhost" in hosts
+    assert "127.0.0.1" in hosts
+    assert "192.168.1.10" in hosts

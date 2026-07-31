@@ -1,6 +1,6 @@
 <service>
-  <id>ShopHoaThuan</id>
-  <name>Shop Hoà Thuận</name>
+  <id>ShopHoaThuanServer</id>
+  <name>Shop Hoà Thuận Server</name>
   <description>Máy chủ nội bộ của ứng dụng quản lý Shop Hoà Thuận.</description>
   <executable>%BASE%\ShopHoaThuanServer.exe</executable>
   <workingdirectory>%BASE%</workingdirectory>
@@ -8,12 +8,14 @@
   <delayedAutoStart>true</delayedAutoStart>
   <env name="SHOP_DATA_DIR" value="%ProgramData%\Shop Hoa Thuan" />
   <env name="DJANGO_DEBUG" value="false" />
-  <env name="DJANGO_ALLOWED_HOSTS" value="*" />
   <env name="SHOP_SERVER_HOST" value="0.0.0.0" />
   <env name="SHOP_SERVER_PORT" value="2505" />
+  <stoptimeout>30 sec</stoptimeout>
   <onfailure action="restart" delay="10 sec" />
   <onfailure action="restart" delay="30 sec" />
+  <onfailure action="none" />
   <resetfailure>1 hour</resetfailure>
+  <logpath>%ProgramData%\Shop Hoa Thuan\logs\service</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>5120</sizeThreshold>
     <keepFiles>3</keepFiles>

@@ -8,7 +8,9 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
+from typing import Protocol, cast
 
 from django.conf import settings
 
@@ -22,6 +24,41 @@ class OperationBusyError(RuntimeError):
 
 class MaintenanceTimeoutError(RuntimeError):
     pass
+
+
+class _Msvcrt(Protocol):
+    LK_NBLCK: int
+    LK_UNLCK: int
+
+    def locking(self, fd: int, mode: int, nbytes: int) -> None: ...
+
+
+class _Fcntl(Protocol):
+    LOCK_EX: int
+    LOCK_NB: int
+    LOCK_UN: int
+
+    def flock(self, fd: int, operation: int) -> None: ...
+
+
+def _try_lock(descriptor: int) -> None:
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    if os.name == "nt":
+        msvcrt = cast(_Msvcrt, import_module("msvcrt"))
+        msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+        return
+    fcntl = cast(_Fcntl, import_module("fcntl"))
+    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _unlock(descriptor: int) -> None:
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    if os.name == "nt":
+        msvcrt = cast(_Msvcrt, import_module("msvcrt"))
+        msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+        return
+    fcntl = cast(_Fcntl, import_module("fcntl"))
+    fcntl.flock(descriptor, fcntl.LOCK_UN)
 
 
 def _paths() -> tuple[Path, Path, Path]:
@@ -75,14 +112,7 @@ class FileLease:
         )
         descriptor = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
-            if os.name == "nt":
-                import msvcrt
-
-                msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]
-            else:
-                import fcntl
-
-                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            _try_lock(descriptor)
         except OSError as error:
             os.close(descriptor)
             raise OperationBusyError(
@@ -98,16 +128,18 @@ class FileLease:
         if not self.acquired:
             return
         if self.descriptor is not None:
-            if os.name == "nt":
-                import msvcrt
-
-                msvcrt.locking(self.descriptor, msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]
-            else:
-                import fcntl
-
-                fcntl.flock(self.descriptor, fcntl.LOCK_UN)
-            os.close(self.descriptor)
-            self.descriptor = None
+            try:
+                _unlock(self.descriptor)
+            except OSError:
+                logger.warning(
+                    "Không thể unlock rõ ràng operation=%s id=%s; "
+                    "đóng descriptor để hệ điều hành giải phóng.",
+                    self.operation,
+                    self.operation_id,
+                )
+            finally:
+                os.close(self.descriptor)
+                self.descriptor = None
         self.acquired = False
         logger.info("Đã giải phóng lock operation=%s id=%s", self.operation, self.operation_id)
 
@@ -120,16 +152,8 @@ def server_lease() -> FileLease:
 def _lease_is_held(path: Path) -> bool:
     descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        if os.name == "nt":
-            import msvcrt
-
-            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]
-            msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]
-        else:
-            import fcntl
-
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        _try_lock(descriptor)
+        _unlock(descriptor)
     except OSError:
         return True
     finally:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+from apps.core.network import server_port
 from shop_hoa_thuan.runtime import (
     ensure_runtime_layout,
     ensure_runtime_secret,
@@ -36,7 +37,7 @@ def main() -> None:
         raise SystemExit(f"SHOP-SERVER-002: {error}") from error
     application = get_wsgi_application()
     host = os.getenv("SHOP_SERVER_HOST", "0.0.0.0")
-    port = int(os.getenv("SHOP_SERVER_PORT", "2505"))
+    port = server_port()
     try:
         serve(
             application,

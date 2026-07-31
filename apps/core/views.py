@@ -1,6 +1,9 @@
+from base64 import b64encode
+from io import BytesIO
 from pathlib import Path
 from typing import cast
 
+import qrcode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
@@ -19,6 +22,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 from PIL import Image, UnidentifiedImageError
+from qrcode.image.svg import SvgPathImage
 
 from apps.catalog.models import Product, ProductVariant
 from apps.core.backup import BackupError, create_backup, list_backups
@@ -33,6 +37,7 @@ from apps.core.forms import (
 )
 from apps.core.idempotency import IdempotencyConflictError, request_fingerprint
 from apps.core.models import IdempotencyRecord, ShopSecuritySettings
+from apps.core.network import discover_device_access
 from apps.core.operations import maintenance_operation, maintenance_state
 from apps.core.security import (
     cost_price_unlock_required,
@@ -250,7 +255,25 @@ def security_action(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def device_access_settings(request: HttpRequest) -> HttpResponse:
-    return render(request, "core/device_access_settings.html", {"backups": list_backups()})
+    access = discover_device_access()
+    qr_target = access.lan_urls[0] if access.lan_urls else access.localhost_url
+    return render(
+        request,
+        "core/device_access_settings.html",
+        {
+            "access": access,
+            "qr_code": _qr_svg_data_uri(qr_target),
+            "backups": list_backups(),
+            "maintenance": maintenance_state(),
+        },
+    )
+
+
+def _qr_svg_data_uri(value: str) -> str:
+    image = qrcode.make(value, image_factory=SvgPathImage, border=2)
+    stream = BytesIO()
+    image.save(stream)
+    return f"data:image/svg+xml;base64,{b64encode(stream.getvalue()).decode('ascii')}"
 
 
 @login_required

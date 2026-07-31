@@ -11,6 +11,8 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+from apps.core.network import lan_ipv4_addresses
+
 
 @dataclass(frozen=True)
 class RuntimePaths:
@@ -147,7 +149,16 @@ def production_allowed_hosts() -> list[str]:
         return hosts
     hostname = socket.gethostname().strip()
     return [
-        host for host in ("localhost", "127.0.0.1", "[::1]", "shophoathuan.local", hostname) if host
+        host
+        for host in (
+            "localhost",
+            "127.0.0.1",
+            "[::1]",
+            "shophoathuan.local",
+            hostname,
+            *lan_ipv4_addresses(),
+        )
+        if host
     ]
 
 
