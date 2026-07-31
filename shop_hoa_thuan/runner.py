@@ -6,7 +6,6 @@ from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 
-from apps.core.models import ShopSecuritySettings
 from apps.core.operations import maintenance_operation
 
 
@@ -31,6 +30,11 @@ def run_migrations() -> None:
 
 
 def run_first_setup(*, username: str, password: str, pin: str) -> None:
+    # Entry points import this module before calling django.setup().  Importing
+    # the model at module scope would make a frozen server fail during startup
+    # with AppRegistryNotReady, even though first-run itself is not executed.
+    from apps.core.models import ShopSecuritySettings
+
     user_model = get_user_model()
     if (
         user_model.objects.exists()

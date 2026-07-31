@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,6 +13,18 @@ from apps.core.models import ShopSecuritySettings
 from apps.core.operations import maintenance_state
 from shop_hoa_thuan.runner import run_first_setup, run_migrations, schema_is_compatible
 from shop_hoa_thuan.runtime import RuntimePaths
+
+
+def test_runner_module_can_load_before_django_setup() -> None:
+    """Packaged server imports runner before calling django.setup()."""
+    result = subprocess.run(
+        [sys.executable, "-c", "import shop_hoa_thuan.runner"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.django_db
