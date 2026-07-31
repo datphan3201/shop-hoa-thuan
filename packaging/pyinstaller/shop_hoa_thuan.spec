@@ -10,6 +10,9 @@ project_root = Path(SPECPATH).parent.parent
 sys.path.insert(0, str(project_root))
 
 datas = [
+    # Version remains authored only in pyproject.toml; frozen code reads this
+    # bundled copy instead of introducing a second version string.
+    (str(project_root / "pyproject.toml"), "."),
     (str(project_root / "templates"), "templates"),
     (str(project_root / "staticfiles"), "staticfiles"),
 ]

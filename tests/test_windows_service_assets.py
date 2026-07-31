@@ -33,6 +33,7 @@ def test_pyinstaller_bundle_keeps_django_logging_filter() -> None:
 
     assert '"apps.core.logging"' in spec
     assert 'collect_submodules("whitenoise")' in spec
+    assert 'project_root / "pyproject.toml"' in spec
     assert "a.zipfiles" in spec
     assert "sys.path.insert(0, str(project_root))" in spec
 
