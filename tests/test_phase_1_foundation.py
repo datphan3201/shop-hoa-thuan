@@ -13,7 +13,11 @@ def test_health_check_reports_database_ready(client: Client) -> None:
     response = client.get(reverse("health"))
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "database": True}
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["database"] is True
+    assert isinstance(payload["version"], str)
+    assert payload["server_time_utc"].endswith("+00:00")
 
 
 @pytest.mark.django_db

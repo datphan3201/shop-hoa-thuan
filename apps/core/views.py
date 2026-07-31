@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
@@ -11,6 +12,7 @@ from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
@@ -38,6 +40,7 @@ from apps.reports.services import (
     resolve_report_period,
 )
 from apps.sales.models import Sale
+from shop_hoa_thuan.version import application_version
 
 User = get_user_model()
 
@@ -251,6 +254,19 @@ def download_backup(request: HttpRequest, filename: str) -> FileResponse:
     )
 
 
+@login_required
+@require_GET
+def protected_media(request: HttpRequest, path: str) -> FileResponse:
+    """Serve product media privately without exposing runtime filesystem paths."""
+    media_root = Path(settings.MEDIA_ROOT).resolve()
+    candidate = (media_root / path).resolve()
+    if media_root not in candidate.parents or not candidate.is_file():
+        raise Http404
+    response = FileResponse(candidate.open("rb"))
+    response.headers["Cache-Control"] = "private, max-age=86400"
+    return response
+
+
 @require_GET
 @never_cache
 def health(request: HttpRequest) -> JsonResponse:
@@ -263,6 +279,11 @@ def health(request: HttpRequest) -> JsonResponse:
         database_ok = False
 
     return JsonResponse(
-        {"status": "ok" if database_ok else "error", "database": database_ok},
+        {
+            "status": "ok" if database_ok else "error",
+            "database": database_ok,
+            "version": application_version(),
+            "server_time_utc": timezone.now().isoformat(),
+        },
         status=200 if database_ok else 503,
     )

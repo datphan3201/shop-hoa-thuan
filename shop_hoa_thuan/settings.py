@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from shop_hoa_thuan.runtime import ensure_runtime_layout, production_allowed_hosts
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -17,22 +19,9 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-secret-key")
 if not DEBUG and SECRET_KEY == "development-only-secret-key":
     raise RuntimeError("DJANGO_SECRET_KEY bắt buộc khi chạy production.")
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",")
-    if host.strip()
-]
-
-data_dir_setting = os.getenv("SHOP_DATA_DIR")
-if data_dir_setting:
-    candidate = Path(data_dir_setting).expanduser()
-    DATA_DIR = candidate if candidate.is_absolute() else BASE_DIR / candidate
-elif os.name == "nt" and os.getenv("PROGRAMDATA"):
-    DATA_DIR = Path(os.environ["PROGRAMDATA"]) / "Shop Hoa Thuan"
-else:
-    DATA_DIR = BASE_DIR / ".data"
-
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_HOSTS = production_allowed_hosts()
+RUNTIME_PATHS = ensure_runtime_layout()
+DATA_DIR = RUNTIME_PATHS.root
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -86,7 +75,7 @@ ASGI_APPLICATION = "shop_hoa_thuan.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": DATA_DIR / "shop-hoa-thuan.sqlite3",
+        "NAME": RUNTIME_PATHS.database,
         "OPTIONS": {
             "timeout": 20,
             "transaction_mode": "IMMEDIATE",
@@ -116,8 +105,8 @@ STORAGES = {
     },
 }
 MEDIA_URL = "/media/"
-MEDIA_ROOT = DATA_DIR / "media"
-BACKUP_ROOT = DATA_DIR / "backups"
+MEDIA_ROOT = RUNTIME_PATHS.media
+BACKUP_ROOT = RUNTIME_PATHS.backups
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -146,7 +135,7 @@ LOGGING = {
         "console": {"class": "logging.StreamHandler", "formatter": "standard"},
         "file": {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": DATA_DIR / "shop-hoa-thuan.log",
+            "filename": RUNTIME_PATHS.logs / "server.log",
             "maxBytes": 5 * 1024 * 1024,
             "backupCount": 3,
             "formatter": "standard",
