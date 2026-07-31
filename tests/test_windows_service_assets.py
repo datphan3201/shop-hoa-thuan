@@ -41,6 +41,7 @@ def test_native_server_smoke_script_uses_only_the_packaged_server() -> None:
     assert "ShopHoaThuanServer.exe" in script
     assert "Invoke-WebRequest" in script
     assert "Stop-Process" in script
+    assert "RedirectStandardError" in script
     assert "python -c" not in script
 
 

@@ -29,6 +29,8 @@ foreach ($name in @(
 }
 
 $process = $null
+$stdout = Join-Path $DataDirectory "logs\\native-server-smoke.stdout.log"
+$stderr = Join-Path $DataDirectory "logs\\native-server-smoke.stderr.log"
 try {
     $env:SHOP_DATA_DIR = $DataDirectory
     $env:DJANGO_DEBUG = "false"
@@ -45,7 +47,8 @@ try {
     $env:SHOP_SERVER_HOST = "127.0.0.1"
     $env:SHOP_SERVER_PORT = "$Port"
 
-    $process = Start-Process -FilePath $ServerExe -PassThru
+    Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
+    $process = Start-Process -FilePath $ServerExe -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
     $healthy = $false
     for ($attempt = 0; $attempt -lt 15; $attempt++) {
         Start-Sleep -Seconds 1
@@ -65,14 +68,20 @@ try {
     }
 
     if (-not $healthy) {
-        throw "Native server không đạt health check tại port $Port."
+        $errorDetail = if (Test-Path -LiteralPath $stderr) {
+            (Get-Content -LiteralPath $stderr -Raw).Trim()
+        }
+        else {
+            "Không có stderr."
+        }
+        throw "Native server không đạt health check tại port $Port. Chi tiết: $errorDetail"
     }
     Write-Output "PASS: Native ShopHoaThuanServer.exe trả /health/ thành công."
 }
 finally {
     if ($null -ne $process -and -not $process.HasExited) {
         Stop-Process -Id $process.Id -Force
-        $process.WaitForExit()
+        $process.WaitForExit(5000)
     }
     foreach ($name in $oldEnvironment.Keys) {
         [Environment]::SetEnvironmentVariable($name, $oldEnvironment[$name], "Process")
