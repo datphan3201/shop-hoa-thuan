@@ -1,0 +1,15 @@
+{% load money %}
+{% if rows %}
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>Nhóm</th><th class="text-end">Số lượng</th><th class="text-end">Doanh thu</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr><td>{{ row.label }}</td><td class="text-end">{{ row.quantity }}</td><td class="text-end fw-semibold">{{ row.revenue|vnd }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state"><strong>Không có dữ liệu</strong><span>Chưa có giao dịch hoàn thành trong khoảng này.</span></div>
+{% endif %}

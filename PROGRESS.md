@@ -6,7 +6,7 @@ Cập nhật gần nhất: 2026-07-31
 
 - Phase 3 — Khóa giá vốn và thống kê tồn: **hoàn thành**.
 - Phase 4 — Bán hàng: **hoàn thành**.
-- Phase 5 — Dashboard và báo cáo: **chưa triển khai**.
+- Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7–13 — Production Windows, mobile, backup/restore và update:
   **đã review kiến trúc và lập kế hoạch, chưa triển khai**.
 
@@ -159,9 +159,13 @@ nội bộ.
 
 ### Phase 5 — Dashboard và báo cáo
 
-- Dashboard, báo cáo theo múi giờ Việt Nam và Chart.js.
-- Doanh thu, bán chạy, tồn thấp/hết.
-- CSV mặc định không có giá vốn; export nhạy cảm cần mở khóa/xác nhận.
+- [x] Dashboard, báo cáo theo múi giờ Việt Nam và Chart.js local.
+- [x] Doanh thu, bán chạy, tồn thấp/hết và giao dịch gần đây.
+- [x] CSV mặc định không có giá vốn; export nhạy cảm chỉ hiện/tải được sau khi mở khóa
+  và xác nhận.
+- [x] Kiểm thử phân bổ giảm giá, loại trừ giao dịch hủy, ngày theo múi giờ Việt Nam, báo cáo
+  không lộ giá vốn khi khóa và CSV.
+- [x] Commit Phase 5.
 
 ### Phase 6 — Hoàn thiện nghiệp vụ
 
@@ -543,3 +547,15 @@ Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 3.
 - Database/media thử nghiệm trình duyệt trong `/tmp` đã được xóa sau kiểm tra.
 
 Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 4.
+
+### Phase 5 — 2026-07-31
+
+- `ruff format --check`, `ruff check`, `mypy --strict`: đạt.
+- Django system/migration checks: đạt.
+- `pytest`: 64 test đạt, gồm báo cáo, dashboard, CSV và bảo vệ giá vốn.
+- Dashboard hiển thị doanh thu theo ngày/tháng, giao dịch gần đây, sản phẩm/size bán chạy,
+  doanh thu theo loại/phương thức thanh toán và cảnh báo tồn.
+- Báo cáo chỉ dùng giao dịch hoàn thành, tính ngày theo `Asia/Ho_Chi_Minh`, phân bổ giảm giá
+  chính xác; khi khóa không truy vấn/render giá vốn.
+
+Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 5.

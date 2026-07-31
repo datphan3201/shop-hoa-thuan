@@ -1,78 +1,244 @@
 {% extends "base.html" %}
+{% load static money %}
 
-{% block title %}Tổng quan — Shop Hoà Thuận{% endblock %}
+{% block title %}Tổng quan · {{ application_name }}{% endblock %}
 {% block page_heading %}Tổng quan{% endblock %}
 
 {% block content %}
 <section class="welcome-panel mb-4">
   <div>
-    <p class="eyebrow mb-2">Hôm nay</p>
-    <h2 class="h3 mb-2">Chào mừng trở lại</h2>
-    <p class="mb-0 text-secondary">Các số liệu kinh doanh sẽ xuất hiện sau Phase 5.</p>
+    <p class="eyebrow mb-2">Shop Hoà Thuận</p>
+    <h2 class="h3 mb-2">Tình hình kinh doanh</h2>
+    <p class="mb-0 text-secondary">Doanh thu dùng số tiền thực tế của giao dịch đã hoàn thành.</p>
   </div>
   <a class="btn btn-primary btn-lg" href="{% url 'sale-create' %}">Tạo giao dịch</a>
 </section>
 
 <div class="row g-3 mb-4">
-  <div class="col-12 col-md-6 col-xl-3">
+  <div class="col-6 col-xl-3">
     <article class="metric-card">
       <span class="metric-label">Sản phẩm hoạt động</span>
       <strong class="metric-value">{{ active_product_count }}</strong>
       <span class="metric-note">{{ variant_count }} size đang quản lý</span>
     </article>
   </div>
-  <div class="col-12 col-md-6 col-xl-3">
+  <div class="col-6 col-xl-3">
     <article class="metric-card">
       <span class="metric-label">Tổng số lượng tồn</span>
       <strong class="metric-value">{{ total_quantity }}</strong>
       <span class="metric-note">{{ low_stock_count }} sắp hết · {{ out_of_stock_count }} hết</span>
     </article>
   </div>
-  <div class="col-12 col-md-6 col-xl-3">
+  <div class="col-6 col-xl-3">
     <article class="metric-card">
-      <span class="metric-label">Giá trị dự kiến bán</span>
-      {% load money %}<strong class="metric-value">{{ projected_sales_value|vnd }}</strong>
-      <span class="metric-note">Theo giá niêm yết hiện tại</span>
+      <span class="metric-label">Doanh thu hôm nay</span>
+      <strong class="metric-value metric-value-sm">{{ today_summary.revenue|vnd }}</strong>
+      <span class="metric-note">{{ today_summary.completed_sale_count }} đơn · {{ today_summary.sold_quantity }} sản phẩm</span>
     </article>
   </div>
-  <div class="col-12 col-md-6 col-xl-3">
+  <div class="col-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Doanh thu tháng này</span>
+      <strong class="metric-value metric-value-sm">{{ month_summary.revenue|vnd }}</strong>
+      <span class="metric-note">TB/đơn: {{ month_summary.average_order_value|vnd }}</span>
+    </article>
+  </div>
+  <div class="col-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Doanh thu năm nay</span>
+      <strong class="metric-value metric-value-sm">{{ year_summary.revenue|vnd }}</strong>
+      <span class="metric-note">{{ year_summary.completed_sale_count }} giao dịch</span>
+    </article>
+  </div>
+  <div class="col-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Giá trị dự kiến bán</span>
+      <strong class="metric-value metric-value-sm">{{ projected_sales_value|vnd }}</strong>
+      <span class="metric-note">Nếu bán hết theo giá hiện tại</span>
+    </article>
+  </div>
+  <div class="col-6 col-xl-3">
     <article class="metric-card metric-card-locked">
       <span class="metric-label">Tổng vốn tồn kho</span>
       {% if cost_price_unlocked %}
         <strong class="metric-value metric-value-sm">{{ inventory_cost|vnd }}</strong>
-        <span class="metric-note">Lợi nhuận: {{ projected_gross_profit|vnd }}{% if has_projected_margin %} · {{ projected_margin|floatformat:1 }}%{% endif %}</span>
+        <span class="metric-note">Tính riêng từng size</span>
       {% else %}
-        <strong class="metric-value metric-value-sm">•••••• ₫</strong>
+        <strong class="metric-value metric-value-sm sensitive-value">•••••• ₫</strong>
         <a href="{% url 'security-settings' %}" class="metric-note">Mở khóa giá vốn</a>
+      {% endif %}
+    </article>
+  </div>
+  <div class="col-6 col-xl-3">
+    <article class="metric-card metric-card-locked">
+      <span class="metric-label">Lợi nhuận gộp dự kiến</span>
+      {% if cost_price_unlocked %}
+        <strong class="metric-value metric-value-sm">{{ projected_gross_profit|vnd }}</strong>
+        <span class="metric-note">
+          {% if has_projected_margin %}Tỷ suất {{ projected_margin|floatformat:1 }}%{% else %}Không có dữ liệu{% endif %}
+        </span>
+      {% else %}
+        <strong class="metric-value metric-value-sm sensitive-value">•••••• ₫</strong>
+        <span class="metric-note">Giá vốn đã khóa</span>
       {% endif %}
     </article>
   </div>
 </div>
 
-<div class="row g-3">
+<div class="row g-4 mb-4">
   <div class="col-12 col-xl-7">
     <section class="panel">
       <div class="panel-heading">
-        <h2 class="h5 mb-0">Giao dịch gần đây</h2>
-        <a href="{% url 'sale-list' %}">Xem tất cả</a>
+        <h2 class="h5 mb-0">Doanh thu từng ngày trong tháng</h2>
+        <a href="{% url 'report-overview' %}?period=this_month">Xem báo cáo</a>
       </div>
-      <div class="empty-state">
-        <strong>Chưa có giao dịch</strong>
-        <span>Giao dịch đầu tiên sẽ xuất hiện tại đây.</span>
-      </div>
+      <div class="chart-container"><canvas id="dailyRevenueChart"></canvas></div>
     </section>
   </div>
   <div class="col-12 col-xl-5">
     <section class="panel">
-      <div class="panel-heading">
-        <h2 class="h5 mb-0">Cảnh báo tồn kho</h2>
-        <a href="{% url 'inventory-list' %}">Xem kho</a>
-      </div>
-      <div class="empty-state">
-        <strong>Chưa có sản phẩm</strong>
-        <span>Thêm sản phẩm để bắt đầu theo dõi tồn kho.</span>
-      </div>
+      <div class="panel-heading"><h2 class="h5 mb-0">Sản phẩm bán theo ngày</h2></div>
+      <div class="chart-container"><canvas id="dailyQuantityChart"></canvas></div>
+    </section>
+  </div>
+  <div class="col-12">
+    <section class="panel">
+      <div class="panel-heading"><h2 class="h5 mb-0">Doanh thu từng tháng trong năm</h2></div>
+      <div class="chart-container chart-container-wide"><canvas id="monthlyRevenueChart"></canvas></div>
     </section>
   </div>
 </div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-xl-7">
+    <section class="panel h-100">
+      <div class="panel-heading">
+        <h2 class="h5 mb-0">Giao dịch gần đây</h2>
+        <a href="{% url 'sale-list' %}">Xem tất cả</a>
+      </div>
+      {% if recent_sales %}
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead><tr><th>Mã</th><th>Thời gian</th><th class="text-end">SL</th><th class="text-end">Tổng</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              {% for sale in recent_sales %}
+                <tr>
+                  <td><a href="{% url 'sale-detail' sale.pk %}">{{ sale.sale_code }}</a></td>
+                  <td>{{ sale.sold_at|date:"d/m H:i" }}</td>
+                  <td class="text-end">{{ sale.total_quantity }}</td>
+                  <td class="text-end">{{ sale.final_total|vnd }}</td>
+                  <td>{% if sale.status == "completed" %}<span class="badge text-bg-success">Hoàn thành</span>{% else %}<span class="badge text-bg-secondary">Đã hủy</span>{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><strong>Chưa có giao dịch</strong><span>Giao dịch đầu tiên sẽ xuất hiện tại đây.</span></div>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-5">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Sản phẩm bán chạy tháng này</h2></div>
+      {% if best_products %}
+        <ol class="dashboard-ranking mb-0">
+          {% for row in best_products %}
+            <li><span>{{ row.label }}</span><strong>{{ row.quantity }} SP</strong><small>{{ row.revenue|vnd }}</small></li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <div class="empty-state"><strong>Chưa có dữ liệu</strong><span>Cần giao dịch hoàn thành trong tháng.</span></div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-lg-6 col-xl-3">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h6 mb-0">Size bán chạy</h2></div>
+      {% if best_sizes %}
+        <ul class="dashboard-simple-list">{% for row in best_sizes %}<li><span>{{ row.label }}</span><strong>{{ row.quantity }}</strong></li>{% endfor %}</ul>
+      {% else %}<div class="empty-state"><span>Chưa có dữ liệu</span></div>{% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-lg-6 col-xl-3">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h6 mb-0">Doanh thu theo loại</h2></div>
+      {% if category_revenue %}
+        <ul class="dashboard-simple-list">{% for row in category_revenue %}<li><span>{{ row.label }}</span><strong>{{ row.revenue|vnd }}</strong></li>{% endfor %}</ul>
+      {% else %}<div class="empty-state"><span>Chưa có dữ liệu</span></div>{% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-lg-6 col-xl-3">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h6 mb-0">Theo thanh toán</h2></div>
+      {% if payment_revenue %}
+        <ul class="dashboard-simple-list">{% for row in payment_revenue %}<li><span>{{ row.label }}</span><strong>{{ row.revenue|vnd }}</strong></li>{% endfor %}</ul>
+      {% else %}<div class="empty-state"><span>Chưa có dữ liệu</span></div>{% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-lg-6 col-xl-3">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h6 mb-0">Sản phẩm mới cập nhật</h2></div>
+      {% if recent_products %}
+        <ul class="dashboard-simple-list">{% for product in recent_products %}<li><a href="{% url 'product-detail' product.pk %}">{{ product.name }}</a><small>{{ product.updated_at|date:"d/m H:i" }}</small></li>{% endfor %}</ul>
+      {% else %}<div class="empty-state"><span>Chưa có sản phẩm</span></div>{% endif %}
+    </section>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-6">
+    <section class="panel">
+      <div class="panel-heading"><h2 class="h5 mb-0">Sắp hết</h2><a href="{% url 'inventory-list' %}?status=low">Xem kho</a></div>
+      {% if low_stock_variants %}
+        <ul class="dashboard-simple-list">{% for variant in low_stock_variants %}<li><span>{{ variant.product.name }} · {{ variant.size }}</span><strong>{{ variant.quantity }}</strong></li>{% endfor %}</ul>
+      {% else %}<div class="empty-state"><strong>Không có cảnh báo</strong></div>{% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-lg-6">
+    <section class="panel">
+      <div class="panel-heading"><h2 class="h5 mb-0">Đã hết hàng</h2><a href="{% url 'inventory-list' %}?status=out">Xem kho</a></div>
+      {% if out_of_stock_variants %}
+        <ul class="dashboard-simple-list">{% for variant in out_of_stock_variants %}<li><span>{{ variant.product.name }} · {{ variant.size }}</span><strong>0</strong></li>{% endfor %}</ul>
+      {% else %}<div class="empty-state"><strong>Không có size hết hàng</strong></div>{% endif %}
+    </section>
+  </div>
+</div>
+
+{{ daily_series|json_script:"dashboard-daily-series" }}
+{{ monthly_series|json_script:"dashboard-monthly-series" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script>
+(() => {
+  const daily = JSON.parse(document.getElementById("dashboard-daily-series").textContent);
+  const monthly = JSON.parse(document.getElementById("dashboard-monthly-series").textContent);
+  const currency = (value) => new Intl.NumberFormat("vi-VN").format(value) + " ₫";
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } }
+  };
+  new Chart(document.getElementById("dailyRevenueChart"), {
+    type: "bar",
+    data: { labels: daily.map((row) => row.label), datasets: [{ data: daily.map((row) => row.revenue), backgroundColor: "#9a3412", borderRadius: 4 }] },
+    options: { ...commonOptions, scales: { y: { beginAtZero: true, ticks: { callback: currency } } } }
+  });
+  new Chart(document.getElementById("dailyQuantityChart"), {
+    type: "line",
+    data: { labels: daily.map((row) => row.label), datasets: [{ data: daily.map((row) => row.quantity), borderColor: "#0369a1", backgroundColor: "#bae6fd", fill: true, tension: 0.25 }] },
+    options: { ...commonOptions, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+  new Chart(document.getElementById("monthlyRevenueChart"), {
+    type: "line",
+    data: { labels: monthly.map((row) => row.label), datasets: [{ data: monthly.map((row) => row.revenue), borderColor: "#9a3412", backgroundColor: "#fed7aa", fill: true, tension: 0.25 }] },
+    options: { ...commonOptions, scales: { y: { beginAtZero: true, ticks: { callback: currency } } } }
+  });
+})();
+</script>
 {% endblock %}

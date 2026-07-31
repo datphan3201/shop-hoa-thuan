@@ -11,7 +11,8 @@ hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đ
 
 ## Trạng thái
 
-Phase 4 đã hoàn thành: sản phẩm, tồn kho, khóa giá vốn và bán/hủy giao dịch đã có kiểm thử.
+Phase 5 đã hoàn thành: sản phẩm, tồn kho, khóa giá vốn, bán/hủy giao dịch, dashboard và
+báo cáo đã có kiểm thử.
 Không dùng cho dữ liệu thật cho đến khi Phase 13 được chứng nhận trên Windows và mobile.
 
 ## Phát triển trong WSL

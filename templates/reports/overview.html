@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static money %}
+
+{% block title %}Báo cáo · {{ application_name }}{% endblock %}
+{% block page_heading %}Báo cáo{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <h2 class="h4 mb-1">{{ period.label }}</h2>
+    <p class="text-secondary mb-0">{{ period.date_from|date:"d/m/Y" }} – {{ period.date_to|date:"d/m/Y" }} · Chỉ tính giao dịch đã hoàn thành.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'report-export-csv' %}?period={{ period.key }}&amp;date_from={{ period.date_from|date:'Y-m-d' }}&amp;date_to={{ period.date_to|date:'Y-m-d' }}">Xuất CSV</a>
+    {% if cost_price_unlocked %}
+      <a class="btn btn-outline-danger" href="{% url 'report-export-sensitive-csv' %}?period={{ period.key }}&amp;date_from={{ period.date_from|date:'Y-m-d' }}&amp;date_to={{ period.date_to|date:'Y-m-d' }}"
+         onclick="return confirm('File này chứa giá vốn và lợi nhuận nội bộ. Bạn chắc chắn muốn xuất?');">
+        Xuất dữ liệu có giá vốn
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel mb-4">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-lg-4">
+      <label class="form-label" for="report-period">Khoảng thời gian</label>
+      <select class="form-select" id="report-period" name="period">
+        <option value="today" {% if period.key == "today" %}selected{% endif %}>Hôm nay</option>
+        <option value="yesterday" {% if period.key == "yesterday" %}selected{% endif %}>Hôm qua</option>
+        <option value="last_7_days" {% if period.key == "last_7_days" %}selected{% endif %}>7 ngày gần nhất</option>
+        <option value="last_30_days" {% if period.key == "last_30_days" %}selected{% endif %}>30 ngày gần nhất</option>
+        <option value="this_month" {% if period.key == "this_month" %}selected{% endif %}>Tháng này</option>
+        <option value="last_month" {% if period.key == "last_month" %}selected{% endif %}>Tháng trước</option>
+        <option value="this_year" {% if period.key == "this_year" %}selected{% endif %}>Năm nay</option>
+        <option value="custom" {% if period.key == "custom" %}selected{% endif %}>Khoảng ngày tùy chọn</option>
+      </select>
+    </div>
+    <div class="col-lg-3">
+      <label class="form-label" for="report-date-from">Từ ngày</label>
+      <input class="form-control" id="report-date-from" type="date" name="date_from"
+             value="{% if period.key == 'custom' %}{{ period.date_from|date:'Y-m-d' }}{% endif %}">
+    </div>
+    <div class="col-lg-3">
+      <label class="form-label" for="report-date-to">Đến ngày</label>
+      <input class="form-control" id="report-date-to" type="date" name="date_to"
+             value="{% if period.key == 'custom' %}{{ period.date_to|date:'Y-m-d' }}{% endif %}">
+    </div>
+    <div class="col-lg-2"><button class="btn btn-primary w-100" type="submit">Xem báo cáo</button></div>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><article class="metric-card"><span class="metric-label">Doanh thu thực tế</span><strong class="metric-value metric-value-sm">{{ report.summary.revenue|vnd }}</strong><span class="metric-note">Sau giảm giá</span></article></div>
+  <div class="col-6 col-xl-3"><article class="metric-card"><span class="metric-label">Giao dịch hoàn thành</span><strong class="metric-value">{{ report.summary.completed_sale_count }}</strong><span class="metric-note">Không tính giao dịch hủy</span></article></div>
+  <div class="col-6 col-xl-3"><article class="metric-card"><span class="metric-label">Sản phẩm đã bán</span><strong class="metric-value">{{ report.summary.sold_quantity }}</strong><span class="metric-note">Tổng số lượng các dòng bán</span></article></div>
+  <div class="col-6 col-xl-3"><article class="metric-card"><span class="metric-label">Trung bình mỗi giao dịch</span><strong class="metric-value metric-value-sm">{{ report.summary.average_order_value|vnd }}</strong><span class="metric-note">Tổng giảm: {{ report.summary.total_discount|vnd }}</span></article></div>
+  {% if cost_price_unlocked %}
+    <div class="col-12 col-md-4"><article class="metric-card metric-card-locked"><span class="metric-label">Giá vốn hàng đã bán</span><strong class="metric-value metric-value-sm">{{ report.summary.cost_of_goods_sold|vnd }}</strong><span class="metric-note">Theo snapshot lúc bán</span></article></div>
+    <div class="col-12 col-md-4"><article class="metric-card metric-card-locked"><span class="metric-label">Lợi nhuận gộp thực tế</span><strong class="metric-value metric-value-sm">{{ report.summary.gross_profit|vnd }}</strong><span class="metric-note">Chưa trừ chi phí vận hành</span></article></div>
+    <div class="col-12 col-md-4"><article class="metric-card metric-card-locked"><span class="metric-label">Tỷ suất lợi nhuận gộp</span><strong class="metric-value metric-value-sm">{% if report.summary.gross_margin is not None %}{{ report.summary.gross_margin|floatformat:1 }}%{% else %}Không có dữ liệu{% endif %}</strong><span class="metric-note">Lợi nhuận / doanh thu</span></article></div>
+  {% endif %}
+</div>
+
+<div class="panel mb-4">
+  <div class="panel-heading"><h2 class="h5 mb-0">Doanh thu và số lượng theo ngày</h2></div>
+  <div class="chart-container chart-container-wide"><canvas id="reportDailyChart"></canvas></div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Doanh thu theo loại mặt hàng</h2></div>
+      {% include "reports/_breakdown_table.html" with rows=report.category_revenue %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Doanh thu theo phương thức thanh toán</h2></div>
+      {% include "reports/_breakdown_table.html" with rows=report.payment_revenue %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Doanh thu theo sản phẩm</h2></div>
+      {% include "reports/_breakdown_table.html" with rows=report.product_revenue %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Doanh thu theo size</h2></div>
+      {% include "reports/_breakdown_table.html" with rows=report.size_revenue %}
+    </section>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Sản phẩm bán chạy</h2></div>
+      {% include "reports/_breakdown_table.html" with rows=report.best_products %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-6">
+    <section class="panel h-100">
+      <div class="panel-heading"><h2 class="h5 mb-0">Biến thể bán chạy</h2></div>
+      {% include "reports/_breakdown_table.html" with rows=report.best_variants %}
+    </section>
+  </div>
+</div>
+{{ daily_series|json_script:"report-daily-series" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script>
+(() => {
+  const rows = JSON.parse(document.getElementById("report-daily-series").textContent);
+  const currency = (value) => new Intl.NumberFormat("vi-VN").format(value) + " ₫";
+  new Chart(document.getElementById("reportDailyChart"), {
+    data: {
+      labels: rows.map((row) => row.label),
+      datasets: [
+        { type: "bar", label: "Doanh thu", data: rows.map((row) => row.revenue), backgroundColor: "#9a3412", borderRadius: 4, yAxisID: "money" },
+        { type: "line", label: "Số lượng", data: rows.map((row) => row.quantity), borderColor: "#0369a1", tension: 0.25, yAxisID: "quantity" }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        money: { beginAtZero: true, position: "left", ticks: { callback: currency } },
+        quantity: { beginAtZero: true, position: "right", grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

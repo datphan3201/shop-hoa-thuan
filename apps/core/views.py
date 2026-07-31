@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.views import LoginView
 from django.db import connection
+from django.db.models import Count, F, IntegerField, Sum
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, render
@@ -29,6 +31,13 @@ from apps.core.security import (
     lock_cost_price,
     verify_and_unlock_cost_price,
 )
+from apps.reports.services import (
+    build_report,
+    daily_sales_series,
+    monthly_sales_series,
+    resolve_report_period,
+)
+from apps.sales.models import Sale
 
 User = get_user_model()
 
@@ -60,32 +69,81 @@ def first_run_setup(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
-    variants = ProductVariant.objects.filter(active=True)
-    variant_list = list(variants.only("quantity", "selling_price", "low_stock_threshold"))
+    variants = ProductVariant.objects.select_related("product")
+    variant_list = list(
+        variants.only(
+            "quantity",
+            "selling_price",
+            "low_stock_threshold",
+            "active",
+            "product__active",
+        )
+    )
+    alert_variants = [
+        variant for variant in variant_list if variant.active and variant.product.active
+    ]
+    today_period = resolve_report_period({"period": "today"})
+    month_period = resolve_report_period({"period": "this_month"})
+    year_period = resolve_report_period({"period": "this_year"})
+    today_report = build_report(today_period, include_cost=False)
+    month_report = build_report(month_period, include_cost=False)
+    year_report = build_report(year_period, include_cost=False)
+    recent_sales = Sale.objects.annotate(
+        total_quantity=Coalesce(Sum("items__quantity"), 0, output_field=IntegerField()),
+        item_type_count=Count("items"),
+    ).order_by("-sold_at", "-id")[:6]
+    low_stock_variants = (
+        ProductVariant.objects.filter(
+            active=True,
+            product__active=True,
+            quantity__gt=0,
+            quantity__lte=F("low_stock_threshold"),
+        )
+        .select_related("product")
+        .order_by("quantity")[:8]
+    )
+    out_of_stock_variants = (
+        ProductVariant.objects.filter(active=True, product__active=True, quantity=0)
+        .select_related("product")
+        .order_by("-updated_at")[:8]
+    )
+    projected_sales_value = sum(
+        variant.quantity * variant.selling_price for variant in variant_list
+    )
     context: dict[str, object] = {
         "active_product_count": Product.objects.filter(active=True).count(),
         "variant_count": len(variant_list),
         "total_quantity": sum(variant.quantity for variant in variant_list),
         "low_stock_count": sum(
-            1 for variant in variant_list if 0 < variant.quantity <= variant.low_stock_threshold
+            1 for variant in alert_variants if 0 < variant.quantity <= variant.low_stock_threshold
         ),
-        "out_of_stock_count": sum(1 for variant in variant_list if variant.quantity == 0),
-        "projected_sales_value": sum(
-            variant.quantity * variant.selling_price for variant in variant_list
-        ),
+        "out_of_stock_count": sum(1 for variant in alert_variants if variant.quantity == 0),
+        "projected_sales_value": projected_sales_value,
+        "today_summary": today_report.summary,
+        "month_summary": month_report.summary,
+        "year_summary": year_report.summary,
+        "daily_series": daily_sales_series(month_period),
+        "monthly_series": monthly_sales_series(year_period.date_from.year),
+        "recent_sales": recent_sales,
+        "best_products": month_report.best_products[:6],
+        "best_sizes": sorted(
+            month_report.size_revenue,
+            key=lambda row: (-row.quantity, -row.revenue, row.label.casefold()),
+        )[:6],
+        "category_revenue": month_report.category_revenue[:6],
+        "payment_revenue": month_report.payment_revenue,
+        "low_stock_variants": low_stock_variants,
+        "out_of_stock_variants": out_of_stock_variants,
+        "recent_products": Product.objects.select_related("category").order_by(
+            "-updated_at", "-id"
+        )[:6],
     }
     if is_cost_price_unlocked(request):
-        sensitive_variants = list(
-            ProductVariant.objects.filter(active=True).only(
-                "quantity", "cost_price", "selling_price"
-            )
-        )
+        sensitive_variants = list(ProductVariant.objects.only("quantity", "cost_price"))
         inventory_cost = sum(
             variant.quantity * variant.cost_price for variant in sensitive_variants
         )
-        projected_sales = sum(
-            variant.quantity * variant.selling_price for variant in sensitive_variants
-        )
+        projected_sales = projected_sales_value
         context["inventory_cost"] = inventory_cost
         context["projected_gross_profit"] = projected_sales - inventory_cost
         context["projected_margin"] = (
