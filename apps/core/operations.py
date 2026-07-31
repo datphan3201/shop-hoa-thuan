@@ -60,6 +60,7 @@ class FileLease:
     operation: str
     operation_id: str
     acquired: bool = False
+    descriptor: int | None = None
 
     def acquire(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,37 +73,41 @@ class FileLease:
             },
             ensure_ascii=False,
         )
-        for _ in range(2):
-            try:
-                descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            except FileExistsError:
-                owner = _read_owner(self.path)
-                if _alive(_pid(owner.get("pid", 0))):
-                    raise OperationBusyError(
-                        f"{self.operation} đang được một process khác thực hiện."
-                    ) from None
-                stale = self.path.with_name(f"{self.path.name}.stale-{uuid.uuid4().hex}")
-                try:
-                    self.path.replace(stale)
-                except FileNotFoundError:
-                    continue
-                continue
-            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-            self.acquired = True
-            logger.info("Đã lấy lock operation=%s id=%s", self.operation, self.operation_id)
-            return
-        raise OperationBusyError(f"Không thể lấy khóa {self.operation}.")
+        descriptor = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]
+            else:
+                import fcntl
+
+                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            os.close(descriptor)
+            raise OperationBusyError(
+                f"{self.operation} đang được một process khác thực hiện."
+            ) from error
+        os.ftruncate(descriptor, 0)
+        os.write(descriptor, payload.encode("utf-8"))
+        self.descriptor = descriptor
+        self.acquired = True
+        logger.info("Đã lấy lock operation=%s id=%s", self.operation, self.operation_id)
 
     def release(self) -> None:
         if not self.acquired:
             return
-        owner = _read_owner(self.path)
-        if (
-            owner.get("operation_id") == self.operation_id
-            and _pid(owner.get("pid", 0)) == os.getpid()
-        ):
-            self.path.unlink(missing_ok=True)
+        if self.descriptor is not None:
+            if os.name == "nt":
+                import msvcrt
+
+                msvcrt.locking(self.descriptor, msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]
+            else:
+                import fcntl
+
+                fcntl.flock(self.descriptor, fcntl.LOCK_UN)
+            os.close(self.descriptor)
+            self.descriptor = None
         self.acquired = False
         logger.info("Đã giải phóng lock operation=%s id=%s", self.operation, self.operation_id)
 
@@ -112,16 +117,35 @@ def server_lease() -> FileLease:
     return FileLease(server_lock, "server", uuid.uuid4().hex)
 
 
+def _lease_is_held(path: Path) -> bool:
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]
+            msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]
+        else:
+            import fcntl
+
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+    except OSError:
+        return True
+    finally:
+        os.close(descriptor)
+    return False
+
+
 def maintenance_state() -> dict[str, object] | None:
     _, state_path, _ = _paths()
     state = _read_owner(state_path)
     if not state:
         return None
-    if _alive(_pid(state.get("pid", 0))):
+    if _lease_is_held(state_path):
         return {
             key: state[key] for key in ("operation", "operation_id", "started_at") if key in state
         }
-    state_path.unlink(missing_ok=True)
     return None
 
 
@@ -135,7 +159,7 @@ class ActiveWrite:
 
 
 def begin_write(operation: str) -> ActiveWrite:
-    _, state_path, writes = _paths()
+    _, _, writes = _paths()
     if maintenance_state() is not None:
         raise OperationBusyError(MAINTENANCE_MESSAGE)
     writes.mkdir(parents=True, exist_ok=True)
@@ -152,7 +176,7 @@ def begin_write(operation: str) -> ActiveWrite:
         ),
         encoding="utf-8",
     )
-    if state_path.exists():
+    if maintenance_state() is not None:
         marker.unlink(missing_ok=True)
         raise OperationBusyError(MAINTENANCE_MESSAGE)
     return ActiveWrite(marker, operation_id)

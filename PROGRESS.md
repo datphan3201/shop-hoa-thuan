@@ -246,6 +246,9 @@ không mất dữ liệu khi mô phỏng chuyển layout.
   khi triển khai HTTPS/Tailscale. W009 xuất phát từ secret test ngắn, không phải cấu hình runtime.
 - WinSW/SCM shutdown, ACL ProgramData, installer/PyInstaller và filesystem Windows thực vẫn phải
   chứng nhận trong Phase 9–10; Phase 8 chưa bắt đầu.
+- Review độc lập đã thay lease stale-rename bằng advisory file lock của OS: cách cũ có TOCTOU có
+  thể đổi tên lease mới của process khác. Maintenance state giờ xác định bằng lock đang được giữ,
+  không chỉ PID trong JSON nên state đã release không bị báo maintenance do PID vẫn sống.
 
 ### Phase 8 — Mobile-first và chỉnh sửa từ điện thoại
 

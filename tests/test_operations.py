@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from contextlib import AbstractContextManager
 from multiprocessing import Event, Process, Queue
 from pathlib import Path
@@ -65,9 +64,11 @@ def test_stale_lock_is_replaced_but_live_owner_lock_is_preserved(
         lease.acquire()
         assert json.loads(path.read_text(encoding="utf-8"))["operation_id"] == "new"
         lease.release()
-        path.write_text(json.dumps({"pid": os.getpid(), "operation_id": "live"}), encoding="utf-8")
+        live = FileLease(path, "server", "live")
+        live.acquire()
         with pytest.raises(OperationBusyError):
             FileLease(path, "server", "other").acquire()
+        live.release()
 
 
 def test_two_real_processes_cannot_hold_same_single_instance_lease(tmp_path: Path) -> None:
