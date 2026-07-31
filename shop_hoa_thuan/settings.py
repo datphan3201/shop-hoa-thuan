@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from apps.core.logging import SensitiveDataFilter
 from shop_hoa_thuan.runtime import ensure_runtime_layout, production_allowed_hosts
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -172,7 +173,9 @@ LOGGING = {
         "console": {"class": "logging.StreamHandler", "formatter": "standard"},
         **_LOG_HANDLERS,
     },
-    "filters": {"redact": {"()": "apps.core.logging.SensitiveDataFilter"}},
+    # Use the class rather than a dotted string so the frozen bundle includes
+    # the filter as an explicit import.
+    "filters": {"redact": {"()": SensitiveDataFilter}},
     "root": {"handlers": ["console", "server"], "level": "INFO"},
     "loggers": {
         logger_name: {"handlers": ["console", category], "level": "INFO", "propagate": False}
