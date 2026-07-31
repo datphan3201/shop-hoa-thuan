@@ -169,11 +169,12 @@ nội bộ.
 
 ### Phase 6 — Hoàn thiện nghiệp vụ
 
-- Hoàn thiện unit/integration/E2E smoke tests cho sản phẩm, tồn kho, khóa giá vốn, bán hàng
-  và báo cáo.
-- Audit auth, CSRF, session, PIN, dữ liệu nhạy cảm và SQLite integrity.
-- Hoàn thiện loading, empty, error state và tài liệu nghiệp vụ.
-- Chốt schema nghiệp vụ làm đầu vào cho kế hoạch migration production.
+- [x] Hoàn thiện unit/integration/E2E smoke tests cho sản phẩm, tồn kho, khóa giá vốn, bán
+  hàng và báo cáo.
+- [x] Audit auth, CSRF, session, PIN, dữ liệu nhạy cảm và SQLite integrity trong phạm vi app.
+- [x] Hoàn thiện empty/error state và tài liệu nghiệp vụ tại `docs/OPERATIONS.md`.
+- [x] Chốt schema nghiệp vụ làm đầu vào cho kế hoạch migration production.
+- [x] Commit Phase 6.
 
 Điều kiện hoàn thành: E2E nghiệp vụ chính đạt, không còn lỗi nghiêm trọng về tính đúng đắn
 giao dịch/tồn kho/báo cáo và schema đã sẵn sàng cho hardening production.
@@ -559,3 +560,12 @@ Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 4.
   chính xác; khi khóa không truy vấn/render giá vốn.
 
 Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 5.
+
+### Phase 6 — 2026-07-31
+
+- Smoke test HTTP: tạo PIN, loại/sản phẩm/size/tồn, hoàn tất bán, báo cáo và hủy/hoàn tồn.
+- Audit mã nguồn và test xác nhận CSRF Django, session HTTP-only, PIN hash/rate-limit,
+  response không lộ giá vốn khi khóa và các thao tác tồn/bán chạy trong transaction nguyên tử.
+- `docs/OPERATIONS.md` ghi rõ quy tắc tồn kho, snapshot, giá vốn và báo cáo.
+
+Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 6.
