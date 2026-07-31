@@ -27,6 +27,13 @@ def test_admin_service_script_is_scoped_to_test_service_and_private_firewall() -
     assert "[switch]$Cleanup" in script
 
 
+def test_pyinstaller_bundle_keeps_django_logging_filter() -> None:
+    root = Path(__file__).resolve().parents[1]
+    spec = (root / "packaging" / "pyinstaller" / "shop_hoa_thuan.spec").read_text(encoding="utf-8")
+
+    assert '"apps.core.logging"' in spec
+
+
 def test_launcher_opens_existing_server_without_starting_another() -> None:
     with (
         patch("shop_hoa_thuan.launcher.is_healthy", return_value=True),

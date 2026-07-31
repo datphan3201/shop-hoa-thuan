@@ -11,7 +11,14 @@ datas = [
 ]
 datas += collect_data_files("django", include_py_files=False)
 
-hiddenimports = collect_submodules("apps") + collect_submodules("shop_hoa_thuan")
+# ``dictConfig`` resolves this filter from a dotted string.  Keep it explicit:
+# PyInstaller's module collector does not always retain modules that are only
+# referenced through Django's logging configuration.
+hiddenimports = [
+    "apps.core.logging",
+    *collect_submodules("apps"),
+    *collect_submodules("shop_hoa_thuan"),
+]
 
 a = Analysis(
     [str(project_root / "shop_hoa_thuan" / "server.py")],
