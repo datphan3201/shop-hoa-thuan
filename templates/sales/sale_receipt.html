@@ -1,0 +1,66 @@
+{% load money %}
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hóa đơn {{ sale.sale_code }}</title>
+  <style>
+    body { color: #111; font-family: Arial, sans-serif; margin: 0 auto; max-width: 760px; padding: 24px; }
+    h1, p { margin: 0 0 8px; }
+    table { border-collapse: collapse; margin: 24px 0; width: 100%; }
+    th, td { border-bottom: 1px solid #ddd; padding: 8px 4px; text-align: left; }
+    .number { text-align: right; }
+    .totals { margin-left: auto; max-width: 340px; }
+    .totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+    .final { border-top: 2px solid #111; font-size: 1.15rem; font-weight: bold; margin-top: 8px; padding-top: 8px !important; }
+    .actions { margin-bottom: 20px; }
+    @media print { .actions { display: none; } body { max-width: none; padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <button type="button" onclick="window.print()">In hóa đơn</button>
+    <button type="button" onclick="window.close()">Đóng</button>
+  </div>
+  <header>
+    <h1>Shop Hoà Thuận</h1>
+    <p>Hóa đơn {{ sale.sale_code }}</p>
+    <p>{{ sale.sold_at|date:"d/m/Y H:i" }}</p>
+    {% if sale.status == "cancelled" %}<p><strong>Giao dịch đã hủy</strong></p>{% endif %}
+  </header>
+  <table>
+    <thead>
+      <tr>
+        <th>Sản phẩm</th>
+        <th>Size</th>
+        <th class="number">SL</th>
+        <th class="number">Đơn giá</th>
+        <th class="number">Thành tiền</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in sale.items.all %}
+        <tr>
+          <td>
+            {{ item.product_name_snapshot }}
+            {% if item.color_snapshot %}<br><small>{{ item.color_snapshot }}</small>{% endif %}
+          </td>
+          <td>{{ item.size_snapshot }}</td>
+          <td class="number">{{ item.quantity }}</td>
+          <td class="number">{{ item.actual_unit_price|vnd }}</td>
+          <td class="number">{{ item.line_total|vnd }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="totals">
+    <div><span>Tổng trước giảm</span><strong>{{ sale.subtotal|vnd }}</strong></div>
+    <div><span>Giảm giá</span><strong>{{ sale.discount_amount|vnd }}</strong></div>
+    <div class="final"><span>Khách thanh toán</span><strong>{{ sale.final_total|vnd }}</strong></div>
+    <div><span>Thanh toán</span><strong>{{ sale.get_payment_method_display }}</strong></div>
+  </div>
+  {% if sale.note %}<p><strong>Ghi chú:</strong> {{ sale.note }}</p>{% endif %}
+  <p style="margin-top: 32px; text-align: center;">Cảm ơn quý khách!</p>
+</body>
+</html>

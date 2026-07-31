@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load money %}
+
+{% block title %}Lịch sử bán hàng · {{ application_name }}{% endblock %}
+{% block page_heading %}Lịch sử bán hàng{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h2 class="h4 mb-1">Các giao dịch</h2>
+    <p class="text-secondary mb-0">Giao dịch đã hủy vẫn được giữ để đối soát.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'sale-create' %}">Tạo giao dịch</a>
+</div>
+
+<div class="panel mb-4">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-lg-3 col-md-6">
+      <label class="form-label" for="sale-filter-q">Mã giao dịch</label>
+      <input class="form-control" id="sale-filter-q" name="q" value="{{ filters.q }}">
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="form-label" for="sale-date-from">Từ ngày</label>
+      <input class="form-control" id="sale-date-from" name="date_from" type="date"
+             value="{{ filters.date_from }}">
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="form-label" for="sale-date-to">Đến ngày</label>
+      <input class="form-control" id="sale-date-to" name="date_to" type="date"
+             value="{{ filters.date_to }}">
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="form-label" for="sale-payment">Thanh toán</label>
+      <select class="form-select" id="sale-payment" name="payment_method">
+        <option value="">Tất cả</option>
+        {% for value, label in payment_methods %}
+          <option value="{{ value }}" {% if filters.payment_method == value %}selected{% endif %}>
+            {{ label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="form-label" for="sale-status">Trạng thái</label>
+      <select class="form-select" id="sale-status" name="status">
+        <option value="">Tất cả</option>
+        {% for value, label in statuses %}
+          <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>
+            {{ label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-1 col-md-6">
+      <label class="form-label" for="sale-sort">Sắp xếp</label>
+      <select class="form-select" id="sale-sort" name="sort">
+        <option value="newest" {% if filters.sort == "newest" %}selected{% endif %}>Mới</option>
+        <option value="oldest" {% if filters.sort == "oldest" %}selected{% endif %}>Cũ</option>
+      </select>
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Lọc</button>
+      <a class="btn btn-outline-secondary" href="{% url 'sale-list' %}">Xóa bộ lọc</a>
+    </div>
+  </form>
+</div>
+
+{% if page.object_list %}
+  <div class="panel p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Mã giao dịch</th>
+            <th>Thời điểm bán</th>
+            <th class="text-end">Số loại</th>
+            <th class="text-end">Số lượng</th>
+            <th class="text-end">Trước giảm</th>
+            <th class="text-end">Giảm</th>
+            <th class="text-end">Thực tế</th>
+            <th>Thanh toán</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sale in page.object_list %}
+            <tr>
+              <td><a class="fw-semibold" href="{% url 'sale-detail' sale.pk %}">{{ sale.sale_code }}</a></td>
+              <td>{{ sale.sold_at|date:"d/m/Y H:i" }}</td>
+              <td class="text-end">{{ sale.item_type_count }}</td>
+              <td class="text-end">{{ sale.total_quantity }}</td>
+              <td class="text-end">{{ sale.subtotal|vnd }}</td>
+              <td class="text-end">{{ sale.discount_amount|vnd }}</td>
+              <td class="text-end fw-semibold">{{ sale.final_total|vnd }}</td>
+              <td>{{ sale.get_payment_method_display }}</td>
+              <td>
+                {% if sale.status == "completed" %}
+                  <span class="badge text-bg-success">Đã hoàn thành</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Đã hủy</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if page.paginator.num_pages > 1 %}
+    <nav class="mt-4" aria-label="Phân trang giao dịch">
+      <ul class="pagination justify-content-center">
+        {% if page.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query_without_page %}{{ query_without_page }}&amp;{% endif %}page={{ page.previous_page_number }}">Trước</a>
+          </li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">Trang {{ page.number }}/{{ page.paginator.num_pages }}</span>
+        </li>
+        {% if page.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query_without_page %}{{ query_without_page }}&amp;{% endif %}page={{ page.next_page_number }}">Sau</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% else %}
+  <div class="panel empty-state empty-state-tall">
+    <span class="empty-state-mark">BH</span>
+    <strong>Chưa có giao dịch phù hợp</strong>
+    <span>Tạo giao dịch mới hoặc thay đổi bộ lọc.</span>
+    <a class="btn btn-primary mt-2" href="{% url 'sale-create' %}">Bán hàng</a>
+  </div>
+{% endif %}
+{% endblock %}

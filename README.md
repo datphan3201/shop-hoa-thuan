@@ -11,7 +11,8 @@ hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đ
 
 ## Trạng thái
 
-Dự án đang ở Phase 1. Không dùng cho dữ liệu thật cho đến khi Phase 6 được nghiệm thu.
+Phase 4 đã hoàn thành: sản phẩm, tồn kho, khóa giá vốn và bán/hủy giao dịch đã có kiểm thử.
+Không dùng cho dữ liệu thật cho đến khi Phase 13 được chứng nhận trên Windows và mobile.
 
 ## Phát triển trong WSL
 
@@ -69,8 +70,8 @@ Xem [PROGRESS.md](PROGRESS.md) để biết kế hoạch và tiến độ chi ti
 
 Khung phát hành nằm trong `packaging/` và `scripts/build_windows.ps1`. PyInstaller phải
 chạy trên Windows (không thể tạo file `.exe` bằng cách cross-compile từ WSL). Bộ cài hoàn
-chỉnh sẽ được tạo và kiểm thử ở Phase 6; máy shop không cần cài Python hoặc công cụ phát
-triển.
+chỉnh sẽ được tạo từ Phase 10 và chỉ phát hành sau chứng nhận Phase 13; máy shop không cần
+cài Python hoặc công cụ phát triển.
 
 Địa chỉ local dự kiến sau khi hoàn thiện Phase 9 là
 `http://shophoathuan.local:2505`. Nếu mDNS không khả dụng, trang thiết bị sẽ hiển thị

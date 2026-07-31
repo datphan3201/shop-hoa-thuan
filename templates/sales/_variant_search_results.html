@@ -1,0 +1,45 @@
+{% load money %}
+{% if variants %}
+  <div class="sale-search-results">
+    {% for variant in variants %}
+      <article class="sale-search-item">
+        <div class="d-flex align-items-center gap-3">
+          {% if variant.product.thumbnail %}
+            <img class="product-thumb" src="{{ variant.product.thumbnail.url }}"
+                 alt="" loading="lazy">
+          {% else %}
+            <span class="product-thumb product-thumb-empty">HT</span>
+          {% endif %}
+          <div class="min-w-0">
+            <strong class="d-block text-truncate">{{ variant.product.name }}</strong>
+            <span class="small text-secondary">
+              {{ variant.product.category.name }} · Size {{ variant.size }}
+              {% if variant.product.color %} · {{ variant.product.color }}{% endif %}
+            </span>
+            <span class="d-block small">
+              {{ variant.selling_price|vnd }} · Còn {{ variant.quantity }}
+              {% if variant.sku %} · {{ variant.sku }}{% endif %}
+            </span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-outline-primary add-sale-variant"
+                data-variant-id="{{ variant.pk }}"
+                data-product-name="{{ variant.product.name }}"
+                data-category-name="{{ variant.product.category.name }}"
+                data-size="{{ variant.size }}"
+                data-color="{{ variant.product.color }}"
+                data-sku="{{ variant.sku }}"
+                data-stock="{{ variant.quantity }}"
+                data-listed-price="{{ variant.selling_price }}"
+                {% if cost_price_unlocked %}data-cost-price="{{ variant.cost_price }}"{% endif %}>
+          Thêm
+        </button>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state py-4">
+    <strong>Không tìm thấy size còn hàng</strong>
+    <span>Thử tên sản phẩm, SKU hoặc loại mặt hàng khác.</span>
+  </div>
+{% endif %}

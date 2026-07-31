@@ -5,7 +5,8 @@ Cập nhật gần nhất: 2026-07-31
 ## Trạng thái hiện tại
 
 - Phase 3 — Khóa giá vốn và thống kê tồn: **hoàn thành**.
-- Phase 4 — Bán hàng: **đang triển khai, chưa hoàn thành**.
+- Phase 4 — Bán hàng: **hoàn thành**.
+- Phase 5 — Dashboard và báo cáo: **chưa triển khai**.
 - Phase 7–13 — Production Windows, mobile, backup/restore và update:
   **đã review kiến trúc và lập kế hoạch, chưa triển khai**.
 
@@ -139,11 +140,22 @@ Cập nhật gần nhất: 2026-07-31
 
 ### Phase 4 — Bán hàng
 
-- Màn hình bán hàng tối ưu bàn phím.
-- Transaction bán hàng nguyên tử, snapshot và trừ kho.
-- Lịch sử/chi tiết/in hóa đơn.
-- Hủy đúng một lần và hoàn tồn.
-- Test cạnh tranh và tính bất biến lịch sử.
+- [x] Màn hình bán hàng tìm theo tên/SKU, lọc loại, chọn đúng size và xem tồn hiện tại.
+- [x] Giỏ nhiều size, sửa số lượng/giá thực tế, giảm giá, thanh toán và ghi chú.
+- [x] Cảnh báo giá thực tế thấp hơn niêm yết; cảnh báo dưới giá vốn chỉ nhận dữ liệu khi
+  khóa giá vốn đã mở.
+- [x] Transaction bán hàng nguyên tử, server tính lại tổng, snapshot và trừ kho.
+- [x] Retry khóa SQLite ngắn/hữu hạn và test hai giao dịch đồng thời không bán quá tồn.
+- [x] Lịch sử có tìm kiếm, lọc ngày/thanh toán/trạng thái, sắp xếp và phân trang.
+- [x] Chi tiết giao dịch và hóa đơn in không chứa giá vốn/lợi nhuận.
+- [x] Hủy đúng một lần, bắt buộc lý do, hoàn tồn và tạo `sale_return`.
+- [x] Test rollback, snapshot bất biến, múi giờ Việt Nam và bảo vệ dữ liệu giá vốn.
+- [x] Kiểm tra trực tiếp luồng login → chọn size → sửa giá → giảm giá → hoàn tất → hóa đơn.
+- [x] Commit Phase 4.
+
+Điều kiện hoàn thành: giao dịch nhiều size commit nguyên tử, không bán quá tồn khi cạnh
+tranh, lịch sử snapshot không đổi, hủy hoàn tồn đúng một lần và hóa đơn không lộ dữ liệu
+nội bộ.
 
 ### Phase 5 — Dashboard và báo cáo
 
@@ -515,3 +527,19 @@ Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 2.
 - Backup chứa database chỉ tạo/tải được khi giá vốn đã mở khóa.
 
 Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 3.
+
+### Phase 4 — 2026-07-31
+
+- `ruff format --check`: đạt, 60 file đã đúng định dạng.
+- `ruff check`: đạt.
+- `mypy --strict`: đạt, 56 source files.
+- Django system/migration checks: đạt, không có model chưa migration.
+- `pytest`: 54 test đạt, gồm validation tổng tiền/dòng bán và transaction cạnh tranh SQLite.
+- Waitress smoke test: đạt.
+- Browser smoke test: đăng nhập, thêm size M, sửa giá thực tế, cảnh báo dưới giá niêm yết,
+  giảm giá, hoàn tất giao dịch, xem chi tiết và hóa đơn đều đạt; console không có lỗi.
+- Response tìm sản phẩm khi khóa không chứa `cost_price`; hóa đơn không chứa giá vốn hoặc
+  lợi nhuận.
+- Database/media thử nghiệm trình duyệt trong `/tmp` đã được xóa sau kiểm tra.
+
+Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 4.

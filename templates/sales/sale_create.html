@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% load money %}
+
+{% block title %}Tạo giao dịch · {{ application_name }}{% endblock %}
+{% block page_heading %}Tạo giao dịch bán hàng{% endblock %}
+
+{% block content %}
+<div class="row g-4 sale-workspace">
+  <section class="col-xl-5">
+    <div class="panel h-100">
+      <div class="panel-heading">
+        <div>
+          <h2 class="h5 mb-1">Chọn sản phẩm và size</h2>
+          <p class="small text-secondary mb-0">Tìm theo tên hoặc SKU.</p>
+        </div>
+      </div>
+      <form id="variant-search-form"
+            hx-get="{% url 'sale-variant-search' %}"
+            hx-target="#variant-search-results"
+            hx-trigger="input changed delay:300ms from:#sale-search, change from:#sale-category"
+            hx-indicator="#sale-search-loading">
+        <div class="row g-2 mb-3">
+          <div class="col-md-7">
+            <label class="form-label" for="sale-search">Tìm sản phẩm</label>
+            <input class="form-control" id="sale-search" name="q" type="search"
+                   placeholder="Tên sản phẩm hoặc SKU" autocomplete="off" autofocus>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label" for="sale-category">Loại mặt hàng</label>
+            <select class="form-select" id="sale-category" name="category">
+              <option value="">Tất cả</option>
+              {% for category in categories %}
+                <option value="{{ category.pk }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </form>
+      <div id="sale-search-loading" class="htmx-indicator small text-secondary mb-2">
+        Đang tìm...
+      </div>
+      <div id="variant-search-results">
+        {% include "sales/_variant_search_results.html" %}
+      </div>
+    </div>
+  </section>
+
+  <section class="col-xl-7">
+    <form method="post" id="sale-checkout-form" novalidate>
+      {% csrf_token %}
+      {{ form.lines_json }}
+      <div class="panel mb-4">
+        <div class="panel-heading">
+          <div>
+            <h2 class="h5 mb-1">Sản phẩm đã chọn</h2>
+            <p class="small text-secondary mb-0">Giá thực tế có thể sửa trước khi bán.</p>
+          </div>
+          <span class="badge text-bg-light" id="cart-count">0 size</span>
+        </div>
+
+        {% if form.non_field_errors or form.lines_json.errors %}
+          <div class="alert alert-danger" role="alert">
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+            {% for error in form.lines_json.errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div id="sale-cart-empty" class="empty-state">
+          <span class="empty-state-mark">+</span>
+          <strong>Chưa có sản phẩm</strong>
+          <span>Chọn đúng size ở danh sách bên trái.</span>
+        </div>
+        <div id="sale-cart-content" class="d-none">
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th style="width: 100px">Số lượng</th>
+                  <th style="width: 170px">Giá thực tế</th>
+                  <th class="text-end">Thành tiền</th>
+                  <th><span class="visually-hidden">Xóa</span></th>
+                </tr>
+              </thead>
+              <tbody id="sale-cart-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.discount_amount.id_for_label }}">
+              {{ form.discount_amount.label }}
+            </label>
+            {{ form.discount_amount }}
+            {% for error in form.discount_amount.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.payment_method.id_for_label }}">
+              {{ form.payment_method.label }}
+            </label>
+            {{ form.payment_method }}
+            {% for error in form.payment_method.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+            {{ form.note }}
+            {% for error in form.note.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="sale-totals my-4">
+          <div><span>Tổng trước giảm</span><strong id="sale-subtotal">0 ₫</strong></div>
+          <div><span>Giảm giá</span><strong id="sale-discount">0 ₫</strong></div>
+          <div class="sale-total-final">
+            <span>Khách thanh toán</span><strong id="sale-final-total">0 ₫</strong>
+          </div>
+        </div>
+        <div id="sale-client-error" class="alert alert-danger d-none" role="alert"></div>
+        <button type="submit" class="btn btn-primary btn-lg w-100" id="complete-sale-button">
+          Hoàn tất giao dịch
+        </button>
+        <p class="small text-secondary text-center mt-2 mb-0">
+          Tồn kho chỉ thay đổi sau khi máy chủ xác nhận giao dịch thành công.
+        </p>
+      </div>
+    </form>
+  </section>
+</div>
+{{ cart_rows|json_script:"initial-sale-cart" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+  const initialCart = JSON.parse(document.getElementById("initial-sale-cart").textContent);
+  const cart = new Map();
+  const cartBody = document.getElementById("sale-cart-body");
+  const cartEmpty = document.getElementById("sale-cart-empty");
+  const cartContent = document.getElementById("sale-cart-content");
+  const cartCount = document.getElementById("cart-count");
+  const linesInput = document.getElementById("id_lines_json");
+  const discountInput = document.getElementById("id_discount_amount");
+  const clientError = document.getElementById("sale-client-error");
+  const checkoutForm = document.getElementById("sale-checkout-form");
+  const submitButton = document.getElementById("complete-sale-button");
+  const money = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0
+  });
+
+  function integerValue(value) {
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function escapeHtml(value) {
+    const element = document.createElement("span");
+    element.textContent = value || "";
+    return element.innerHTML;
+  }
+
+  function updatePayloadAndTotals() {
+    const lines = Array.from(cart.values()).map((item) => ({
+      variant_id: item.variant_id,
+      quantity: item.quantity,
+      actual_unit_price: item.actual_unit_price
+    }));
+    linesInput.value = JSON.stringify(lines);
+    const subtotal = Array.from(cart.values()).reduce(
+      (sum, item) => sum + item.quantity * item.actual_unit_price,
+      0
+    );
+    const discount = Math.max(0, integerValue(discountInput.value));
+    document.getElementById("sale-subtotal").textContent = money.format(subtotal);
+    document.getElementById("sale-discount").textContent = money.format(discount);
+    document.getElementById("sale-final-total").textContent = money.format(
+      Math.max(0, subtotal - discount)
+    );
+    cartCount.textContent = `${cart.size} size`;
+    cartEmpty.classList.toggle("d-none", cart.size > 0);
+    cartContent.classList.toggle("d-none", cart.size === 0);
+  }
+
+  function priceWarning(item) {
+    if (item.actual_unit_price < item.cost_price && Number.isFinite(item.cost_price)) {
+      return '<span class="text-danger">Giá thực tế đang thấp hơn giá vốn.</span>';
+    }
+    if (item.actual_unit_price < item.listed_price) {
+      return '<span class="text-warning-emphasis">Giá thực tế thấp hơn giá niêm yết.</span>';
+    }
+    return "";
+  }
+
+  function renderCart() {
+    cartBody.innerHTML = "";
+    for (const item of cart.values()) {
+      const row = document.createElement("tr");
+      row.dataset.variantId = String(item.variant_id);
+      row.innerHTML = `
+        <td>
+          <strong>${escapeHtml(item.product_name)}</strong>
+          <span class="d-block small text-secondary">
+            Size ${escapeHtml(item.size)}
+            ${item.color ? ` · ${escapeHtml(item.color)}` : ""}
+            ${item.sku ? ` · ${escapeHtml(item.sku)}` : ""}
+          </span>
+          <span class="d-block small">Niêm yết ${money.format(item.listed_price)} · Còn ${item.stock}</span>
+        </td>
+        <td>
+          <input class="form-control cart-quantity" type="number" min="1" max="${item.stock}"
+                 inputmode="numeric" value="${item.quantity}" aria-label="Số lượng">
+        </td>
+        <td>
+          <input class="form-control cart-price" type="number" min="0" step="1000"
+                 inputmode="numeric" value="${item.actual_unit_price}" aria-label="Giá bán thực tế">
+          <span class="d-block small mt-1 cart-price-warning">${priceWarning(item)}</span>
+        </td>
+        <td class="text-end fw-semibold cart-line-total">
+          ${money.format(item.quantity * item.actual_unit_price)}
+        </td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger remove-cart-item" type="button"
+                  aria-label="Xóa ${escapeHtml(item.product_name)} size ${escapeHtml(item.size)}">
+            Xóa
+          </button>
+        </td>
+      `;
+      cartBody.appendChild(row);
+    }
+    updatePayloadAndTotals();
+  }
+
+  function addFromButton(button) {
+    const variantId = integerValue(button.dataset.variantId);
+    const existing = cart.get(variantId);
+    if (existing) {
+      if (existing.quantity < existing.stock) {
+        existing.quantity += 1;
+      }
+    } else {
+      const costPrice = button.dataset.costPrice;
+      cart.set(variantId, {
+        variant_id: variantId,
+        product_name: button.dataset.productName,
+        category_name: button.dataset.categoryName,
+        size: button.dataset.size,
+        color: button.dataset.color,
+        sku: button.dataset.sku,
+        stock: integerValue(button.dataset.stock),
+        listed_price: integerValue(button.dataset.listedPrice),
+        actual_unit_price: integerValue(button.dataset.listedPrice),
+        quantity: 1,
+        cost_price: costPrice === undefined ? Number.NaN : integerValue(costPrice)
+      });
+    }
+    renderCart();
+  }
+
+  document.addEventListener("click", (event) => {
+    const addButton = event.target.closest(".add-sale-variant");
+    if (addButton) {
+      addFromButton(addButton);
+      return;
+    }
+    const removeButton = event.target.closest(".remove-cart-item");
+    if (removeButton) {
+      const row = removeButton.closest("tr");
+      cart.delete(integerValue(row.dataset.variantId));
+      renderCart();
+    }
+  });
+
+  cartBody.addEventListener("input", (event) => {
+    const row = event.target.closest("tr");
+    if (!row) return;
+    const item = cart.get(integerValue(row.dataset.variantId));
+    if (!item) return;
+    if (event.target.classList.contains("cart-quantity")) {
+      item.quantity = Math.min(item.stock, Math.max(1, integerValue(event.target.value)));
+    }
+    if (event.target.classList.contains("cart-price")) {
+      item.actual_unit_price = Math.max(0, integerValue(event.target.value));
+    }
+    row.querySelector(".cart-line-total").textContent =
+      money.format(item.quantity * item.actual_unit_price);
+    row.querySelector(".cart-price-warning").innerHTML = priceWarning(item);
+    updatePayloadAndTotals();
+  });
+
+  discountInput.addEventListener("input", updatePayloadAndTotals);
+  checkoutForm.addEventListener("submit", (event) => {
+    clientError.classList.add("d-none");
+    updatePayloadAndTotals();
+    const subtotal = Array.from(cart.values()).reduce(
+      (sum, item) => sum + item.quantity * item.actual_unit_price,
+      0
+    );
+    const discount = Math.max(0, integerValue(discountInput.value));
+    if (cart.size === 0) {
+      event.preventDefault();
+      clientError.textContent = "Giao dịch phải có ít nhất một sản phẩm.";
+      clientError.classList.remove("d-none");
+      return;
+    }
+    if (discount > subtotal) {
+      event.preventDefault();
+      clientError.textContent = "Giảm giá không được lớn hơn tổng tiền.";
+      clientError.classList.remove("d-none");
+      return;
+    }
+    submitButton.disabled = true;
+    submitButton.textContent = "Đang hoàn tất...";
+  });
+
+  for (const item of initialCart) {
+    cart.set(item.variant_id, {
+      ...item,
+      cost_price: Object.prototype.hasOwnProperty.call(item, "cost_price")
+        ? item.cost_price
+        : Number.NaN
+    });
+  }
+  renderCart();
+})();
+</script>
+{% endblock %}

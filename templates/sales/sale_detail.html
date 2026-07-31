@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load money %}
+
+{% block title %}{{ sale.sale_code }} · {{ application_name }}{% endblock %}
+{% block page_heading %}Chi tiết giao dịch{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <div class="d-flex align-items-center gap-2">
+      <h2 class="h4 mb-0">{{ sale.sale_code }}</h2>
+      {% if sale.status == "completed" %}
+        <span class="badge text-bg-success">Đã hoàn thành</span>
+      {% else %}
+        <span class="badge text-bg-secondary">Đã hủy</span>
+      {% endif %}
+    </div>
+    <p class="text-secondary mb-0">{{ sale.sold_at|date:"d/m/Y H:i" }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'sale-list' %}">Quay lại</a>
+    <a class="btn btn-outline-primary" href="{% url 'sale-receipt' sale.pk %}" target="_blank">
+      In hóa đơn
+    </a>
+  </div>
+</div>
+
+{% if sale.status == "cancelled" %}
+  <div class="alert alert-secondary">
+    <strong>Đã hủy lúc {{ sale.cancelled_at|date:"d/m/Y H:i" }}</strong>
+    <div>Lý do: {{ sale.cancellation_reason }}</div>
+  </div>
+{% endif %}
+
+<div class="panel p-0 mb-4">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Sản phẩm</th>
+          <th>Size/Màu</th>
+          <th class="text-end">Số lượng</th>
+          <th class="text-end">Giá niêm yết</th>
+          <th class="text-end">Giá thực tế</th>
+          <th class="text-end">Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in sale.items.all %}
+          <tr>
+            <td>
+              <strong>{{ item.product_name_snapshot }}</strong>
+              <span class="d-block small text-secondary">
+                {{ item.category_name_snapshot }}
+                {% if item.sku_snapshot %} · {{ item.sku_snapshot }}{% endif %}
+              </span>
+            </td>
+            <td>
+              {{ item.size_snapshot }}
+              {% if item.color_snapshot %} · {{ item.color_snapshot }}{% endif %}
+            </td>
+            <td class="text-end">{{ item.quantity }}</td>
+            <td class="text-end">{{ item.listed_price|vnd }}</td>
+            <td class="text-end">{{ item.actual_unit_price|vnd }}</td>
+            <td class="text-end fw-semibold">{{ item.line_total|vnd }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="panel h-100">
+      <h3 class="h5">Thông tin thanh toán</h3>
+      <dl class="row mb-0">
+        <dt class="col-sm-5">Phương thức</dt>
+        <dd class="col-sm-7">{{ sale.get_payment_method_display }}</dd>
+        <dt class="col-sm-5">Ghi chú</dt>
+        <dd class="col-sm-7">{{ sale.note|default:"Không có" }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel h-100 sale-totals">
+      <div><span>Tổng trước giảm</span><strong>{{ sale.subtotal|vnd }}</strong></div>
+      <div><span>Giảm giá</span><strong>{{ sale.discount_amount|vnd }}</strong></div>
+      <div class="sale-total-final">
+        <span>Tổng thực tế</span><strong>{{ sale.final_total|vnd }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if sale.status == "completed" %}
+  <div class="panel mt-4">
+    <h3 class="h5">Hủy giao dịch</h3>
+    <p class="text-secondary">
+      Tồn kho sẽ được hoàn lại đúng một lần. Giao dịch vẫn được giữ trong lịch sử.
+    </p>
+    <form method="post" action="{% url 'sale-cancel' sale.pk %}"
+          onsubmit="return confirm('Xác nhận hủy giao dịch và hoàn lại tồn kho?');">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ cancellation_form.reason.id_for_label }}">
+          {{ cancellation_form.reason.label }}
+        </label>
+        {{ cancellation_form.reason }}
+        {% for error in cancellation_form.reason.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <button class="btn btn-outline-danger" type="submit">Hủy giao dịch và hoàn tồn</button>
+    </form>
+  </div>
+{% endif %}
+{% endblock %}
