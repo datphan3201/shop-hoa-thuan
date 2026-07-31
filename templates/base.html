@@ -73,10 +73,16 @@
         {% include "includes/navigation.html" %}
       </div>
     </div>
+    <nav class="mobile-bottom-nav d-lg-none" aria-label="Điều hướng nhanh">
+      <a href="{% url 'dashboard' %}">Tổng quan</a><a href="{% url 'product-list' %}">Sản phẩm</a>
+      <a class="mobile-bottom-nav-primary" href="{% url 'sale-create' %}">Bán hàng</a><a href="{% url 'inventory-list' %}">Tồn kho</a>
+      <a href="{% url 'product-create' %}">Thêm</a>
+    </nav>
   {% else %}
     {% block public_content %}{% endblock %}
   {% endif %}
   <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("{% static 'service-worker.js' %}");</script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

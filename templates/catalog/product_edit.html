@@ -7,7 +7,9 @@
 <section class="panel narrow-panel">
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
-    {% for field in form %}
+    {% for field in form.hidden_fields %}{{ field }}{% for error in field.errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}{% endfor %}
+    {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+    {% for field in form.visible_fields %}
       <div class="{% if field.name == 'active' %}form-check mb-3{% else %}mb-3{% endif %}">
         {% if field.name == "active" %}
           {{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -17,8 +19,22 @@
         {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
       </div>
     {% endfor %}
+    <img id="image-preview" class="product-image mt-3 d-none" alt="Xem trước ảnh sản phẩm">
     <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
     <a class="btn btn-outline-secondary" href="{% url 'product-detail' product.id %}">Hủy</a>
   </form>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const imageInput = document.getElementById("id_image");
+  const imagePreview = document.getElementById("image-preview");
+  imageInput?.addEventListener("change", () => {
+    const [file] = imageInput.files || [];
+    if (!file || !imagePreview) return;
+    imagePreview.src = URL.createObjectURL(file);
+    imagePreview.classList.remove("d-none");
+  });
+</script>
 {% endblock %}

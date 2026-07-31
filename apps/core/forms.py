@@ -94,6 +94,7 @@ class PinChangeForm(PinSetupForm):
 
 
 class SecurityTimeoutForm(forms.ModelForm):
+    revision = forms.IntegerField(required=False, widget=forms.HiddenInput)
     cost_price_lock_timeout_minutes = forms.IntegerField(
         label="Tự khóa sau (phút)",
         validators=[MinValueValidator(1), MaxValueValidator(120)],
@@ -103,3 +104,16 @@ class SecurityTimeoutForm(forms.ModelForm):
     class Meta:
         model = ShopSecuritySettings
         fields = ("cost_price_lock_timeout_minutes",)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.initial.setdefault("revision", self.instance.revision)
+
+    def clean_revision(self) -> int:
+        revision = self.cleaned_data.get("revision")
+        if revision != self.instance.revision:
+            raise forms.ValidationError(
+                "Thiết lập đã thay đổi trên thiết bị khác. Vui lòng tải lại trang rồi thử lại."
+            )
+        return cast(int, revision)

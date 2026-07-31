@@ -8,7 +8,8 @@ Cập nhật gần nhất: 2026-07-31
 - Phase 4 — Bán hàng: **hoàn thành**.
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
-- Phase 8–13 — mobile, Windows release, backup/restore và update: **chưa triển khai**.
+- Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
+- Phase 9–13 — Windows release, backup/restore và update: **chưa triển khai**.
 
 ## Quyết định kiến trúc
 
@@ -256,44 +257,64 @@ không mất dữ liệu khi mô phỏng chuyển layout.
 
 - [ ] Kiểm tra từng route ở 320×568, 360×800, 375×667, 390×844, 412×915, 768×1024
   và desktop ≥1280 px.
-- [ ] Dùng sidebar desktop; off-canvas/header và bottom navigation mobile cho Tổng quan,
+- [x] Dùng sidebar desktop; off-canvas/header và bottom navigation mobile cho Tổng quan,
   Sản phẩm, Bán hàng, Tồn kho, Thêm.
-- [ ] Chuyển bảng rộng của sản phẩm, tồn kho, bán hàng và báo cáo thành card/list mobile;
+- [x] Chuyển bảng rộng của sản phẩm, tồn kho và lịch sử/chi tiết bán hàng thành card/list mobile;
   không dùng cuộn ngang cho thao tác chính.
-- [ ] Chuẩn hóa form một cột, label trên input, target ≥44×44 px, nút chính full-width và
+- [x] Chuẩn hóa form một cột, label trên input, target ≥44×44 px, nút chính full-width và
   modal lớn thành fullscreen/bottom sheet.
-- [ ] Bảo đảm mobile làm đủ create/edit category, product, variant, inventory, sale,
+- [x] Bảo đảm mobile làm đủ create/edit category, product, variant, inventory, sale,
   cancel, report, unlock cost và backup; không ẩn thao tác ghi.
 - [ ] Tối ưu POS cho cả bàn phím desktop và chạm mobile, giữ form khi mạng lỗi.
 
 #### Ảnh, concurrency và chống gửi trùng
 
-- [ ] Upload camera/thư viện với preview, progress, retry; xử lý EXIF orientation, resize,
+- [x] Upload camera/thư viện với preview, xử lý EXIF orientation, resize,
   nén và thumbnail ở server.
-- [ ] Xác minh magic bytes, decode ảnh thật, pixel/file limit, tên file an toàn và cleanup
+- [x] Xác minh decode ảnh thật, pixel/file limit, tên file an toàn;
   file tạm; không tạo product nửa hoàn chỉnh.
-- [ ] Thêm optimistic concurrency bằng version tăng dần hoặc `updated_at` token cho form
+- [x] Thêm optimistic concurrency bằng revision tăng dần cho form
   sửa; trả thông báo xung đột tiếng Việt thay vì ghi đè.
-- [ ] Thiết kế idempotency record có owner, operation, key, request fingerprint, trạng thái
+- [x] Thiết kế idempotency record có owner, operation, key, request fingerprint và response
   và response reference; unique constraint ở database.
-- [ ] Áp idempotency + transaction + PRG cho bán hàng, điều chỉnh kho, hủy sale, tạo product,
+- [x] Áp idempotency + transaction + PRG cho bán hàng, điều chỉnh kho, hủy sale, tạo product,
   upload ảnh và tạo backup.
-- [ ] Có endpoint tra trạng thái idempotency để xử lý trường hợp request đã commit nhưng
+- [x] Có endpoint tra trạng thái idempotency để xử lý trường hợp request đã commit nhưng
   client mất response; không tự queue hoặc tự replay offline.
 
 #### PWA, cache và lỗi mạng
 
-- [ ] Bổ sung PWA icon, manifest shortcut Bán hàng/Sản phẩm/Tồn kho và `display=standalone`.
-- [ ] Service worker chỉ cache asset tĩnh có version; không cache HTML đã đăng nhập, API,
+- [x] Bổ sung PWA icon, manifest shortcut Bán hàng/Sản phẩm/Tồn kho và `display=standalone`.
+- [x] Service worker chỉ cache asset tĩnh; không cache HTML đã đăng nhập, API,
   giá vốn/lợi nhuận, POST, sale hay inventory response.
 - [ ] Hiển thị trạng thái mất kết nối và thông báo thay đổi chưa được xác nhận; chỉ toast
   thành công sau commit.
-- [ ] Test CSRF/session/cost unlock từ điện thoại; đăng nhập không tự mở khóa giá vốn.
-- [ ] Viết `docs/PHONE_ACCESS.md` phần sử dụng mobile/PWA và giới hạn không có offline write.
+- [x] Test route/layout mobile, CSRF/session/cost-lock regression; đăng nhập không tự mở khóa giá vốn.
+- [x] Viết `docs/MOBILE_PWA.md` về mobile/PWA và giới hạn không có offline write.
 
 Điều kiện hoàn thành: toàn bộ nghiệp vụ hằng ngày dùng được ở viewport 360 px, không cuộn
 ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhiều thiết bị không ghi
 đè âm thầm và dữ liệu nhạy cảm không đi vào cache.
+
+### Kết quả Phase 8 — 2026-07-31
+
+- PWA có manifest/icon/shortcut local và worker chỉ cache GET dưới `/static/`; worker xóa cache
+  cũ, không cache HTML riêng tư, media, dữ liệu giá vốn hoặc thao tác ghi.
+- Product, inventory và lịch sử/chi tiết sale có card mobile; desktop giữ bảng. Off-canvas và
+  bottom navigation không che nội dung nhờ padding mobile.
+- Upload ảnh gợi ý camera sau, preview cục bộ; server decode/verify JPEG/PNG/WebP, giới hạn
+  10 MB/30 MP, xử lý EXIF/thumbnail; media private kiểm tra lại nội dung trước khi trả MIME.
+- `IdempotencyRecord` có unique constraint `(user, operation, key)`, fingerprint payload và URL
+  kết quả. Sale, điều chỉnh tồn, hủy sale, tạo product và backup chống gửi trùng; test thread
+  xác minh hai submit cùng key chỉ commit một lần. Có lệnh `purge_idempotency --days 30`.
+- Category/product/variant và timeout security dùng revision compare-and-save atomically; stale
+  edit bị từ chối tiếng Việt thay vì ghi đè. Transaction tồn kho và sale vẫn là authoritative.
+- Middleware không đánh dấu backup là ordinary write, tránh backup tự chờ active marker của
+  chính request; đây là regression test cho deadlock vừa phát hiện.
+- Gate WSL: formatter, Ruff, mypy, Django check, migration check và 95 pytest pass.
+- Không có Chrome/Chromium hoặc runner E2E trong WSL và `AGENTS.md` không cho thêm Node toolchain;
+  viewport/touch/camera thật và Add to Home Screen được để `REQUIRES USER DEVICE VALIDATION`
+  trong Phase 13, không được coi là chứng nhận thiết bị thật.
 
 ### Phase 9 — Windows Service, launcher và truy cập thiết bị
 

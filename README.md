@@ -11,8 +11,9 @@ hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đ
 
 ## Trạng thái
 
-Phase 5 đã hoàn thành: sản phẩm, tồn kho, khóa giá vốn, bán/hủy giao dịch, dashboard và
-báo cáo đã có kiểm thử.
+Phase 8 đã hoàn thành trong WSL: sản phẩm, tồn kho, khóa giá vốn, bán/hủy giao dịch,
+dashboard/báo cáo, mobile cards, PWA an toàn, idempotency và optimistic concurrency đã có
+kiểm thử. Chứng nhận Windows/điện thoại thật vẫn thuộc các phase phát hành sau.
 Không dùng cho dữ liệu thật cho đến khi Phase 13 được chứng nhận trên Windows và mobile.
 
 ## Phát triển trong WSL
@@ -52,7 +53,7 @@ Development mặc định dùng `.data/`. Bản Windows sẽ dùng thư mục d�
 ngoài thư mục cài đặt. Database, media, backup và secret thật không được commit.
 
 Trang **Thiết bị và sao lưu** có thể tạo và tải file backup nhất quán gồm SQLite, media
-và manifest. Chức năng khôi phục có xác nhận sẽ được hoàn thiện và kiểm thử ở Phase 6.
+và manifest. Khôi phục có xác nhận sẽ được hoàn thiện và kiểm thử ở Phase 11.
 
 ## Kiểm tra
 
@@ -66,6 +67,7 @@ uv run pytest
 ```
 
 Xem [PROGRESS.md](PROGRESS.md) để biết kế hoạch và tiến độ chi tiết.
+Xem thêm [hướng dẫn Mobile/PWA](docs/MOBILE_PWA.md).
 
 ## Đóng gói Windows
 

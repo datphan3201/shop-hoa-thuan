@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
-from typing import Any
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, IntegerField, Q, Sum
 from django.db.models.functions import Coalesce
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.catalog.models import Category, ProductVariant
 from apps.catalog.services import InsufficientStockError
+from apps.core.idempotency import IdempotencyConflictError, execute
+from apps.core.models import IdempotencyRecord
 from apps.core.security import is_cost_price_unlocked
 from apps.sales.forms import SaleCancellationForm, SaleCreateForm
 from apps.sales.models import Sale
@@ -154,13 +158,42 @@ def sale_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and form.is_valid():
         lines = form.get_sale_lines()
         try:
-            sale = complete_sale(
-                lines=lines,
-                discount_amount=form.cleaned_data["discount_amount"],
-                payment_method=form.cleaned_data["payment_method"],
-                note=form.cleaned_data["note"],
-            )
-        except (SaleValidationError, InsufficientStockError) as exc:
+            key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
+            if key:
+                owner = cast(User, request.user)
+                outcome = execute(
+                    user=owner,
+                    operation="sale.complete",
+                    key=key[:128],
+                    payload={
+                        "lines": form.cleaned_data["lines_json"],
+                        "discount": form.cleaned_data["discount_amount"],
+                        "payment": form.cleaned_data["payment_method"],
+                        "note": form.cleaned_data["note"],
+                    },
+                    work=lambda: complete_sale(
+                        lines=lines,
+                        discount_amount=form.cleaned_data["discount_amount"],
+                        payment_method=form.cleaned_data["payment_method"],
+                        note=form.cleaned_data["note"],
+                    ),
+                    location=lambda sale: reverse("sale-detail", args=[sale.pk]),
+                )
+                if outcome.replayed:
+                    record = IdempotencyRecord.objects.get(
+                        user=owner, operation="sale.complete", key=key[:128]
+                    )
+                    return redirect(record.response_location)
+                sale = outcome.result
+                assert sale is not None
+            else:
+                sale = complete_sale(
+                    lines=lines,
+                    discount_amount=form.cleaned_data["discount_amount"],
+                    payment_method=form.cleaned_data["payment_method"],
+                    note=form.cleaned_data["note"],
+                )
+        except (IdempotencyConflictError, SaleValidationError, InsufficientStockError) as exc:
             form.add_error(None, str(exc))
             cart_rows = _cart_rows(request, lines)
         else:
@@ -220,8 +253,28 @@ def sale_cancel(request: HttpRequest, sale_id: int) -> HttpResponse:
             status=400,
         )
     try:
-        sale = cancel_sale(sale_id=sale_id, reason=form.cleaned_data["reason"])
+        key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
+        if key:
+            owner = cast(User, request.user)
+            outcome = execute(
+                user=owner,
+                operation="sale.cancel",
+                key=key[:128],
+                payload={"sale_id": sale_id, "reason": form.cleaned_data["reason"]},
+                work=lambda: cancel_sale(sale_id=sale_id, reason=form.cleaned_data["reason"]),
+                location=lambda sale: reverse("sale-detail", args=[sale.pk]),
+            )
+            if outcome.replayed:
+                record = IdempotencyRecord.objects.get(
+                    user=owner, operation="sale.cancel", key=key[:128]
+                )
+                return redirect(record.response_location)
+            sale = cast(Sale, outcome.result)
+        else:
+            sale = cancel_sale(sale_id=sale_id, reason=form.cleaned_data["reason"])
     except SaleAlreadyCancelledError as exc:
+        messages.error(request, str(exc))
+    except IdempotencyConflictError as exc:
         messages.error(request, str(exc))
     else:
         messages.success(request, f"Đã hủy {sale.sale_code} và hoàn lại tồn kho.")

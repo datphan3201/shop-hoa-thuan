@@ -59,7 +59,27 @@
 
 <section class="panel p-0">
   {% if rows %}
-    <div class="table-responsive">
+    <div class="d-lg-none p-3 product-card-list">
+      {% for row in rows %}
+        <article class="mobile-record-card">
+          <a class="d-flex align-items-center gap-3 text-decoration-none text-reset" href="{% url 'product-detail' row.product.id %}">
+            {% if row.product.thumbnail %}
+              <img class="product-thumb" src="{{ row.product.thumbnail.url }}" alt="">
+            {% else %}<span class="product-thumb product-thumb-empty">HT</span>{% endif %}
+            <span><strong class="d-block">{{ row.product.name }}</strong><small class="text-secondary">{{ row.product.category.name }} · {{ row.product.color|default:"Chưa nhập màu" }}</small></span>
+          </a>
+          <dl class="mobile-record-grid mb-0 mt-3">
+            <dt>Giá bán</dt><dd>{% if row.min_price == row.max_price %}{{ row.min_price|vnd }}{% else %}{{ row.min_price|vnd }} – {{ row.max_price|vnd }}{% endif %}</dd>
+            <dt>Tổng tồn</dt><dd>{{ row.total_quantity }}</dd>
+            <dt>Size còn hàng</dt><dd>{% for v in row.in_stock %}{{ v.size }} ({{ v.quantity }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+            <dt>Size sắp hết</dt><dd>{% for v in row.low_stock %}{{ v.size }} ({{ v.quantity }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+            <dt>Size hết hàng</dt><dd>{% for v in row.out_of_stock %}{{ v.size }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+          </dl>
+          <span class="badge {% if row.product.active %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if row.product.active %}Hoạt động{% else %}Đã ngừng{% endif %}</span>
+        </article>
+      {% endfor %}
+    </div>
+    <div class="table-responsive d-none d-lg-block">
       <table class="table table-hover align-middle mb-0">
         <thead><tr><th>Sản phẩm</th><th>Loại / màu</th><th>Giá bán</th><th>Tổng tồn</th><th>Size</th><th>Trạng thái</th></tr></thead>
         <tbody>

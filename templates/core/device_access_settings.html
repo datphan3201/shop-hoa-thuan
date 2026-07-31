@@ -27,6 +27,7 @@
       {% if cost_price_unlocked %}
         <form method="post" action="{% url 'backup-create' %}" class="d-inline">
           {% csrf_token %}
+          <input type="hidden" name="idempotency_key" id="id_backup_idempotency_key">
           <button class="btn btn-primary" type="submit">Tạo bản sao lưu</button>
         </form>
       {% else %}
@@ -47,4 +48,11 @@
     </section>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const backupKey = document.getElementById("id_backup_idempotency_key");
+  if (backupKey && window.crypto?.randomUUID) backupKey.value = window.crypto.randomUUID();
+</script>
 {% endblock %}

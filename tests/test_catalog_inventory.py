@@ -11,6 +11,7 @@ from django.test import Client, override_settings
 from django.urls import reverse
 from PIL import Image
 
+from apps.catalog.forms import ProductForm
 from apps.catalog.models import Category, InventoryMovement, Product, ProductVariant
 from apps.catalog.services import InsufficientStockError, adjust_inventory
 from apps.core.security import UNLOCKED_UNTIL_KEY
@@ -101,6 +102,34 @@ def test_inventory_requires_reason(variant: ProductVariant) -> None:
 
 
 @pytest.mark.django_db
+def test_inventory_adjustment_idempotency_replays_single_movement(
+    owner_client: Client, variant: ProductVariant
+) -> None:
+    payload = {"operation": "add", "quantity": "4", "reason": "Nhập lại"}
+    headers = {"Idempotency-Key": "mobile-inventory-001"}
+
+    first = owner_client.post(
+        reverse("inventory-adjust", args=[variant.pk]), payload, headers=headers
+    )
+    replay = owner_client.post(
+        reverse("inventory-adjust", args=[variant.pk]), payload, headers=headers
+    )
+    conflict = owner_client.post(
+        reverse("inventory-adjust", args=[variant.pk]),
+        {**payload, "quantity": "5"},
+        headers=headers,
+    )
+
+    assert first.status_code == 302
+    assert replay.status_code == 302
+    assert conflict.status_code == 200
+    variant.refresh_from_db()
+    assert variant.quantity == 7
+    assert variant.inventory_movements.count() == 1
+    assert "không khớp" in conflict.content.decode()
+
+
+@pytest.mark.django_db
 def test_stock_status_uses_threshold_and_zero(variant: ProductVariant) -> None:
     assert variant.stock_status == "in_stock"
     variant.quantity = 2
@@ -157,6 +186,47 @@ def test_create_product_with_multiple_sizes_creates_initial_history(
             movement_type=InventoryMovement.MovementType.INITIAL,
         ).count()
         == 2
+    )
+
+
+@pytest.mark.django_db
+def test_product_create_idempotency_does_not_duplicate_product_or_inventory(
+    owner_client: Client,
+) -> None:
+    category = Category.objects.create(name="Quần")
+    payload = {
+        "category": category.pk,
+        "name": "Quần mobile",
+        "brand": "",
+        "color": "Xanh",
+        "description": "",
+        "active": "on",
+        "variants-TOTAL_FORMS": "1",
+        "variants-INITIAL_FORMS": "0",
+        "variants-MIN_NUM_FORMS": "1",
+        "variants-MAX_NUM_FORMS": "1000",
+        "variants-0-size": "L",
+        "variants-0-sku": "QUAN-L",
+        "variants-0-cost_price": "100000",
+        "variants-0-selling_price": "200000",
+        "variants-0-initial_quantity": "2",
+        "variants-0-low_stock_threshold": "1",
+        "variants-0-active": "on",
+    }
+    headers = {"Idempotency-Key": "product-create-001"}
+
+    first = owner_client.post(reverse("product-create"), payload, headers=headers)
+    replay = owner_client.post(reverse("product-create"), payload, headers=headers)
+
+    assert first.status_code == 302
+    assert replay.status_code == 302
+    assert first.headers["Location"] == replay.headers["Location"]
+    assert Product.objects.filter(name="Quần mobile").count() == 1
+    assert (
+        InventoryMovement.objects.filter(
+            movement_type=InventoryMovement.MovementType.INITIAL
+        ).count()
+        == 1
     )
 
 
@@ -237,6 +307,46 @@ def test_uploaded_image_is_resized_and_thumbnail_created(
 
 
 @pytest.mark.django_db
+def test_product_upload_rejects_file_that_only_claims_to_be_an_image(
+    owner_client: Client,
+) -> None:
+    category = Category.objects.create(name="Nón")
+    upload = SimpleUploadedFile("fake.jpg", b"not a JPEG", content_type="image/jpeg")
+    response = owner_client.post(
+        reverse("product-create"),
+        {
+            "category": category.pk,
+            "name": "Nón bảo hiểm",
+            "image": upload,
+            "active": "on",
+            "variants-TOTAL_FORMS": "1",
+            "variants-INITIAL_FORMS": "0",
+            "variants-MIN_NUM_FORMS": "1",
+            "variants-MAX_NUM_FORMS": "1000",
+            "variants-0-size": "M",
+            "variants-0-sku": "NON-M",
+            "variants-0-cost_price": "100000",
+            "variants-0-selling_price": "180000",
+            "variants-0-initial_quantity": "1",
+            "variants-0-low_stock_threshold": "1",
+            "variants-0-active": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "không phải ảnh hợp lệ" in response.content.decode()
+    assert not Product.objects.filter(name="Nón bảo hiểm").exists()
+
+
+@pytest.mark.django_db
+def test_product_image_field_allows_mobile_camera_and_supported_image_types() -> None:
+    form = ProductForm()
+
+    assert form.fields["image"].widget.attrs["accept"] == "image/jpeg,image/png,image/webp"
+    assert form.fields["image"].widget.attrs["capture"] == "environment"
+
+
+@pytest.mark.django_db
 def test_cost_price_is_not_rendered_on_product_and_inventory_pages(
     owner_client: Client,
     variant: ProductVariant,
@@ -250,3 +360,24 @@ def test_cost_price_is_not_rendered_on_product_and_inventory_pages(
     assert "100.000 ₫" not in product_response.content.decode()
     assert "100.000 ₫" not in inventory_response.content.decode()
     assert "•••••• ₫" in product_response.content.decode()
+
+
+@pytest.mark.django_db
+def test_category_update_rejects_stale_revision(owner_client: Client) -> None:
+    category = Category.objects.create(name="Áo khoác")
+    url = reverse("category-update", args=[category.pk])
+    first = owner_client.post(
+        url,
+        {"name": "Áo khoác mới", "description": "", "active": "on", "revision": "1"},
+    )
+    stale = owner_client.post(
+        url,
+        {"name": "Ghi đè cũ", "description": "", "active": "on", "revision": "1"},
+    )
+
+    assert first.status_code == 302
+    assert stale.status_code == 200
+    category.refresh_from_db()
+    assert category.name == "Áo khoác mới"
+    assert category.revision == 2
+    assert "đã được thay đổi" in stale.content.decode()

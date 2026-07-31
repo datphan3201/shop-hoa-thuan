@@ -38,7 +38,21 @@
     <h2 class="h5 mb-0">Các size</h2>
     <a class="btn btn-primary btn-sm" href="{% url 'variant-create' product.id %}">Thêm size</a>
   </div>
-  <div class="table-responsive">
+  <div class="d-lg-none p-3 product-card-list">
+    {% for variant in variants %}
+      <article class="mobile-record-card">
+        <div class="d-flex justify-content-between"><strong>{{ variant.size }}</strong><a class="btn btn-sm btn-outline-secondary" href="{% url 'variant-update' variant.id %}">Sửa</a></div>
+        <dl class="mobile-record-grid mb-0 mt-3">
+          <dt>SKU</dt><dd>{{ variant.sku|default:"—" }}</dd>
+          <dt>Giá bán</dt><dd>{{ variant.selling_price|vnd }}</dd>
+          <dt>Tồn</dt><dd>{{ variant.quantity }}</dd>
+          <dt>Trạng thái</dt><dd>{% if variant.stock_status == "out_of_stock" %}Hết hàng{% elif variant.stock_status == "low_stock" %}Sắp hết{% else %}Còn hàng{% endif %}</dd>
+          {% if cost_price_unlocked %}<dt>Giá vốn</dt><dd>{{ variant.cost_price|vnd }}</dd>{% endif %}
+        </dl>
+      </article>
+    {% empty %}<div class="empty-state">Chưa có size.</div>{% endfor %}
+  </div>
+  <div class="table-responsive d-none d-lg-block">
     <table class="table table-hover align-middle mb-0">
       <thead><tr><th>Size</th><th>SKU</th><th>Giá vốn</th><th>Giá bán</th><th>Tồn</th><th>Trạng thái</th>{% if cost_price_unlocked %}<th>Vốn tồn</th><th>Lợi nhuận dự kiến</th>{% endif %}<th>Giá trị dự kiến bán</th><th></th></tr></thead>
       <tbody>

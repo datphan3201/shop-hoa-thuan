@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from contextlib import AbstractContextManager
 from multiprocessing import Event, Process, Queue
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any
 import pytest
 from django.conf import settings
 from django.test import Client, override_settings
+from django.urls import reverse
 
 from apps.core.operations import (
     MAINTENANCE_MESSAGE,
@@ -18,6 +20,7 @@ from apps.core.operations import (
     maintenance_operation,
     maintenance_state,
 )
+from apps.core.security import UNLOCKED_UNTIL_KEY
 from shop_hoa_thuan.runtime import RuntimePaths
 
 
@@ -111,3 +114,21 @@ def test_maintenance_waits_for_write_then_releases(
         with maintenance_operation("backup") as operation_id:
             assert operation_id
         assert maintenance_state() is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_backup_maintenance_entrypoint_is_not_its_own_active_write(
+    client: Client, tmp_path: Path
+) -> None:
+    """A backup request must acquire maintenance, not wait on its middleware marker."""
+    from django.contrib.auth.models import User
+
+    user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
+    client.force_login(user)
+    session = client.session
+    session[UNLOCKED_UNTIL_KEY] = time.time() + 600
+    session.save()
+    with override_settings(BACKUP_ROOT=tmp_path / "backups", MEDIA_ROOT=tmp_path / "media"):
+        response = client.post(reverse("backup-create"))
+
+    assert response.status_code == 302

@@ -67,7 +67,21 @@
 
 {% if page.object_list %}
   <div class="panel p-0">
-    <div class="table-responsive">
+    <div class="d-lg-none p-3 product-card-list">
+      {% for sale in page.object_list %}
+        <article class="mobile-record-card">
+          <div class="d-flex justify-content-between gap-2"><a class="fw-semibold text-decoration-none" href="{% url 'sale-detail' sale.pk %}">{{ sale.sale_code }}</a><span class="badge {% if sale.status == "completed" %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if sale.status == "completed" %}Đã hoàn thành{% else %}Đã hủy{% endif %}</span></div>
+          <dl class="mobile-record-grid mb-0 mt-3">
+            <dt>Thời điểm</dt><dd>{{ sale.sold_at|date:"d/m/Y H:i" }}</dd>
+            <dt>Số lượng</dt><dd>{{ sale.total_quantity }} sản phẩm / {{ sale.item_type_count }} loại</dd>
+            <dt>Giảm giá</dt><dd>{{ sale.discount_amount|vnd }}</dd>
+            <dt>Thực tế</dt><dd class="fw-semibold">{{ sale.final_total|vnd }}</dd>
+            <dt>Thanh toán</dt><dd>{{ sale.get_payment_method_display }}</dd>
+          </dl>
+        </article>
+      {% endfor %}
+    </div>
+    <div class="table-responsive d-none d-lg-block">
       <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>

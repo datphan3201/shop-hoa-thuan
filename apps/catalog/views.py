@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.catalog.forms import (
@@ -23,6 +25,9 @@ from apps.catalog.services import (
     adjust_inventory,
     process_product_image,
 )
+from apps.core.concurrency import ConcurrentUpdateError, save_with_revision
+from apps.core.idempotency import IdempotencyConflictError, execute, replay_location
+from apps.core.models import IdempotencyRecord
 from apps.core.security import cost_price_unlock_required, is_cost_price_unlocked
 
 
@@ -58,9 +63,14 @@ def category_update(request: HttpRequest, category_id: int) -> HttpResponse:
     category = get_object_or_404(Category, pk=category_id)
     form = CategoryForm(request.POST or None, instance=category)
     if request.method == "POST" and form.is_valid():
-        category = form.save()
-        messages.success(request, f"Đã cập nhật “{category.name}”.")
-        return redirect("category-list")
+        try:
+            category = form.save(commit=False)
+            save_with_revision(category, expected_revision=form.cleaned_data["revision"])
+        except ConcurrentUpdateError as exc:
+            form.add_error(None, str(exc))
+        else:
+            messages.success(request, f"Đã cập nhật “{category.name}”.")
+            return redirect("category-list")
     return render(
         request,
         "catalog/category_form.html",
@@ -73,7 +83,15 @@ def category_update(request: HttpRequest, category_id: int) -> HttpResponse:
 def category_toggle(request: HttpRequest, category_id: int) -> HttpResponse:
     category = get_object_or_404(Category, pk=category_id)
     category.active = not category.active
-    category.save(update_fields=["active", "updated_at"])
+    try:
+        save_with_revision(
+            category,
+            expected_revision=category.revision,
+            update_fields=["active"],
+        )
+    except ConcurrentUpdateError:
+        messages.error(request, "Dữ liệu đã thay đổi. Vui lòng thử lại.")
+        return redirect("category-list")
     state = "hoạt động" if category.active else "ngừng hoạt động"
     messages.success(request, f"Đã chuyển “{category.name}” sang {state}.")
     return redirect("category-list")
@@ -165,29 +183,80 @@ def product_create(request: HttpRequest) -> HttpResponse:
         instance=product,
         prefix="variants",
     )
+    key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
+    idempotency_payload = {
+        "fields": {
+            field: request.POST.getlist(field)
+            for field in sorted(request.POST)
+            if field not in {"csrfmiddlewaretoken", "idempotency_key"}
+        },
+        "image": {
+            "name": getattr(request.FILES.get("image"), "name", ""),
+            "size": getattr(request.FILES.get("image"), "size", 0),
+        },
+    }
+    if request.method == "POST" and key:
+        try:
+            location = replay_location(
+                user=cast(User, request.user),
+                operation="product.create",
+                key=key[:128],
+                payload=idempotency_payload,
+            )
+        except IdempotencyConflictError as exc:
+            form.add_error(None, str(exc))
+        else:
+            if location:
+                return redirect(location)
     if request.method == "POST" and form.is_valid() and formset.is_valid():
         uploaded_image = form.cleaned_data.get("image")
-        with transaction.atomic():
-            product = form.save()
-            for variant_form in formset.forms:
-                if not variant_form.cleaned_data:
-                    continue
-                variant = variant_form.save(commit=False)
-                initial_quantity = variant_form.cleaned_data["initial_quantity"]
-                variant.product = product
-                variant.quantity = 0
-                variant.full_clean()
-                variant.save()
-                adjust_inventory(
-                    variant_id=variant.pk,
-                    operation="set",
-                    quantity=initial_quantity,
-                    reason="Tồn kho ban đầu",
-                    movement_type=InventoryMovement.MovementType.INITIAL,
+
+        def create_product() -> Product:
+            with transaction.atomic():
+                product = cast(Product, form.save())
+                for variant_form in formset.forms:
+                    if not variant_form.cleaned_data:
+                        continue
+                    variant = variant_form.save(commit=False)
+                    initial_quantity = variant_form.cleaned_data["initial_quantity"]
+                    variant.product = product
+                    variant.quantity = 0
+                    variant.full_clean()
+                    variant.save()
+                    adjust_inventory(
+                        variant_id=variant.pk,
+                        operation="set",
+                        quantity=initial_quantity,
+                        reason="Tồn kho ban đầu",
+                        movement_type=InventoryMovement.MovementType.INITIAL,
+                    )
+                process_product_image(product, uploaded_image)
+            return product
+
+        try:
+            if key:
+                owner = cast(User, request.user)
+                outcome = execute(
+                    user=owner,
+                    operation="product.create",
+                    key=key[:128],
+                    payload=idempotency_payload,
+                    work=create_product,
+                    location=lambda product: reverse("product-detail", args=[product.pk]),
                 )
-        process_product_image(product, uploaded_image)
-        messages.success(request, f"Đã tạo sản phẩm “{product.name}”.")
-        return redirect("product-detail", product_id=product.pk)
+                if outcome.replayed:
+                    record = IdempotencyRecord.objects.get(
+                        user=owner, operation="product.create", key=key[:128]
+                    )
+                    return redirect(record.response_location)
+                product = cast(Product, outcome.result)
+            else:
+                product = create_product()
+        except IdempotencyConflictError as exc:
+            form.add_error(None, str(exc))
+        else:
+            messages.success(request, f"Đã tạo sản phẩm “{product.name}”.")
+            return redirect("product-detail", product_id=product.pk)
     return render(
         request,
         "catalog/product_form.html",
@@ -233,15 +302,20 @@ def product_update(request: HttpRequest, product_id: int) -> HttpResponse:
     form = ProductForm(request.POST or None, request.FILES or None, instance=product)
     if request.method == "POST" and form.is_valid():
         uploaded_image = form.cleaned_data.get("image") if request.FILES else None
-        product = form.save()
-        if uploaded_image and product.image.name != previous_image_name:
-            process_product_image(product, uploaded_image)
-            if previous_image_name:
-                product.image.storage.delete(previous_image_name)
-            if previous_thumbnail_name:
-                product.thumbnail.storage.delete(previous_thumbnail_name)
-        messages.success(request, f"Đã cập nhật “{product.name}”.")
-        return redirect("product-detail", product_id=product.pk)
+        try:
+            product = form.save(commit=False)
+            save_with_revision(product, expected_revision=form.cleaned_data["revision"])
+            if uploaded_image and product.image.name != previous_image_name:
+                process_product_image(product, uploaded_image)
+                if previous_image_name:
+                    product.image.storage.delete(previous_image_name)
+                if previous_thumbnail_name:
+                    product.thumbnail.storage.delete(previous_thumbnail_name)
+        except ConcurrentUpdateError as exc:
+            form.add_error(None, str(exc))
+        else:
+            messages.success(request, f"Đã cập nhật “{product.name}”.")
+            return redirect("product-detail", product_id=product.pk)
     return render(
         request,
         "catalog/product_edit.html",
@@ -254,7 +328,11 @@ def product_update(request: HttpRequest, product_id: int) -> HttpResponse:
 def product_toggle(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(Product, pk=product_id)
     product.active = not product.active
-    product.save(update_fields=["active", "updated_at"])
+    try:
+        save_with_revision(product, expected_revision=product.revision, update_fields=["active"])
+    except ConcurrentUpdateError:
+        messages.error(request, "Dữ liệu đã thay đổi. Vui lòng thử lại.")
+        return redirect("product-detail", product_id=product.pk)
     messages.success(request, "Đã cập nhật trạng thái sản phẩm.")
     return redirect("product-detail", product_id=product.pk)
 
@@ -294,9 +372,14 @@ def variant_update(request: HttpRequest, variant_id: int) -> HttpResponse:
     variant = get_object_or_404(ProductVariant.objects.select_related("product"), pk=variant_id)
     form = ProductVariantForm(request.POST or None, instance=variant)
     if request.method == "POST" and form.is_valid():
-        variant = form.save()
-        messages.success(request, f"Đã cập nhật size {variant.size}.")
-        return redirect("product-detail", product_id=variant.product_id)
+        try:
+            variant = form.save(commit=False)
+            save_with_revision(variant, expected_revision=form.cleaned_data["revision"])
+        except ConcurrentUpdateError as exc:
+            form.add_error(None, str(exc))
+        else:
+            messages.success(request, f"Đã cập nhật size {variant.size}.")
+            return redirect("product-detail", product_id=variant.product_id)
     return render(
         request,
         "catalog/variant_form.html",
@@ -334,14 +417,43 @@ def inventory_adjust(request: HttpRequest, variant_id: int) -> HttpResponse:
     form = InventoryAdjustmentForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
-            adjust_inventory(
-                variant_id=variant.pk,
-                operation=form.cleaned_data["operation"],
-                quantity=form.cleaned_data["quantity"],
-                reason=form.cleaned_data["reason"],
-            )
+            key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
+            if key:
+                owner = cast(User, request.user)
+                outcome = execute(
+                    user=owner,
+                    operation="inventory.adjust",
+                    key=key[:128],
+                    payload={
+                        "variant_id": variant.pk,
+                        "operation": form.cleaned_data["operation"],
+                        "quantity": form.cleaned_data["quantity"],
+                        "reason": form.cleaned_data["reason"],
+                    },
+                    work=lambda: adjust_inventory(
+                        variant_id=variant.pk,
+                        operation=form.cleaned_data["operation"],
+                        quantity=form.cleaned_data["quantity"],
+                        reason=form.cleaned_data["reason"],
+                    ),
+                    location=lambda _: reverse("inventory-list"),
+                )
+                if outcome.replayed:
+                    record = IdempotencyRecord.objects.get(
+                        user=owner, operation="inventory.adjust", key=key[:128]
+                    )
+                    return redirect(record.response_location)
+            else:
+                adjust_inventory(
+                    variant_id=variant.pk,
+                    operation=form.cleaned_data["operation"],
+                    quantity=form.cleaned_data["quantity"],
+                    reason=form.cleaned_data["reason"],
+                )
         except InsufficientStockError:
             form.add_error("quantity", "Không thể trừ quá số lượng đang tồn.")
+        except IdempotencyConflictError as exc:
+            form.add_error(None, str(exc))
         else:
             messages.success(
                 request, f"Đã cập nhật tồn kho {variant.product.name} — {variant.size}."

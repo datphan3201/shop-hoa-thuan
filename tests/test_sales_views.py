@@ -80,6 +80,25 @@ def test_sale_create_view_commits_server_totals_and_inventory(
 
 
 @pytest.mark.django_db
+def test_sale_create_idempotency_replays_sale_and_rejects_changed_payload(
+    sales_owner_client: Client, sales_variant: ProductVariant
+) -> None:
+    payload = _sale_payload(sales_variant)
+    headers = {"Idempotency-Key": "mobile-sale-001"}
+    first = sales_owner_client.post(reverse("sale-create"), payload, headers=headers)
+    second = sales_owner_client.post(reverse("sale-create"), payload, headers=headers)
+    changed = dict(payload, discount_amount="0")
+    conflict = sales_owner_client.post(reverse("sale-create"), changed, headers=headers)
+
+    assert first.status_code == 302
+    assert second.status_code == 302
+    assert first.headers["Location"] == second.headers["Location"]
+    assert Sale.objects.count() == 1
+    assert conflict.status_code == 200
+    assert "không khớp" in conflict.content.decode()
+
+
+@pytest.mark.django_db
 def test_sale_create_view_rejects_out_of_stock_without_partial_sale(
     sales_owner_client: Client,
     sales_variant: ProductVariant,
@@ -171,6 +190,36 @@ def test_cancel_view_requires_reason_and_restores_only_once(
         {"reason": "Thử hủy lần hai"},
     )
     assert second_response.status_code == 302
+    sales_variant.refresh_from_db()
+    assert sales_variant.quantity == 3
+    assert (
+        InventoryMovement.objects.filter(
+            movement_type=InventoryMovement.MovementType.SALE_RETURN,
+            reference_id=str(sale.pk),
+        ).count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_cancel_idempotency_replays_single_stock_return(
+    sales_owner_client: Client,
+    sales_variant: ProductVariant,
+) -> None:
+    sales_owner_client.post(reverse("sale-create"), _sale_payload(sales_variant, quantity=2))
+    sale = Sale.objects.get()
+    payload = {"reason": "Khách đổi ý"}
+    headers = {"Idempotency-Key": "mobile-cancel-001"}
+
+    first = sales_owner_client.post(
+        reverse("sale-cancel", args=[sale.pk]), payload, headers=headers
+    )
+    replay = sales_owner_client.post(
+        reverse("sale-cancel", args=[sale.pk]), payload, headers=headers
+    )
+
+    assert first.status_code == 302
+    assert replay.status_code == 302
     sales_variant.refresh_from_db()
     assert sales_variant.quantity == 3
     assert (

@@ -9,6 +9,11 @@ urlpatterns = [
     path("settings/security/", views.security_settings, name="security-settings"),
     path("settings/security/action/", views.security_action, name="security-action"),
     path(
+        "operations/idempotency/<str:operation>/<str:key>/",
+        views.idempotency_status,
+        name="idempotency-status",
+    ),
+    path(
         "settings/device-access/",
         views.device_access_settings,
         name="device-access-settings",

@@ -20,7 +20,22 @@
   </form>
 </section>
 <section class="panel p-0">
-  <div class="table-responsive">
+  <div class="d-lg-none p-3 product-card-list">
+    {% for variant in variants %}
+      <article class="mobile-record-card">
+        <div class="d-flex justify-content-between gap-2"><a class="fw-semibold text-decoration-none" href="{% url 'product-detail' variant.product_id %}">{{ variant.product.name }}</a><span class="badge {% if variant.stock_status == "out_of_stock" %}text-bg-danger{% elif variant.stock_status == "low_stock" %}text-bg-warning{% else %}text-bg-success{% endif %}">{% if variant.stock_status == "out_of_stock" %}Hết hàng{% elif variant.stock_status == "low_stock" %}Sắp hết{% else %}Còn hàng{% endif %}</span></div>
+        <dl class="mobile-record-grid mb-3 mt-3">
+          <dt>Loại / màu</dt><dd>{{ variant.product.category.name }} · {{ variant.product.color|default:"—" }}</dd>
+          <dt>Size / SKU</dt><dd>{{ variant.size }}{% if variant.sku %} · {{ variant.sku }}{% endif %}</dd>
+          <dt>Giá bán</dt><dd>{{ variant.selling_price|vnd }}</dd>
+          <dt>Tồn kho</dt><dd class="fw-semibold">{{ variant.quantity }}</dd>
+          {% if cost_price_unlocked %}<dt>Giá vốn</dt><dd>{{ variant.cost_price|vnd }}</dd>{% endif %}
+        </dl>
+        <a class="btn btn-outline-primary w-100" href="{% url 'inventory-adjust' variant.id %}">Điều chỉnh tồn kho</a>
+      </article>
+    {% empty %}<div class="empty-state">Không có size phù hợp.</div>{% endfor %}
+  </div>
+  <div class="table-responsive d-none d-lg-block">
     <table class="table table-hover align-middle mb-0">
       <thead><tr><th>Sản phẩm</th><th>Loại</th><th>Màu</th><th>Size</th><th>SKU</th><th>Giá vốn</th><th>Giá bán</th><th>Tồn</th><th>Trạng thái</th><th></th></tr></thead>
       <tbody>

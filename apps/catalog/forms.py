@@ -1,14 +1,43 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.forms import BaseInlineFormSet, inlineformset_factory
+from PIL import Image, UnidentifiedImageError
 
 from apps.catalog.models import Category, Product, ProductVariant
+
+
+class OptimisticConcurrencyFormMixin(forms.ModelForm):
+    revision = forms.IntegerField(required=False, widget=forms.HiddenInput)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.initial.setdefault("revision", self.instance.revision)
+
+    def clean_revision(self) -> int:
+        revision = self.cleaned_data.get("revision")
+        if not self.instance.pk:
+            return 1 if revision is None else revision
+        if revision is None:
+            raise ValidationError("Thiếu phiên bản dữ liệu. Vui lòng tải lại trang rồi thử lại.")
+        current_revision = cast(
+            int | None,
+            type(self.instance)
+            ._default_manager.filter(pk=self.instance.pk)
+            .values_list("revision", flat=True)
+            .first(),
+        )
+        if current_revision != revision:
+            raise ValidationError(
+                "Dữ liệu này đã được thay đổi trên thiết bị khác. Vui lòng tải lại rồi thử lại."
+            )
+        return cast(int, revision)
 
 
 class BootstrapFormMixin:
@@ -22,7 +51,7 @@ class BootstrapFormMixin:
                 field.widget.attrs["class"] = "form-control"
 
 
-class CategoryForm(BootstrapFormMixin, forms.ModelForm):
+class CategoryForm(OptimisticConcurrencyFormMixin, BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Category
         fields = ("name", "description", "active")
@@ -33,11 +62,12 @@ class CategoryForm(BootstrapFormMixin, forms.ModelForm):
         self.apply_bootstrap_classes()
 
 
-class ProductForm(BootstrapFormMixin, forms.ModelForm):
+class ProductForm(OptimisticConcurrencyFormMixin, BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Product
         fields = ("category", "name", "brand", "color", "image", "description", "active")
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
+        error_messages = {"image": {"invalid_image": "File tải lên không phải ảnh hợp lệ."}}
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -45,6 +75,12 @@ class ProductForm(BootstrapFormMixin, forms.ModelForm):
         category_field = self.fields["category"]
         if isinstance(category_field, forms.ModelChoiceField):
             category_field.queryset = Category.objects.filter(active=True)
+        self.fields["image"].widget.attrs.update(
+            {
+                "accept": "image/jpeg,image/png,image/webp",
+                "capture": "environment",
+            }
+        )
 
     def clean_image(self) -> Any:
         image = self.cleaned_data.get("image")
@@ -54,13 +90,21 @@ class ProductForm(BootstrapFormMixin, forms.ModelForm):
             return image
         if image.size is not None and image.size > 10 * 1024 * 1024:
             raise ValidationError("Ảnh không được lớn hơn 10 MB.")
-        content_type = getattr(image, "content_type", "")
-        if content_type not in {"image/jpeg", "image/png", "image/webp"}:
-            raise ValidationError("Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.")
+        try:
+            with Image.open(image) as source:
+                if source.format not in {"JPEG", "PNG", "WEBP"}:
+                    raise ValidationError("Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.")
+                if source.width * source.height > 30_000_000:
+                    raise ValidationError("Ảnh có độ phân giải quá lớn.")
+                source.verify()
+        except (OSError, UnidentifiedImageError) as error:
+            raise ValidationError("File tải lên không phải ảnh hợp lệ.") from error
+        finally:
+            image.seek(0)
         return image
 
 
-class ProductVariantForm(BootstrapFormMixin, forms.ModelForm):
+class ProductVariantForm(OptimisticConcurrencyFormMixin, BootstrapFormMixin, forms.ModelForm):
     initial_quantity = forms.IntegerField(
         label="Số lượng ban đầu",
         min_value=0,

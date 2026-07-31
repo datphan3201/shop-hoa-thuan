@@ -40,6 +40,7 @@
       <h2 class="h5 mb-3">Thời gian tự khóa</h2>
       <form method="post" action="{% url 'security-action' %}">
         {% csrf_token %}<input type="hidden" name="action" value="timeout">
+        {{ timeout_form.revision }}
         {{ timeout_form.cost_price_lock_timeout_minutes }}
         <button class="btn btn-outline-primary mt-3" type="submit">Lưu thời gian</button>
       </form>

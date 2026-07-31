@@ -6,6 +6,10 @@ from django.http import HttpRequest, HttpResponse
 
 from apps.core.operations import MAINTENANCE_MESSAGE, OperationBusyError, begin_write
 
+_MAINTENANCE_ENTRYPOINTS = {
+    "/settings/device-access/backup/create/",
+}
+
 
 class WriteOperationMiddleware:
     """Track ordinary HTTP writes so operational maintenance can drain safely."""
@@ -14,7 +18,10 @@ class WriteOperationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+        if (
+            request.method not in {"POST", "PUT", "PATCH", "DELETE"}
+            or request.path in _MAINTENANCE_ENTRYPOINTS
+        ):
             return self.get_response(request)
         try:
             write = begin_write(request.path)

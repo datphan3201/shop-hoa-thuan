@@ -49,6 +49,7 @@
     <form method="post" id="sale-checkout-form" novalidate>
       {% csrf_token %}
       {{ form.lines_json }}
+      <input type="hidden" name="idempotency_key" id="sale-idempotency-key">
       <div class="panel mb-4">
         <div class="panel-heading">
           <div>
@@ -152,6 +153,8 @@
   const clientError = document.getElementById("sale-client-error");
   const checkoutForm = document.getElementById("sale-checkout-form");
   const submitButton = document.getElementById("complete-sale-button");
+  const idempotencyKey = document.getElementById("sale-idempotency-key");
+  idempotencyKey.value = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const money = new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",

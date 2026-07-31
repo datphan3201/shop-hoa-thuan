@@ -33,7 +33,19 @@
 {% endif %}
 
 <div class="panel p-0 mb-4">
-  <div class="table-responsive">
+  <div class="d-lg-none p-3 product-card-list">
+    {% for item in sale.items.all %}
+      <article class="mobile-record-card">
+        <strong>{{ item.product_name_snapshot }}</strong><span class="d-block text-secondary small">{{ item.size_snapshot }}{% if item.color_snapshot %} · {{ item.color_snapshot }}{% endif %}</span>
+        <dl class="mobile-record-grid mb-0 mt-3">
+          <dt>Số lượng</dt><dd>{{ item.quantity }}</dd>
+          <dt>Giá thực tế</dt><dd>{{ item.actual_unit_price|vnd }}</dd>
+          <dt>Thành tiền</dt><dd class="fw-semibold">{{ item.line_total|vnd }}</dd>
+        </dl>
+      </article>
+    {% endfor %}
+  </div>
+  <div class="table-responsive d-none d-lg-block">
     <table class="table align-middle mb-0">
       <thead>
         <tr>
@@ -102,6 +114,7 @@
     <form method="post" action="{% url 'sale-cancel' sale.pk %}"
           onsubmit="return confirm('Xác nhận hủy giao dịch và hoàn lại tồn kho?');">
       {% csrf_token %}
+      <input type="hidden" name="idempotency_key" id="id_cancel_idempotency_key">
       <div class="mb-3">
         <label class="form-label" for="{{ cancellation_form.reason.id_for_label }}">
           {{ cancellation_form.reason.label }}
@@ -115,4 +128,10 @@
     </form>
   </div>
 {% endif %}
+<script>
+  (() => {
+    const field = document.getElementById("id_cancel_idempotency_key");
+    if (field && window.crypto?.randomUUID) field.value = window.crypto.randomUUID();
+  })();
+</script>
 {% endblock %}

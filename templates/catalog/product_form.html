@@ -6,10 +6,13 @@
 {% block content %}
 <form method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
+  <input type="hidden" name="idempotency_key" id="id_product_idempotency_key">
+  {% for field in form.hidden_fields %}{{ field }}{% for error in field.errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}{% endfor %}
+  {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
   <section class="panel mb-3">
     <h2 class="h5 mb-3">Thông tin sản phẩm</h2>
     <div class="row g-3">
-      {% for field in form %}
+      {% for field in form.visible_fields %}
         <div class="{% if field.name == 'description' %}col-12{% elif field.name == 'active' %}col-12{% else %}col-12 col-md-6{% endif %}">
           {% if field.name == "active" %}
             <div class="form-check">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
@@ -20,6 +23,7 @@
         </div>
       {% endfor %}
     </div>
+    <img id="image-preview" class="product-image mt-3 d-none" alt="Xem trước ảnh sản phẩm">
   </section>
 
   <section class="panel mb-3">
@@ -57,6 +61,17 @@
     const html = document.getElementById("empty-variant-form").innerHTML.replaceAll("__prefix__", index);
     document.getElementById("variant-forms").insertAdjacentHTML("beforeend", html);
     total.value = index + 1;
+  });
+
+  const imageInput = document.getElementById("id_image");
+  const imagePreview = document.getElementById("image-preview");
+  const idempotencyKey = document.getElementById("id_product_idempotency_key");
+  if (idempotencyKey && window.crypto?.randomUUID) idempotencyKey.value = window.crypto.randomUUID();
+  imageInput?.addEventListener("change", () => {
+    const [file] = imageInput.files || [];
+    if (!file || !imagePreview) return;
+    imagePreview.src = URL.createObjectURL(file);
+    imagePreview.classList.remove("d-none");
   });
 </script>
 {% endblock %}

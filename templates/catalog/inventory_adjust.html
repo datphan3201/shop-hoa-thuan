@@ -11,6 +11,8 @@
   </div>
   <form method="post" novalidate>
     {% csrf_token %}
+    <input type="hidden" name="idempotency_key" id="id_idempotency_key">
+    {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
     {% for field in form %}
       <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
     {% endfor %}
@@ -18,4 +20,10 @@
     <a class="btn btn-outline-secondary" href="{% url 'inventory-list' %}">Hủy</a>
   </form>
 </section>
+<script>
+  (() => {
+    const field = document.getElementById("id_idempotency_key");
+    if (field && window.crypto?.randomUUID) field.value = window.crypto.randomUUID();
+  })();
+</script>
 {% endblock %}

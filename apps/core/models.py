@@ -7,9 +7,31 @@ from django.db import models
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField("Ngày tạo", auto_now_add=True)
     updated_at = models.DateTimeField("Ngày cập nhật", auto_now=True)
+    revision = models.PositiveBigIntegerField("Phiên bản bản ghi", default=1, editable=False)
 
     class Meta:
         abstract = True
+
+
+class IdempotencyRecord(models.Model):
+    """Server-side replay record for operations that must not be duplicated."""
+
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
+    operation = models.CharField(max_length=64)
+    key = models.CharField(max_length=128)
+    fingerprint = models.CharField(max_length=64)
+    response_location = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "operation", "key"), name="idempotency_user_op_key"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.operation}:{self.key}"
 
 
 class ShopSecuritySettings(TimeStampedModel):
