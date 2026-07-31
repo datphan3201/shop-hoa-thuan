@@ -32,6 +32,7 @@ def test_pyinstaller_bundle_keeps_django_logging_filter() -> None:
     spec = (root / "packaging" / "pyinstaller" / "shop_hoa_thuan.spec").read_text(encoding="utf-8")
 
     assert '"apps.core.logging"' in spec
+    assert "a.zipfiles" in spec
 
 
 def test_native_server_smoke_script_uses_only_the_packaged_server() -> None:
