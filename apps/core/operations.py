@@ -99,6 +99,11 @@ class FileLease:
     acquired: bool = False
     descriptor: int | None = None
 
+    @property
+    def guard_path(self) -> Path:
+        """Use a separate guard so NTFS readers can always read lease metadata."""
+        return self.path.with_name(f"{self.path.name}.lease")
+
     def acquire(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(
@@ -110,16 +115,18 @@ class FileLease:
             },
             ensure_ascii=False,
         )
-        descriptor = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
+        guard_path = self.guard_path
+        descriptor = os.open(guard_path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
+            if os.fstat(descriptor).st_size == 0:
+                os.write(descriptor, b"\0")
             _try_lock(descriptor)
         except OSError as error:
             os.close(descriptor)
             raise OperationBusyError(
                 f"{self.operation} đang được một process khác thực hiện."
             ) from error
-        os.ftruncate(descriptor, 0)
-        os.write(descriptor, payload.encode("utf-8"))
+        self.path.write_text(payload, encoding="utf-8")
         self.descriptor = descriptor
         self.acquired = True
         logger.info("Đã lấy lock operation=%s id=%s", self.operation, self.operation_id)
@@ -150,8 +157,12 @@ def server_lease() -> FileLease:
 
 
 def _lease_is_held(path: Path) -> bool:
-    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    guard_path = path.with_name(f"{path.name}.lease")
+    guard_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(guard_path, os.O_RDWR | os.O_CREAT, 0o600)
     try:
+        if os.fstat(descriptor).st_size == 0:
+            os.write(descriptor, b"\0")
         _try_lock(descriptor)
         _unlock(descriptor)
     except OSError:

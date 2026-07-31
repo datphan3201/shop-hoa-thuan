@@ -48,11 +48,14 @@ def create_backup() -> BackupInfo:
         database_snapshot = temporary_path / "database.sqlite3"
         archive_temporary = temporary_path / "backup.zip"
 
-        with sqlite3.connect(database_snapshot) as destination_database:
+        destination_database = sqlite3.connect(database_snapshot)
+        try:
             source_database.backup(destination_database)
             integrity_result = destination_database.execute("PRAGMA integrity_check").fetchone()
             if not integrity_result or integrity_result[0] != "ok":
                 raise BackupError("Bản sao cơ sở dữ liệu không vượt qua kiểm tra toàn vẹn.")
+        finally:
+            destination_database.close()
 
         manifest = {
             "application": "Shop Hoà Thuận",

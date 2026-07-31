@@ -20,7 +20,6 @@ from apps.core.operations import (
     maintenance_operation,
     maintenance_state,
 )
-from apps.core.security import UNLOCKED_UNTIL_KEY
 from shop_hoa_thuan.runtime import RuntimePaths
 
 
@@ -122,6 +121,8 @@ def test_backup_maintenance_entrypoint_is_not_its_own_active_write(
 ) -> None:
     """A backup request must acquire maintenance, not wait on its middleware marker."""
     from django.contrib.auth.models import User
+
+    from apps.core.security import UNLOCKED_UNTIL_KEY
 
     user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
     client.force_login(user)
