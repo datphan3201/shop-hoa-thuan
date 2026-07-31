@@ -1,7 +1,8 @@
 # Shop Hoà Thuận
 
-Ứng dụng quản lý nội bộ cho một chủ shop quần áo: sản phẩm theo size, tồn kho, bán hàng,
-doanh thu, báo cáo và khóa bảo vệ giá vốn.
+Ứng dụng quản lý nội bộ cho shop quần áo: sản phẩm theo size, tồn kho, bán hàng, doanh thu,
+báo cáo và khóa bảo vệ giá vốn. Kiến trúc là Django monolith, Django Templates và HTMX; không
+có dependency cloud bắt buộc.
 
 Hiện đã có quản lý loại mặt hàng, sản phẩm nhiều size, ảnh/thumbnail, tìm kiếm/lọc và
 điều chỉnh tồn kho nguyên tử kèm lịch sử.
@@ -11,10 +12,20 @@ hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đ
 
 ## Trạng thái
 
-Phase 8 đã hoàn thành trong WSL: sản phẩm, tồn kho, khóa giá vốn, bán/hủy giao dịch,
-dashboard/báo cáo, mobile cards, PWA an toàn, idempotency và optimistic concurrency đã có
-kiểm thử. Chứng nhận Windows/điện thoại thật vẫn thuộc các phase phát hành sau.
-Không dùng cho dữ liệu thật cho đến khi Phase 13 được chứng nhận trên Windows và mobile.
+Phase 1–8 đã hoàn thành; Phase 9 (Windows Service, launcher và LAN) đang triển khai. Native
+Windows server đã smoke-test `/health/`, nhưng gate WinSW/SCM/firewall, installer,
+backup/restore, update/rollback, clean Windows và thiết bị thật chưa đạt. Không dùng dữ liệu
+thật cho đến khi Phase 13 có chứng nhận release.
+
+## Tài liệu
+
+- [Kiến trúc](docs/ARCHITECTURE.md): thành phần, runtime data, lock, security và deployment.
+- [Data model](docs/DATA_MODEL.md): schema nghiệp vụ, constraint, snapshot và lifecycle.
+- [Use case](docs/USE_CASES.md): luồng thiết lập, catalog, tồn, bán, hủy, report và mobile.
+- [Roadmap phát hành](docs/DELIVERY_ROADMAP.md): trạng thái, việc tiếp theo và cách thực hiện.
+- [Chất lượng và rủi ro](docs/QUALITY_AND_RISK.md): quality gate, deployment warning, risk.
+- [Vận hành nghiệp vụ](docs/OPERATIONS.md), [runtime production](docs/PRODUCTION_RUNTIME.md),
+  [Mobile/PWA](docs/MOBILE_PWA.md), [Windows Service](docs/WINDOWS_SERVICE.md).
 
 ## Phát triển trong WSL
 
@@ -66,15 +77,13 @@ uv run python manage.py makemigrations --check --dry-run
 uv run pytest
 ```
 
-Xem [PROGRESS.md](PROGRESS.md) để biết kế hoạch và tiến độ chi tiết.
-Xem thêm [hướng dẫn Mobile/PWA](docs/MOBILE_PWA.md).
+Xem [PROGRESS.md](PROGRESS.md) để biết checklist phase, evidence và trạng thái chính thức.
 
 ## Đóng gói Windows
 
-Khung phát hành nằm trong `packaging/` và `scripts/build_windows.ps1`. PyInstaller phải
-chạy trên Windows (không thể tạo file `.exe` bằng cách cross-compile từ WSL). Bộ cài hoàn
-chỉnh sẽ được tạo từ Phase 10 và chỉ phát hành sau chứng nhận Phase 13; máy shop không cần
-cài Python hoặc công cụ phát triển.
+Khung phát hành nằm trong `packaging/` và `scripts/build_windows.ps1`. PyInstaller phải chạy
+native trên Windows, không cross-compile từ WSL. Máy đích sẽ không cần Python/uv/Git/Node; bộ
+cài hoàn chỉnh vẫn là công việc Phase 10 và chỉ phát hành sau chứng nhận Phase 13.
 
 Địa chỉ local dự kiến sau khi hoàn thiện Phase 9 là
 `http://shophoathuan.local:2505`. Nếu mDNS không khả dụng, trang thiết bị sẽ hiển thị

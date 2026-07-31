@@ -9,7 +9,25 @@ Cập nhật gần nhất: 2026-07-31
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
-- Phase 9–13 — Windows release, backup/restore và update: **chưa triển khai**.
+- Phase 9 — Windows Service, launcher và LAN: **đang triển khai; chưa đạt gate**.
+- Phase 10–13 — installer, backup/restore, update/rollback và acceptance: **chưa triển khai**.
+
+### Evidence mới nhất Phase 9
+
+- Waitress server entry point giữ single-instance lease, không tự migrate/first-run và native
+  PyInstaller `onedir` `ShopHoaThuanServer.exe` đã smoke PASS `/health/` trên Windows test data.
+- Source launcher, WinSW XML, logging/runtime data config, LAN/device access page và QR đã có.
+- Regression packaging đã sửa: import Django trước setup, logging filter dynamic, standard
+  library archive, dynamic middleware/app modules và `pyproject.toml` version metadata trong
+  frozen bundle.
+- WinSW portable 2.12.0.0 được tải từ winget/official GitHub và hash `05B82D…B3A0DA` đã xác minh;
+  đây là build/test tool tạm, chưa được commit vào repository.
+- Gate chưa chạy: Administrator integration service/Private firewall/controlled recovery;
+  reboot auto-start, LAN điện thoại và clean Windows vẫn là device validation.
+
+Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase tiếp theo ở
+`docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/USE_CASES.md`,
+`docs/QUALITY_AND_RISK.md` và `docs/DELIVERY_ROADMAP.md`.
 
 ## Quyết định kiến trúc
 
