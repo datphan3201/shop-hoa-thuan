@@ -3,7 +3,7 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
-project_root = Path(SPECPATH).parent.parent.parent
+project_root = Path(SPECPATH).parent.parent
 
 datas = [
     (str(project_root / "templates"), "templates"),
