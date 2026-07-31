@@ -34,6 +34,16 @@ def test_pyinstaller_bundle_keeps_django_logging_filter() -> None:
     assert '"apps.core.logging"' in spec
 
 
+def test_native_server_smoke_script_uses_only_the_packaged_server() -> None:
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "windows" / "test_native_server.ps1").read_text(encoding="utf-8")
+
+    assert "ShopHoaThuanServer.exe" in script
+    assert "Invoke-WebRequest" in script
+    assert "Stop-Process" in script
+    assert "python -c" not in script
+
+
 def test_launcher_opens_existing_server_without_starting_another() -> None:
     with (
         patch("shop_hoa_thuan.launcher.is_healthy", return_value=True),
