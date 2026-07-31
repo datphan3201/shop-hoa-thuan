@@ -27,13 +27,13 @@ Source: "..\winsw\ShopHoaThuanService.xml"; DestDir: "{app}"; Flags: ignoreversi
 Source: "..\vendor\WinSW-x64.exe"; DestDir: "{app}"; DestName: "ShopHoaThuanService.exe"; Flags: ignoreversion
 
 [Icons]
-Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "http://127.0.0.1:8765/"
-Name: "{group}\Shop Hoà Thuận"; Filename: "http://127.0.0.1:8765/"
+Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "http://127.0.0.1:2505/"
+Name: "{group}\Shop Hoà Thuận"; Filename: "http://127.0.0.1:2505/"
 
 [Run]
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "install"; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "start"; Flags: runhidden waituntilterminated
-Filename: "http://127.0.0.1:8765/setup/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait
+Filename: "http://127.0.0.1:2505/setup/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait
 
 [UninstallRun]
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist

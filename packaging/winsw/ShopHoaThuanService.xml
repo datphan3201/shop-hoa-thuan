@@ -10,7 +10,7 @@
   <env name="DJANGO_DEBUG" value="false" />
   <env name="DJANGO_ALLOWED_HOSTS" value="*" />
   <env name="SHOP_SERVER_HOST" value="0.0.0.0" />
-  <env name="SHOP_SERVER_PORT" value="8765" />
+  <env name="SHOP_SERVER_PORT" value="2505" />
   <onfailure action="restart" delay="10 sec" />
   <onfailure action="restart" delay="30 sec" />
   <resetfailure>1 hour</resetfailure>

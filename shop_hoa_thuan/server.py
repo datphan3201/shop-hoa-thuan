@@ -23,7 +23,7 @@ def main() -> None:
 
     application = get_wsgi_application()
     host = os.getenv("SHOP_SERVER_HOST", "0.0.0.0")
-    port = int(os.getenv("SHOP_SERVER_PORT", "8765"))
+    port = int(os.getenv("SHOP_SERVER_PORT", "2505"))
     serve(
         application,
         host=host,

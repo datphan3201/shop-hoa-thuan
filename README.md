@@ -21,10 +21,10 @@ Yêu cầu duy nhất cho môi trường phát triển là Ubuntu WSL và `uv`.
 cd ~/code/shop-hoa-thuan
 uv sync
 uv run python manage.py migrate
-uv run python manage.py runserver
+uv run python manage.py runserver 127.0.0.1:2505
 ```
 
-Mở `http://127.0.0.1:8000/`.
+Mở `http://127.0.0.1:2505/`.
 
 Lần đầu sử dụng, mở `/setup/` để tạo tài khoản chủ shop. Sau khi tài khoản được tạo,
 route này tự đóng và không thể dùng để đăng ký thêm.
@@ -41,6 +41,8 @@ Các biến chính:
 - `DJANGO_SECRET_KEY`
 - `DJANGO_ALLOWED_HOSTS`
 - `SHOP_DATA_DIR`
+- `SHOP_SERVER_HOST`
+- `SHOP_SERVER_PORT` — mặc định `2505` cho bản production.
 
 ## Dữ liệu
 
@@ -69,3 +71,8 @@ Khung phát hành nằm trong `packaging/` và `scripts/build_windows.ps1`. PyIn
 chạy trên Windows (không thể tạo file `.exe` bằng cách cross-compile từ WSL). Bộ cài hoàn
 chỉnh sẽ được tạo và kiểm thử ở Phase 6; máy shop không cần cài Python hoặc công cụ phát
 triển.
+
+Địa chỉ local dự kiến sau khi hoàn thiện Phase 9 là
+`http://shophoathuan.local:2505`. Nếu mDNS không khả dụng, trang thiết bị sẽ hiển thị
+`http://<IP-LAN>:2505` và mã QR làm phương án dự phòng. Tên `.local` chỉ được quảng bá
+trong LAN, không đăng ký DNS công cộng và không tự mở ứng dụng ra Internet.
