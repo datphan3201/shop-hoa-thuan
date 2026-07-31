@@ -25,6 +25,9 @@ def test_admin_service_script_is_scoped_to_test_service_and_private_firewall() -
     assert "-Profile Private" in script
     assert "Shop Hoa Thuan Test LAN 2505" in script
     assert "[switch]$Cleanup" in script
+    assert "migrate --noinput" in script
+    assert "Stop-Process -Id $service.ProcessId -Force" in script
+    assert "Remove-TestResources" in script
 
 
 def test_pyinstaller_bundle_keeps_django_logging_filter() -> None:
