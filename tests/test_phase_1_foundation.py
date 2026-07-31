@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
@@ -18,6 +20,24 @@ def test_health_check_reports_database_ready(client: Client) -> None:
     assert payload["database"] is True
     assert isinstance(payload["version"], str)
     assert payload["server_time_utc"].endswith("+00:00")
+    assert payload["schema"] is True
+
+
+@pytest.mark.django_db
+def test_health_reports_schema_incompatible_without_details(client: Client) -> None:
+    with patch("apps.core.views.schema_is_compatible", return_value=False):
+        response = client.get(reverse("health"))
+    assert response.status_code == 503
+    assert response.json()["status"] == "schema_incompatible"
+
+
+@pytest.mark.django_db
+def test_health_reports_database_unavailable_without_exception_details(client: Client) -> None:
+    with patch("apps.core.views.connection.cursor", side_effect=RuntimeError("/secret/path")):
+        response = client.get(reverse("health"))
+    assert response.status_code == 503
+    assert response.json()["status"] == "error"
+    assert "/secret/path" not in response.content.decode()
 
 
 @pytest.mark.django_db

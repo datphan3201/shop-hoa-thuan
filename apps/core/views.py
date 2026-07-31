@@ -1,3 +1,4 @@
+import mimetypes
 from pathlib import Path
 
 from django.conf import settings
@@ -27,6 +28,7 @@ from apps.core.forms import (
     SecurityTimeoutForm,
 )
 from apps.core.models import ShopSecuritySettings
+from apps.core.operations import maintenance_operation, maintenance_state
 from apps.core.security import (
     cost_price_unlock_required,
     is_cost_price_unlocked,
@@ -40,6 +42,7 @@ from apps.reports.services import (
     resolve_report_period,
 )
 from apps.sales.models import Sale
+from shop_hoa_thuan.runner import schema_is_compatible
 from shop_hoa_thuan.version import application_version
 
 User = get_user_model()
@@ -227,8 +230,9 @@ def device_access_settings(request: HttpRequest) -> HttpResponse:
 @require_POST
 def create_backup_view(request: HttpRequest) -> HttpResponse:
     try:
-        backup = create_backup()
-    except BackupError:
+        with maintenance_operation("backup"):
+            backup = create_backup()
+    except (BackupError, RuntimeError):
         messages.error(request, "Không thể tạo bản sao lưu. Vui lòng thử lại.")
     else:
         messages.success(request, f"Đã tạo bản sao lưu {backup.path.name}.")
@@ -262,7 +266,10 @@ def protected_media(request: HttpRequest, path: str) -> FileResponse:
     candidate = (media_root / path).resolve()
     if media_root not in candidate.parents or not candidate.is_file():
         raise Http404
-    response = FileResponse(candidate.open("rb"))
+    content_type, _ = mimetypes.guess_type(candidate.name)
+    if content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = FileResponse(candidate.open("rb"), content_type=content_type)
     response.headers["Cache-Control"] = "private, max-age=86400"
     return response
 
@@ -278,12 +285,24 @@ def health(request: HttpRequest) -> JsonResponse:
     except Exception:
         database_ok = False
 
+    schema_ok = False
+    if database_ok:
+        try:
+            schema_ok = schema_is_compatible()
+        except Exception:
+            database_ok = False
+    maintenance = maintenance_state()
+    status = "maintenance" if maintenance else ("ok" if schema_ok else "schema_incompatible")
+    if not database_ok:
+        status = "error"
     return JsonResponse(
         {
-            "status": "ok" if database_ok else "error",
+            "status": status,
             "database": database_ok,
+            "schema": schema_ok,
             "version": application_version(),
             "server_time_utc": timezone.now().isoformat(),
+            "maintenance": maintenance,
         },
-        status=200 if database_ok else 503,
+        status=200 if status == "ok" else 503,
     )

@@ -44,6 +44,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.WriteOperationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
@@ -117,10 +118,43 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+USE_HTTPS = env_bool("SHOP_USE_HTTPS")
+SESSION_COOKIE_SECURE = USE_HTTPS
+CSRF_COOKIE_SECURE = USE_HTTPS
+SECURE_SSL_REDIRECT = USE_HTTPS
+if USE_HTTPS:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
 MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
+
+_LOG_CATEGORIES = {
+    "server": "django.server",
+    "security": "django.security",
+    "business": "shop.business",
+    "backup": "shop.backup",
+    "restore": "shop.restore",
+    "update": "shop.update",
+    "service": "shop.service",
+}
+_LOG_HANDLERS = {
+    name: {
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": RUNTIME_PATHS.logs / f"{name}.log",
+        "maxBytes": 5 * 1024 * 1024,
+        "backupCount": 5,
+        "formatter": "standard",
+        "encoding": "utf-8",
+        "filters": ["redact"],
+    }
+    for name in _LOG_CATEGORIES
+}
 
 LOGGING = {
     "version": 1,
@@ -133,17 +167,12 @@ LOGGING = {
     },
     "handlers": {
         "console": {"class": "logging.StreamHandler", "formatter": "standard"},
-        "file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": RUNTIME_PATHS.logs / "server.log",
-            "maxBytes": 5 * 1024 * 1024,
-            "backupCount": 3,
-            "formatter": "standard",
-            "encoding": "utf-8",
-        },
+        **_LOG_HANDLERS,
     },
-    "root": {"handlers": ["console", "file"], "level": "INFO"},
+    "filters": {"redact": {"()": "apps.core.logging.SensitiveDataFilter"}},
+    "root": {"handlers": ["console", "server"], "level": "INFO"},
     "loggers": {
-        "django.server": {"handlers": ["console", "file"], "level": "INFO", "propagate": False}
+        logger_name: {"handlers": ["console", category], "level": "INFO", "propagate": False}
+        for category, logger_name in _LOG_CATEGORIES.items()
     },
 }

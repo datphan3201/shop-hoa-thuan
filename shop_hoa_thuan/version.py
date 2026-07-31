@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from importlib.metadata import PackageNotFoundError, version
+import tomllib
+from pathlib import Path
+
+VERSION_SOURCE = Path(__file__).resolve().parent.parent / "pyproject.toml"
 
 
 def application_version() -> str:
-    try:
-        return version("shop-hoa-thuan")
-    except PackageNotFoundError:
-        return "0.1.0-dev"
+    """Read the sole authored version from project metadata."""
+    with VERSION_SOURCE.open("rb") as source:
+        metadata = tomllib.load(source)
+    return str(metadata["project"]["version"])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import tempfile
 import zipfile
@@ -11,7 +12,10 @@ from pathlib import Path
 from django.conf import settings
 from django.db import connection
 
+from shop_hoa_thuan.version import application_version
+
 BACKUP_FORMAT_VERSION = 1
+logger = logging.getLogger("shop.backup")
 
 
 class BackupError(Exception):
@@ -53,6 +57,7 @@ def create_backup() -> BackupInfo:
         manifest = {
             "application": "Shop Hoà Thuận",
             "format_version": BACKUP_FORMAT_VERSION,
+            "application_version": application_version(),
             "created_at_utc": created_at.isoformat(),
             "includes": ["database", "media"],
         }
@@ -75,7 +80,9 @@ def create_backup() -> BackupInfo:
         validate_backup(archive_temporary)
         archive_temporary.replace(final_path)
 
-    return BackupInfo(path=final_path, created_at=created_at, size=final_path.stat().st_size)
+    backup = BackupInfo(path=final_path, created_at=created_at, size=final_path.stat().st_size)
+    logger.info("Đã tạo backup file=%s size=%s", backup.path.name, backup.size)
+    return backup
 
 
 def validate_backup(backup_path: Path) -> dict[str, object]:

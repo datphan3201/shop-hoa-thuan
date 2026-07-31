@@ -21,18 +21,33 @@ def main() -> None:
     from django.core.wsgi import get_wsgi_application
     from waitress import serve
 
+    from apps.core.operations import OperationBusyError, server_lease
+    from shop_hoa_thuan.runner import SchemaIncompatibleError, require_compatible_schema
+
     django.setup()
+    try:
+        require_compatible_schema()
+    except SchemaIncompatibleError as error:
+        raise SystemExit(f"SHOP-SERVER-003: {error}") from error
+    lease = server_lease()
+    try:
+        lease.acquire()
+    except OperationBusyError as error:
+        raise SystemExit(f"SHOP-SERVER-002: {error}") from error
     application = get_wsgi_application()
     host = os.getenv("SHOP_SERVER_HOST", "0.0.0.0")
     port = int(os.getenv("SHOP_SERVER_PORT", "2505"))
-    serve(
-        application,
-        host=host,
-        port=port,
-        threads=4,
-        channel_timeout=120,
-        clear_untrusted_proxy_headers=True,
-    )
+    try:
+        serve(
+            application,
+            host=host,
+            port=port,
+            threads=4,
+            channel_timeout=120,
+            clear_untrusted_proxy_headers=True,
+        )
+    finally:
+        lease.release()
 
 
 if __name__ == "__main__":

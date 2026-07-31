@@ -9,6 +9,7 @@ from django.test import override_settings
 
 from apps.catalog.models import Category
 from apps.core.backup import create_backup, list_backups, validate_backup
+from shop_hoa_thuan.version import application_version
 
 
 @pytest.mark.django_db(transaction=True)
@@ -26,6 +27,7 @@ def test_backup_contains_consistent_database_media_and_manifest(tmp_path: Path) 
 
     assert manifest["application"] == "Shop Hoà Thuận"
     assert manifest["format_version"] == 1
+    assert manifest["application_version"] == application_version()
     assert backup.path.exists()
     assert backups[0].path == backup.path
 

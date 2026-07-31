@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import os
+import re
 import secrets
 import shutil
 import socket
@@ -132,9 +134,17 @@ def ensure_runtime_secret() -> str:
 def production_allowed_hosts() -> list[str]:
     configured = os.getenv("DJANGO_ALLOWED_HOSTS", "")
     if configured:
-        return [
-            host.strip() for host in configured.split(",") if host.strip() and host.strip() != "*"
-        ]
+        hosts = [host.strip() for host in configured.split(",") if host.strip()]
+        if "*" in hosts:
+            raise RuntimeError("DJANGO_ALLOWED_HOSTS không được dùng '*' ở production.")
+        for host in hosts:
+            candidate = host.strip("[]")
+            try:
+                ipaddress.ip_address(candidate)
+            except ValueError:
+                if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?", host):
+                    raise RuntimeError("DJANGO_ALLOWED_HOSTS chứa hostname không hợp lệ.") from None
+        return hosts
     hostname = socket.gethostname().strip()
     return [
         host for host in ("localhost", "127.0.0.1", "[::1]", "shophoathuan.local", hostname) if host

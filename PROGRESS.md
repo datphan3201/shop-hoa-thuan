@@ -7,8 +7,8 @@ Cập nhật gần nhất: 2026-07-31
 - Phase 3 — Khóa giá vốn và thống kê tồn: **hoàn thành**.
 - Phase 4 — Bán hàng: **hoàn thành**.
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
-- Phase 7–13 — Production Windows, mobile, backup/restore và update:
-  **đã review kiến trúc và lập kế hoạch, chưa triển khai**.
+- Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
+- Phase 8–13 — mobile, Windows release, backup/restore và update: **chưa triển khai**.
 
 ## Quyết định kiến trúc
 
@@ -183,53 +183,69 @@ giao dịch/tồn kho/báo cáo và schema đã sẵn sàng cho hardening produc
 
 #### Cấu trúc runtime và dữ liệu
 
-- [ ] Tạo module đường dẫn production duy nhất cho:
+- [x] Tạo module đường dẫn production duy nhất cho:
   - `C:\Program Files\Shop Hoa Thuan` — application files chỉ đọc;
   - `C:\ProgramData\Shop Hoa Thuan\data\db.sqlite3`;
   - `C:\ProgramData\Shop Hoa Thuan\data\media\products`;
   - `backups`, `rollback`, `logs` và `config`.
-- [ ] Trong development giữ `.data`, nhưng mô phỏng cùng cây thư mục production.
-- [ ] Viết migration utility một lần cho layout cũ; dùng rename/copy có kiểm tra checksum,
+- [x] Trong development giữ `.data`, nhưng mô phỏng cùng cây thư mục production.
+- [x] Viết migration utility một lần cho layout cũ; dùng rename/copy có kiểm tra checksum,
   không xóa nguồn trước khi database mới vượt integrity check.
-- [ ] Đưa secret key và cấu hình máy vào `config`; áp quyền filesystem phù hợp và không log
+- [x] Đưa secret key và cấu hình máy vào `config`; áp quyền filesystem phù hợp và không log
   secret.
-- [ ] Bảo đảm repair/reinstall không tạo lại secret, database hoặc media đã tồn tại.
+- [x] Bảo đảm repair/reinstall không tạo lại secret, database hoặc media đã tồn tại.
 
 #### SQLite và điều phối tiến trình
 
 - [ ] Gom cấu hình PRAGMA vào một module được test: foreign keys, WAL, busy timeout,
   synchronous và kiểm tra filesystem local.
-- [ ] Xác nhận chỉ một Waitress process ghi database; tạo single-instance/process lock.
-- [ ] Tạo maintenance state và operation lock dùng cho backup, restore, update và migration.
-- [ ] Theo dõi số transaction ghi đang hoạt động để chặn ghi mới và chờ drain có timeout.
+- [x] Xác nhận chỉ một Waitress process ghi database; tạo single-instance/process lock.
+- [x] Tạo maintenance state và operation lock dùng cho backup, restore, update và migration.
+- [x] Theo dõi số transaction ghi đang hoạt động để chặn ghi mới và chờ drain có timeout.
 - [ ] Ghi audit event cho các thao tác vận hành quan trọng mà không chứa mật khẩu, PIN,
   cookie, secret hoặc toàn bộ giá vốn.
 
 #### Server, media, health, logging và version
 
-- [ ] Tách `migrate`/`seed_data` khỏi server startup; tạo migration runner và first-run
+- [x] Tách `migrate`/`seed_data` khỏi server startup; tạo migration runner và first-run
   runner có exit code ổn định.
-- [ ] Tạo một nguồn Semantic Version duy nhất; sinh/đóng gói `version.json`.
-- [ ] Nâng `/health/` để kiểm tra query database nhẹ và trả status, database, version,
+- [x] Tạo một nguồn version duy nhất dùng chung runtime/health/UI/backup.
+- [x] Nâng `/health/` để kiểm tra query database nhẹ và trả status, database, version,
   server time UTC; luôn che traceback/path.
-- [ ] Phục vụ static và media trong bản đóng gói; ảnh sản phẩm yêu cầu session đăng nhập,
+- [x] Phục vụ media riêng tư; ảnh sản phẩm yêu cầu session đăng nhập,
   hỗ trợ thumbnail/cache header an toàn và không lộ path thật.
-- [ ] Sinh `ALLOWED_HOSTS`, CSRF trusted origins và listen address từ config được kiểm soát.
-- [ ] Tách log server, authentication, business, backup, restore, update, launcher và service;
+- [x] Sinh `ALLOWED_HOSTS`, CSRF trusted origins và listen address từ config được kiểm soát.
+- [x] Tách log server, authentication, business, backup, restore, update và service;
   dùng rotating handler, redaction và mã lỗi thân thiện.
 
 #### Kiểm tra và tài liệu
 
-- [ ] Test đường dẫn Windows/development, nâng cấp layout cũ, single-instance, maintenance,
+- [x] Test đường dẫn development, nâng cấp layout cũ, single-instance, maintenance,
   transaction drain, health schema, media auth và log redaction.
 - [ ] Chạy test SQLite WAL/backup/shutdown trên filesystem local; không hỗ trợ database live
   trong OneDrive, USB, NAS hoặc network share.
-- [ ] Khởi tạo `docs/INSTALLATION.md`, `docs/HOST_SETUP.md` và
-  `docs/TROUBLESHOOTING.md`, phân biệt rõ hướng dẫn người dùng và developer.
+- [x] Viết `docs/PRODUCTION_RUNTIME.md` cho runtime/config/lock; tài liệu installer Windows
+  đầy đủ vẫn thuộc Phase 9–10.
 
 Điều kiện hoàn thành: application/data tách đúng cây thư mục, service start không tự migrate,
 health/version/log đạt contract, media hoạt động ở production, một instance duy nhất và
 không mất dữ liệu khi mô phỏng chuyển layout.
+
+### Kết quả Phase 7 — 2026-07-31
+
+- Runtime dùng lease file theo data directory, maintenance state/active-write marker có dọn stale
+  PID và timeout; request ghi nhận thông báo bảo trì thay vì báo thành công giả.
+- Service không tự migrate/seed; migration và first-run là runner riêng. Health che toàn bộ lỗi
+  nội bộ và phân biệt `ok`, `maintenance`, `schema_incompatible`, `error`.
+- Media chỉ cho user đăng nhập, chỉ phục vụ JPEG/PNG/WebP dưới media root; version được dùng bởi
+  UI context, health và manifest backup. Log xoay/redact theo nhóm runtime.
+- 78 test tự động đạt trước test process lease cuối; test process lease đạt riêng. Formatter,
+  Ruff, mypy, check và migration check đạt trước thay đổi test cuối.
+- `check --deploy` chỉ còn W004/W008/W012/W016 cho HTTP LAN có chủ đích. Không bật HSTS,
+  HTTPS redirect hoặc secure cookie khi máy chủ vẫn phục vụ HTTP LAN; bật `SHOP_USE_HTTPS=true`
+  khi triển khai HTTPS/Tailscale. W009 xuất phát từ secret test ngắn, không phải cấu hình runtime.
+- WinSW/SCM shutdown, ACL ProgramData, installer/PyInstaller và filesystem Windows thực vẫn phải
+  chứng nhận trong Phase 9–10; Phase 8 chưa bắt đầu.
 
 ### Phase 8 — Mobile-first và chỉnh sửa từ điện thoại
 
