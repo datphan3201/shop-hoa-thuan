@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 
-from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -26,7 +25,6 @@ def _period_params(request: HttpRequest) -> dict[str, str]:
     }
 
 
-@login_required
 def report_overview(request: HttpRequest) -> HttpResponse:
     period = resolve_report_period(_period_params(request))
     include_cost = is_cost_price_unlocked(request)
@@ -105,13 +103,11 @@ def _csv_response(request: HttpRequest, *, include_cost: bool) -> HttpResponse:
     return response
 
 
-@login_required
 @require_GET
 def export_sales_csv(request: HttpRequest) -> HttpResponse:
     return _csv_response(request, include_cost=False)
 
 
-@login_required
 @cost_price_unlock_required
 @require_GET
 def export_sales_sensitive_csv(request: HttpRequest) -> HttpResponse:

@@ -21,8 +21,6 @@ BLOCK_SECONDS = 5 * 60
 
 
 def is_cost_price_unlocked(request: HttpRequest) -> bool:
-    if not request.user.is_authenticated:
-        return False
     unlocked_until = request.session.get(UNLOCKED_UNTIL_KEY)
     if not isinstance(unlocked_until, (int, float)) or unlocked_until <= time.time():
         request.session.pop(UNLOCKED_UNTIL_KEY, None)

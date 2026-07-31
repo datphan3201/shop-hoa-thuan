@@ -13,8 +13,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-  {% if request.user.is_authenticated %}
-    <div class="app-shell">
+  <div class="app-shell">
       <aside class="sidebar d-none d-lg-flex flex-column">
         <a class="brand" href="{% url 'dashboard' %}">
           <span class="brand-mark">HT</span>
@@ -24,14 +23,6 @@
           </span>
         </a>
         {% include "includes/navigation.html" %}
-        <div class="mt-auto sidebar-footer">
-          <div class="small text-secondary mb-2">Đang đăng nhập</div>
-          <div class="fw-semibold text-truncate mb-3">{{ request.user.username }}</div>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button class="btn btn-outline-secondary w-100" type="submit">Đăng xuất</button>
-          </form>
-        </div>
       </aside>
 
       <div class="app-main">
@@ -78,9 +69,6 @@
       <a class="mobile-bottom-nav-primary" href="{% url 'sale-create' %}">Bán hàng</a><a href="{% url 'inventory-list' %}">Tồn kho</a>
       <a href="{% url 'product-create' %}">Thêm</a>
     </nav>
-  {% else %}
-    {% block public_content %}{% endblock %}
-  {% endif %}
   <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
   <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("{% static 'service-worker.js' %}");</script>
   {% block extra_scripts %}{% endblock %}

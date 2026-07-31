@@ -6,11 +6,7 @@ from typing import cast
 import qrcode
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import User as DjangoUser
-from django.contrib.auth.views import LoginView
 from django.db import connection
 from django.db.models import Count, F, IntegerField, Sum
 from django.db.models.functions import Coalesce
@@ -28,14 +24,12 @@ from apps.catalog.models import Product, ProductVariant
 from apps.core.backup import BackupError, create_backup, list_backups
 from apps.core.concurrency import ConcurrentUpdateError, save_with_revision
 from apps.core.forms import (
-    OwnerAuthenticationForm,
-    OwnerSetupForm,
     PinChangeForm,
     PinSetupForm,
     PinUnlockForm,
     SecurityTimeoutForm,
 )
-from apps.core.idempotency import IdempotencyConflictError, request_fingerprint
+from apps.core.idempotency import client_key, IdempotencyConflictError, request_fingerprint
 from apps.core.models import IdempotencyRecord, ShopSecuritySettings
 from apps.core.network import discover_device_access
 from apps.core.operations import maintenance_operation, maintenance_state
@@ -55,35 +49,6 @@ from apps.sales.models import Sale
 from shop_hoa_thuan.runner import schema_is_compatible
 from shop_hoa_thuan.version import application_version
 
-User = get_user_model()
-
-
-class OwnerLoginView(LoginView):
-    template_name = "registration/login.html"
-    authentication_form = OwnerAuthenticationForm
-    redirect_authenticated_user = True
-
-    def dispatch(self, request: HttpRequest, *args: object, **kwargs: object) -> HttpResponseBase:
-        if not User.objects.exists():
-            return redirect("first-run-setup")
-        return super().dispatch(request, *args, **kwargs)
-
-
-def first_run_setup(request: HttpRequest) -> HttpResponse:
-    if User.objects.exists():
-        return redirect("dashboard" if request.user.is_authenticated else "login")
-
-    form = OwnerSetupForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        user = form.save()
-        login(request, user)
-        messages.success(request, "Đã tạo tài khoản chủ shop.")
-        return redirect("dashboard")
-
-    return render(request, "registration/first_run_setup.html", {"form": form})
-
-
-@login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     variants = ProductVariant.objects.select_related("product")
     variant_list = list(
@@ -169,7 +134,6 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     return render(request, "core/dashboard.html", context)
 
 
-@login_required
 def security_settings(request: HttpRequest) -> HttpResponse:
     security = ShopSecuritySettings.load()
     context = {
@@ -183,7 +147,6 @@ def security_settings(request: HttpRequest) -> HttpResponse:
     return render(request, "core/security_settings.html", context)
 
 
-@login_required
 @require_POST
 def security_action(request: HttpRequest) -> HttpResponse:
     security = ShopSecuritySettings.load()
@@ -253,7 +216,6 @@ def security_action(request: HttpRequest) -> HttpResponse:
     return redirect("security-settings")
 
 
-@login_required
 def device_access_settings(request: HttpRequest) -> HttpResponse:
     access = discover_device_access()
     qr_target = access.lan_urls[0] if access.lan_urls else access.localhost_url
@@ -276,18 +238,17 @@ def _qr_svg_data_uri(value: str) -> str:
     return f"data:image/svg+xml;base64,{b64encode(stream.getvalue()).decode('ascii')}"
 
 
-@login_required
 @cost_price_unlock_required
 @require_POST
 def create_backup_view(request: HttpRequest) -> HttpResponse:
     try:
         key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
         if key:
-            owner = cast(DjangoUser, request.user)
+            client = client_key(request)
             fingerprint = request_fingerprint({"requested": "backup"})
             with maintenance_operation("backup"):
                 record = IdempotencyRecord.objects.filter(
-                    user=owner, operation="backup.create", key=key[:128]
+                    client_key=client, operation="backup.create", key=key[:128]
                 ).first()
                 if record:
                     if record.fingerprint != fingerprint:
@@ -295,7 +256,7 @@ def create_backup_view(request: HttpRequest) -> HttpResponse:
                     return redirect(record.response_location)
                 backup = create_backup()
                 IdempotencyRecord.objects.create(
-                    user=owner,
+                    client_key=client,
                     operation="backup.create",
                     key=key[:128],
                     fingerprint=fingerprint,
@@ -311,7 +272,6 @@ def create_backup_view(request: HttpRequest) -> HttpResponse:
     return redirect("device-access-settings")
 
 
-@login_required
 @cost_price_unlock_required
 @require_GET
 def download_backup(request: HttpRequest, filename: str) -> FileResponse:
@@ -330,7 +290,6 @@ def download_backup(request: HttpRequest, filename: str) -> FileResponse:
     )
 
 
-@login_required
 @require_GET
 def protected_media(request: HttpRequest, path: str) -> FileResponse:
     """Serve product media privately without exposing runtime filesystem paths."""
@@ -355,14 +314,13 @@ def protected_media(request: HttpRequest, path: str) -> FileResponse:
     return response
 
 
-@login_required
 @require_GET
 def idempotency_status(request: HttpRequest, operation: str, key: str) -> JsonResponse:
-    """Return only the replay location for the owner of a completed write."""
+    """Return only the replay location for this browser's completed write."""
     if len(operation) > 64 or len(key) > 128:
         raise Http404
     record = IdempotencyRecord.objects.filter(
-        user=cast(DjangoUser, request.user), operation=operation, key=key
+        client_key=client_key(request), operation=operation, key=key
     ).first()
     if record is None:
         raise Http404

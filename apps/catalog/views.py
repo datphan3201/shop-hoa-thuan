@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpRequest, HttpResponse
@@ -26,12 +24,11 @@ from apps.catalog.services import (
     process_product_image,
 )
 from apps.core.concurrency import ConcurrentUpdateError, save_with_revision
-from apps.core.idempotency import IdempotencyConflictError, execute, replay_location
+from apps.core.idempotency import client_key, IdempotencyConflictError, execute, replay_location
 from apps.core.models import IdempotencyRecord
 from apps.core.security import cost_price_unlock_required, is_cost_price_unlocked
 
 
-@login_required
 def category_list(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
     categories = Category.objects.annotate(product_count=Count("products")).order_by("name")
@@ -44,7 +41,6 @@ def category_list(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 def category_create(request: HttpRequest) -> HttpResponse:
     form = CategoryForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -58,7 +54,6 @@ def category_create(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 def category_update(request: HttpRequest, category_id: int) -> HttpResponse:
     category = get_object_or_404(Category, pk=category_id)
     form = CategoryForm(request.POST or None, instance=category)
@@ -78,7 +73,6 @@ def category_update(request: HttpRequest, category_id: int) -> HttpResponse:
     )
 
 
-@login_required
 @require_POST
 def category_toggle(request: HttpRequest, category_id: int) -> HttpResponse:
     category = get_object_or_404(Category, pk=category_id)
@@ -122,7 +116,6 @@ def _product_rows(products: list[Product]) -> list[dict[str, Any]]:
     return rows
 
 
-@login_required
 def product_list(request: HttpRequest) -> HttpResponse:
     products = Product.objects.select_related("category").prefetch_related(
         Prefetch("variants", queryset=ProductVariant.objects.order_by("size"))
@@ -173,7 +166,6 @@ def product_list(request: HttpRequest) -> HttpResponse:
     return render(request, "catalog/product_list.html", context)
 
 
-@login_required
 @cost_price_unlock_required
 def product_create(request: HttpRequest) -> HttpResponse:
     product = Product()
@@ -198,7 +190,7 @@ def product_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and key:
         try:
             location = replay_location(
-                user=cast(User, request.user),
+                client=client_key(request),
                 operation="product.create",
                 key=key[:128],
                 payload=idempotency_payload,
@@ -235,9 +227,9 @@ def product_create(request: HttpRequest) -> HttpResponse:
 
         try:
             if key:
-                owner = cast(User, request.user)
+                client = client_key(request)
                 outcome = execute(
-                    user=owner,
+                    client=client,
                     operation="product.create",
                     key=key[:128],
                     payload=idempotency_payload,
@@ -246,7 +238,7 @@ def product_create(request: HttpRequest) -> HttpResponse:
                 )
                 if outcome.replayed:
                     record = IdempotencyRecord.objects.get(
-                        user=owner, operation="product.create", key=key[:128]
+                        client_key=client, operation="product.create", key=key[:128]
                     )
                     return redirect(record.response_location)
                 product = cast(Product, outcome.result)
@@ -264,7 +256,6 @@ def product_create(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 def product_detail(request: HttpRequest, product_id: int) -> HttpResponse:
     unlocked = is_cost_price_unlocked(request)
     variant_queryset = ProductVariant.objects.order_by("size")
@@ -294,7 +285,6 @@ def product_detail(request: HttpRequest, product_id: int) -> HttpResponse:
     )
 
 
-@login_required
 def product_update(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(Product, pk=product_id)
     previous_image_name = product.image.name
@@ -323,7 +313,6 @@ def product_update(request: HttpRequest, product_id: int) -> HttpResponse:
     )
 
 
-@login_required
 @require_POST
 def product_toggle(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(Product, pk=product_id)
@@ -337,7 +326,6 @@ def product_toggle(request: HttpRequest, product_id: int) -> HttpResponse:
     return redirect("product-detail", product_id=product.pk)
 
 
-@login_required
 @cost_price_unlock_required
 def variant_create(request: HttpRequest, product_id: int) -> HttpResponse:
     product = get_object_or_404(Product, pk=product_id)
@@ -366,7 +354,6 @@ def variant_create(request: HttpRequest, product_id: int) -> HttpResponse:
     )
 
 
-@login_required
 @cost_price_unlock_required
 def variant_update(request: HttpRequest, variant_id: int) -> HttpResponse:
     variant = get_object_or_404(ProductVariant.objects.select_related("product"), pk=variant_id)
@@ -387,7 +374,6 @@ def variant_update(request: HttpRequest, variant_id: int) -> HttpResponse:
     )
 
 
-@login_required
 def inventory_list(request: HttpRequest) -> HttpResponse:
     variants = ProductVariant.objects.select_related("product", "product__category").order_by(
         "product__name", "size"
@@ -411,7 +397,6 @@ def inventory_list(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 def inventory_adjust(request: HttpRequest, variant_id: int) -> HttpResponse:
     variant = get_object_or_404(ProductVariant.objects.select_related("product"), pk=variant_id)
     form = InventoryAdjustmentForm(request.POST or None)
@@ -419,9 +404,9 @@ def inventory_adjust(request: HttpRequest, variant_id: int) -> HttpResponse:
         try:
             key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
             if key:
-                owner = cast(User, request.user)
+                client = client_key(request)
                 outcome = execute(
-                    user=owner,
+                    client=client,
                     operation="inventory.adjust",
                     key=key[:128],
                     payload={
@@ -440,7 +425,7 @@ def inventory_adjust(request: HttpRequest, variant_id: int) -> HttpResponse:
                 )
                 if outcome.replayed:
                     record = IdempotencyRecord.objects.get(
-                        user=owner, operation="inventory.adjust", key=key[:128]
+                        client_key=client, operation="inventory.adjust", key=key[:128]
                     )
                     return redirect(record.response_location)
             else:

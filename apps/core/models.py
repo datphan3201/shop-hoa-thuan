@@ -16,7 +16,7 @@ class TimeStampedModel(models.Model):
 class IdempotencyRecord(models.Model):
     """Server-side replay record for operations that must not be duplicated."""
 
-    user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
+    client_key = models.CharField(max_length=64)
     operation = models.CharField(max_length=64)
     key = models.CharField(max_length=128)
     fingerprint = models.CharField(max_length=64)
@@ -26,7 +26,7 @@ class IdempotencyRecord(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("user", "operation", "key"), name="idempotency_user_op_key"
+                fields=("client_key", "operation", "key"), name="idempotency_client_op_key"
             )
         ]
 

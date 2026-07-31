@@ -6,8 +6,6 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, IntegerField, Q, Sum
 from django.db.models.functions import Coalesce
@@ -18,7 +16,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.catalog.models import Category, ProductVariant
 from apps.catalog.services import InsufficientStockError
-from apps.core.idempotency import IdempotencyConflictError, execute
+from apps.core.idempotency import client_key, IdempotencyConflictError, execute
 from apps.core.models import IdempotencyRecord
 from apps.core.security import is_cost_price_unlocked
 from apps.sales.forms import SaleCancellationForm, SaleCreateForm
@@ -99,7 +97,6 @@ def _local_day_start(value: date) -> datetime:
     return datetime.combine(value, time.min, tzinfo=ZoneInfo(settings.TIME_ZONE))
 
 
-@login_required
 def sale_list(request: HttpRequest) -> HttpResponse:
     sales = Sale.objects.annotate(
         item_type_count=Count("items"),
@@ -151,7 +148,6 @@ def sale_list(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 def sale_create(request: HttpRequest) -> HttpResponse:
     form = SaleCreateForm(request.POST or None, initial={"lines_json": "[]"})
     cart_rows: list[dict[str, Any]] = []
@@ -160,9 +156,9 @@ def sale_create(request: HttpRequest) -> HttpResponse:
         try:
             key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
             if key:
-                owner = cast(User, request.user)
+                client = client_key(request)
                 outcome = execute(
-                    user=owner,
+                    client=client,
                     operation="sale.complete",
                     key=key[:128],
                     payload={
@@ -181,7 +177,7 @@ def sale_create(request: HttpRequest) -> HttpResponse:
                 )
                 if outcome.replayed:
                     record = IdempotencyRecord.objects.get(
-                        user=owner, operation="sale.complete", key=key[:128]
+                        client_key=client, operation="sale.complete", key=key[:128]
                     )
                     return redirect(record.response_location)
                 sale = outcome.result
@@ -214,7 +210,6 @@ def sale_create(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 @require_GET
 def sale_variant_search(request: HttpRequest) -> HttpResponse:
     return render(
@@ -224,7 +219,6 @@ def sale_variant_search(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
 def sale_detail(request: HttpRequest, sale_id: int) -> HttpResponse:
     sale = get_object_or_404(Sale.objects.prefetch_related("items"), pk=sale_id)
     return render(
@@ -234,13 +228,11 @@ def sale_detail(request: HttpRequest, sale_id: int) -> HttpResponse:
     )
 
 
-@login_required
 def sale_receipt(request: HttpRequest, sale_id: int) -> HttpResponse:
     sale = get_object_or_404(Sale.objects.prefetch_related("items"), pk=sale_id)
     return render(request, "sales/sale_receipt.html", {"sale": sale})
 
 
-@login_required
 @require_POST
 def sale_cancel(request: HttpRequest, sale_id: int) -> HttpResponse:
     form = SaleCancellationForm(request.POST)
@@ -255,9 +247,9 @@ def sale_cancel(request: HttpRequest, sale_id: int) -> HttpResponse:
     try:
         key = request.headers.get("Idempotency-Key") or request.POST.get("idempotency_key", "")
         if key:
-            owner = cast(User, request.user)
+            client = client_key(request)
             outcome = execute(
-                user=owner,
+                client=client,
                 operation="sale.cancel",
                 key=key[:128],
                 payload={"sale_id": sale_id, "reason": form.cleaned_data["reason"]},
@@ -266,7 +258,7 @@ def sale_cancel(request: HttpRequest, sale_id: int) -> HttpResponse:
             )
             if outcome.replayed:
                 record = IdempotencyRecord.objects.get(
-                    user=owner, operation="sale.cancel", key=key[:128]
+                    client_key=client, operation="sale.cancel", key=key[:128]
                 )
                 return redirect(record.response_location)
             sale = cast(Sale, outcome.result)

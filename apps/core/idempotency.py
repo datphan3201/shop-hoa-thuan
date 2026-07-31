@@ -5,9 +5,10 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from time import sleep
+from uuid import uuid4
 
-from django.contrib.auth.models import User
 from django.db import IntegrityError, OperationalError, transaction
+from django.http import HttpRequest
 
 from apps.core.models import IdempotencyRecord
 
@@ -27,9 +28,21 @@ def request_fingerprint(payload: object) -> str:
     return hashlib.sha256(encoded.encode()).hexdigest()
 
 
-def replay_location(*, user: User, operation: str, key: str, payload: object) -> str | None:
+def client_key(request: HttpRequest) -> str:
+    """Stable anonymous browser key; it survives cost-PIN session key rotation."""
+    value = request.session.get("idempotency_client_key")
+    if isinstance(value, str) and value:
+        return value
+    value = uuid4().hex
+    request.session["idempotency_client_key"] = value
+    return value
+
+
+def replay_location(*, client: str, operation: str, key: str, payload: object) -> str | None:
     """Return a completed result before validating a retried stale form."""
-    record = IdempotencyRecord.objects.filter(user=user, operation=operation, key=key).first()
+    record = IdempotencyRecord.objects.filter(
+        client_key=client, operation=operation, key=key
+    ).first()
     if record is None:
         return None
     if record.fingerprint != request_fingerprint(payload):
@@ -39,14 +52,14 @@ def replay_location(*, user: User, operation: str, key: str, payload: object) ->
 
 def execute[ResultT](
     *,
-    user: User,
+    client: str,
     operation: str,
     key: str,
     payload: object,
     work: Callable[[], ResultT],
     location: Callable[[ResultT], str],
 ) -> IdempotencyResult[ResultT | None]:
-    """Run a write exactly once for a user/key/payload combination.
+    """Run a write exactly once for an anonymous browser/key/payload combination.
 
     The record is deliberately inserted in the same transaction as ``work``.
     A competing SQLite writer can therefore only observe a committed operation;
@@ -58,7 +71,7 @@ def execute[ResultT](
             with transaction.atomic():
                 record = (
                     IdempotencyRecord.objects.select_for_update()
-                    .filter(user=user, operation=operation, key=key)
+                    .filter(client_key=client, operation=operation, key=key)
                     .first()
                 )
                 if record:
@@ -67,7 +80,7 @@ def execute[ResultT](
                     return IdempotencyResult(None, True)
                 result = work()
                 IdempotencyRecord.objects.create(
-                    user=user,
+                    client_key=client,
                     operation=operation,
                     key=key,
                     fingerprint=fingerprint,
@@ -79,7 +92,7 @@ def execute[ResultT](
             # operation while this process was creating its record.  Re-read it
             # outside the rolled-back transaction and preserve its result.
             record = IdempotencyRecord.objects.filter(
-                user=user, operation=operation, key=key
+                client_key=client, operation=operation, key=key
             ).first()
             if record is None:
                 raise

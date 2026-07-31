@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
 from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
@@ -28,21 +26,3 @@ def run_migrations() -> None:
         call_command("migrate", interactive=False, verbosity=1)
         require_compatible_schema()
 
-
-def run_first_setup(*, username: str, password: str, pin: str) -> None:
-    # Entry points import this module before calling django.setup().  Importing
-    # the model at module scope would make a frozen server fail during startup
-    # with AppRegistryNotReady, even though first-run itself is not executed.
-    from apps.core.models import ShopSecuritySettings
-
-    user_model = get_user_model()
-    if (
-        user_model.objects.exists()
-        or ShopSecuritySettings.objects.filter(cost_price_pin_hash__gt="").exists()
-    ):
-        raise RuntimeError("Hệ thống đã được thiết lập; không chạy first-run lần nữa.")
-    with maintenance_operation("first-run"):
-        owner = user_model.objects.create_superuser(username=username, password=password)
-        owner.is_staff = True
-        owner.save(update_fields=["is_staff"])
-        ShopSecuritySettings.objects.create(cost_price_pin_hash=make_password(pin))
