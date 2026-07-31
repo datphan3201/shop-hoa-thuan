@@ -21,7 +21,9 @@ datas += collect_data_files("django", include_py_files=False)
 hiddenimports = [
     "apps.core.logging",
     *collect_submodules("apps"),
+    *collect_submodules("django_htmx"),
     *collect_submodules("shop_hoa_thuan"),
+    *collect_submodules("whitenoise"),
 ]
 
 a = Analysis(
