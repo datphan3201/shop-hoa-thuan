@@ -38,7 +38,8 @@ if ($null -eq $iscc) {
 if (-not (Test-Path -LiteralPath "packaging\vendor\WinSW-x64.exe" -PathType Leaf)) {
     throw "Thiếu packaging\vendor\WinSW-x64.exe đã xác minh checksum."
 }
-& $iscc.Source "/DAppVersion=$version" "packaging\installer\ShopHoaThuan.iss"
+$isccPath = if ($iscc.PSObject.Properties.Name -contains "Source") { $iscc.Source } else { $iscc.FullName }
+& $isccPath "/DAppVersion=$version" "packaging\installer\ShopHoaThuan.iss"
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup build thất bại."
 }
