@@ -6,8 +6,8 @@ Shop Hoà Thuận là ứng dụng nội bộ cho shop quần áo: danh mục, s
 bán hàng, hủy giao dịch, báo cáo và bảo vệ giá vốn. Mục tiêu phát hành là phần mềm cài trên
 Windows, dùng từ thiết bị trong LAN mà không yêu cầu cloud hay terminal trên máy người dùng.
 
-Phase 1–8 đã hoàn thành; Phase 9 đang triển khai. Chưa được dùng dữ liệu thật cho đến khi các
-gate Windows, backup/restore, update/rollback và thiết bị thật của Phase 9–13 có evidence.
+Phase 1–8 đã hoàn thành trong WSL; Phase 9–13 đã có nền tảng source/build nhưng chưa đạt toàn
+bộ acceptance gate Windows và thiết bị thật. Chưa được dùng dữ liệu thật cho failure injection.
 
 ## Sơ đồ thành phần
 
@@ -117,6 +117,7 @@ manifest và artifact dùng cùng giá trị.
 
 ## Trạng thái Windows
 
-PyInstaller `onedir` native `ShopHoaThuanServer.exe` đã smoke PASS `/health/` trên Windows test
-data. Gate WinSW/SCM/firewall/recovery vẫn cần chạy với Administrator. Installer, restore GUI và
-updater chưa hoàn thành; xem [roadmap](DELIVERY_ROADMAP.md).
+PyInstaller native server, migration, health, launcher, update, backup và restore utilities đã
+build; server/migration/health smoke PASS trên Windows test data. Gate WinSW/SCM/firewall/recovery,
+clean install, restore/update native và thiết bị thật vẫn cần evidence; xem
+[roadmap](DELIVERY_ROADMAP.md) và [known limitations](KNOWN_LIMITATIONS.md).

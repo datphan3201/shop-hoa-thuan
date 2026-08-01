@@ -6,11 +6,11 @@
 |---|---|---|---|
 | 1–7 | Hoàn thành | Nghiệp vụ, runtime hardening, lock/maintenance, health/media/logging test | Chứng nhận Windows thuộc phase phát hành. |
 | 8 | Hoàn thành trong WSL | Mobile/PWA, idempotency, concurrency, upload/media | Camera/viewport/A2HS thật ở Phase 13. |
-| 9 | Đang thực hiện | Waitress, launcher source, WinSW XML, device page; native server `/health/` PASS | WinSW/SCM/firewall/recovery cần UAC; reboot/LAN phone cần device validation. |
-| 10 | Chưa bắt đầu | PyInstaller server `onedir` proof-of-build | Bundle đủ utility và installer Inno Setup. |
-| 11 | Chưa bắt đầu | SQLite backup/maintenance foundation | Restore GUI, retention và restore thật. |
-| 12 | Chưa bắt đầu | Version/migration runner/rollback directory | Updater local, preflight và rollback failure tests. |
-| 13 | Chưa bắt đầu | Nền test/docs | Acceptance, clean Windows và real-device evidence. |
+| 9 | Đang thực hiện | Waitress, launcher source, WinSW XML, device page; native server/migration/health smoke PASS | WinSW/SCM/firewall/recovery cần UAC; reboot/LAN phone cần device validation. |
+| 10 | Artifact PASS, acceptance pending | PyInstaller server + standalone utilities + Inno Setup installer build PASS | Clean install/reinstall/uninstall trên Windows sạch chưa chạy. |
+| 11 | Backend PASS, native acceptance pending | SQLite backup API, manifest/checksum/integrity, restore và GUI source | Restore bằng installer/service thật và retention scheduler cần kiểm thử thêm. |
+| 12 | WSL validation PASS, native acceptance pending | Package validation, staging cleanup, complete tree replacement, rollback primitives | 1.0.0→1.1.0 với SCM/migration/health failure injection chưa chạy. |
+| 13 | Đang lập evidence, chưa accepted | Traceability, acceptance, limitations, checklist và user validation docs | UAC, reboot, clean Windows, LAN phone và camera thật. |
 
 Không bắt đầu phase kế tiếp trước khi gate phase hiện tại đạt hoặc được ghi rõ `BLOCKED FOR
 DEVICE VALIDATION`; không ghi PASS giả.

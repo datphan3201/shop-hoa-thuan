@@ -9,8 +9,53 @@ Cập nhật gần nhất: 2026-08-01
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
-- Phase 9 — Windows Service, launcher và LAN: **đang triển khai; chưa đạt gate**.
-- Phase 10–13 — installer, backup/restore, update/rollback và acceptance: **chưa triển khai**.
+- Phase 9 — Windows Service, launcher và LAN: **đang triển khai; native server PASS, SCM/UAC gate chưa chạy**.
+- Phase 10 — PyInstaller và installer: **đã build artifact 1.0.0; clean-install/reinstall chưa đạt gate**.
+- Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
+- Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
+- Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
+
+### Trạng thái thực tế sau lượt build cuối — 2026-08-01
+
+Các commit gần nhất đã push lên branch `bugfix`: `80d286e` (backup/restore GUI), `ead1fa7`
+(update package builder và regression tests), `8bda778` (update thay toàn bộ application tree).
+Tài liệu nghiệm thu hiện nằm trong `docs/REQUIREMENT_TRACEABILITY_MATRIX.md`,
+`docs/FINAL_ACCEPTANCE_REPORT.md`, `docs/KNOWN_LIMITATIONS.md`,
+`docs/RELEASE_CHECKLIST.md`, `docs/USER_DEVICE_VALIDATION.md`, `docs/UPDATE.md` và
+`docs/RELEASE_PROCESS.md`.
+
+Windows build evidence:
+
+- Windows 11 x64, Python 3.12.10, PyInstaller 6.21.0, Inno Setup 6.7.3.
+- `ShopHoaThuanServer.exe`: native `/health/` smoke PASS trên test data.
+- `ShopHoaThuanMigration.exe`: migration runner PASS, output Unicode PASS, không tự chạy từ server.
+- `ShopHoaThuanHealth.exe`: không có server trả `SHOP-HEALTH-001`, exit code 1 như thiết kế.
+- Installer `ShopHoaThuan-Setup-1.0.0.exe`: compile PASS; SHA-256 phải lấy lại từ artifact hiện
+  hành sau mỗi rebuild, không ghi hash cũ vào tài liệu.
+- Standalone health/launcher/update/backup/restore specs đã nhúng runtime binaries; lỗi thiếu
+  `python312.dll` đã được bắt bằng smoke test và sửa.
+
+WSL quality gate sau các thay đổi code/tài liệu: `ruff format --check` PASS (111 files), Ruff
+PASS, mypy PASS (88 source files), Django system check PASS, migration check PASS và full pytest
+PASS: **122 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
+`override_settings(DATABASES=...)` trong restore test, không phải test fail.
+
+Django deployment check với production test env (`DEBUG=false`, secret test dài, hosts
+`localhost,127.0.0.1`) PASS với đúng 4 warning có chủ đích: `W004`, `W008`, `W012`, `W016`.
+`W009` và `W018` chỉ xuất hiện khi chạy nhầm bằng development env và không được chấp nhận
+trong build.
+
+Deployment warning phân loại:
+
+- Phải sửa trước release: DEBUG production, `W009`, wildcard `ALLOWED_HOSTS`, secret ngắn,
+  schema mismatch, migration ngoài ý muốn và warning build không giải thích được.
+- Chấp nhận có điều kiện cho HTTP LAN: `W004`, `W008`, `W012`, `W016`; chỉ dùng Private LAN
+  tin cậy hoặc bật `SHOP_USE_HTTPS=true` khi có HTTPS/Tailscale phù hợp.
+- Chỉ xác minh trên Windows/device: SCM, firewall, ACL, reboot, clean install, LAN phone,
+  camera, Add to Home Screen, native update/rollback.
+
+Không đánh dấu Phase 9–13 hoàn thành cho đến khi các mục BLOCKED có evidence thật. Kết luận hiện
+tại là `CONDITIONALLY ACCEPTED` cho internal build validation, không phải production release.
 
 ### Cập nhật truy cập LAN — 2026-08-01
 

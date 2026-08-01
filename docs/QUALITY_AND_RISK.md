@@ -6,7 +6,7 @@
 |---|---|---|
 | Formatter/Ruff/mypy | Style, lỗi tĩnh, type contract | PASS sau thay đổi truy cập LAN (2026-08-01). |
 | Django check/migration check | Settings/schema sạch | PASS sau thay đổi truy cập LAN (2026-08-01). |
-| Pytest | Nghiệp vụ, lock, maintenance, health, media, idempotency | 107 PASS với `--create-db` sau thay đổi truy cập LAN; không thay thế gate phase cuối. |
+| Pytest | Nghiệp vụ, lock, maintenance, health, media, idempotency, backup/update | Chạy lại sau commit tài liệu; số test và warning ghi trong `PROGRESS.md`, không thay thế gate phase cuối. |
 | Native Windows smoke | Artifact không cần Python dev | `ShopHoaThuanServer.exe` PASS `/health/` với Windows test data. |
 | SCM/firewall | Service, recovery, Private LAN/cleanup | Chưa chạy: cần UAC. |
 | Clean machine/device | Reboot, LAN phone, camera/PWA, installer | Chưa chạy: Phase 13. |
@@ -22,7 +22,7 @@ Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
 | Runtime data | Hai server ghi DB, maintenance stuck | OS lease, write drain timeout/finally, stale tests | Windows SCM/crash/reboot. |
 | Upload/media | Fake image, traversal, public file | Pillow decode/verify, limits, media root giới hạn đúng thư mục ảnh | Camera/browser thật. |
 | Network | Public exposure/host header/firewall | No port-forward, no wildcard host, Private firewall plan | LAN firewall inspection. |
-| Backup/update | Snapshot/restore/update mất data | Maintenance + SQLite backup foundation | End-to-end Phase 11–12. |
+| Backup/update | Snapshot/restore/update mất data | Maintenance + SQLite backup API + staged rollback tests | End-to-end Windows Phase 11–12. |
 
 ## Django deployment warnings
 

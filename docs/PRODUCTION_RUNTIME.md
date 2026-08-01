@@ -1,4 +1,4 @@
-# Runtime production Phase 7
+# Runtime production và release operations
 
 ## Một server và maintenance
 
@@ -21,6 +21,13 @@ Version runtime đọc từ `pyproject.toml`; health, UI context và manifest ba
 `SHOP_USE_HTTPS=true` khi reverse proxy/Tailscale đã cung cấp HTTPS. Log xoay tối đa 5 file mỗi
 nhóm trong `logs/`: server, security, business, backup, restore, update và service. Filter chung
 che PIN, secret, CSRF/session/authorization và cost price.
+
+## Backup, restore và update
+
+`ShopHoaThuanBackup.exe` và `ShopHoaThuanRestore.exe` là GUI native; chúng khởi tạo cùng runtime
+config, lấy maintenance lock và không yêu cầu terminal. Restore validate ZIP trước khi tạo
+pre-restore backup. `ShopHoaThuanUpdate.exe` chỉ nhận package có manifest/checksum, thay toàn bộ
+application tree và dọn staging trong mọi exception path.
 
 ## Giới hạn Windows
 

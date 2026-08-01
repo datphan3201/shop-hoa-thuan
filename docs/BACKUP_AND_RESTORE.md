@@ -19,6 +19,10 @@ Mở **Thiết bị và sao lưu**, mở khóa giá vốn bằng PIN rồi chọ
 terminal. Nút có idempotency key để retry không tạo hai archive. File ZIP hoàn chỉnh có thể copy
 ra USB hoặc lưu trữ khác; không đồng bộ live `db.sqlite3`.
 
+Trên Windows có thêm `ShopHoaThuanBackup.exe` trong Start Menu. Utility này dùng cùng
+maintenance/SQLite snapshot với giao diện web. `prune_backups()` giữ theo cửa sổ daily/weekly/
+monthly và không xóa archive có file đánh dấu `.keep`.
+
 ## Restore từ giao diện
 
 1. Chọn file ZIP backup.
@@ -31,6 +35,9 @@ ra USB hoặc lưu trữ khác; không đồng bộ live `db.sqlite3`.
 Sau restore cần kiểm tra dashboard, tồn kho, giao dịch gần nhất, ảnh sản phẩm và PIN. Restore
 production thực tế phải được chạy trên bản sao hoặc môi trường test trước; không dùng dữ liệu
 thật cho failure injection.
+
+Trên Windows có `ShopHoaThuanRestore.exe`; utility yêu cầu chọn ZIP, xác nhận mạnh `KHÔI PHỤC`
+và hiển thị pre-restore backup sau khi hoàn tất.
 
 ## Giữ lại và phục hồi
 

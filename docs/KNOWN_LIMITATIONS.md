@@ -1,0 +1,19 @@
+# Known limitations
+
+## Chưa thể xác minh trong môi trường hiện tại
+
+- Windows Service Control Manager, đăng ký/gỡ service và Private firewall cần PowerShell
+  Administrator; token hiện tại không elevated.
+- Reboot/autostart, clean Windows install, reinstall/repair/uninstall và ACL ProgramData chưa
+  có evidence trên máy sạch.
+- Điện thoại thật: LAN, camera orientation, touch UX, PWA Add to Home Screen và mất mạng.
+- Tailscale/HTTPS/mDNS/hostname resolution trên Android/iOS.
+- Update/rollback failure injection khi service đang chạy native.
+
+## Giới hạn thiết kế
+
+- Bản đầu dùng SQLite một host; không đặt database trên cloud sync, NAS, USB hoặc network share.
+- HTTP LAN vẫn có thể bị nghe lén; chỉ dùng Private LAN tin cậy hoặc cấu hình HTTPS/Tailscale.
+- Không có account/password nghiệp vụ; PIN chỉ khóa giá vốn, không phải authorization cho các
+  thao tác bán hàng/tồn kho.
+- Gói update local chưa có chữ ký số; checksum và nguồn file cục bộ là điều kiện preflight.
