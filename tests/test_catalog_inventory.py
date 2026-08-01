@@ -5,7 +5,6 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
-from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, override_settings
 from django.urls import reverse
@@ -18,9 +17,7 @@ from apps.core.security import UNLOCKED_UNTIL_KEY
 
 
 @pytest.fixture
-def owner_client(db: None, client: Client) -> Client:
-    owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(owner)
+def app_client(db: None, client: Client) -> Client:
     session = client.session
     session[UNLOCKED_UNTIL_KEY] = time.time() + 600
     session.save()
@@ -103,18 +100,18 @@ def test_inventory_requires_reason(variant: ProductVariant) -> None:
 
 @pytest.mark.django_db
 def test_inventory_adjustment_idempotency_replays_single_movement(
-    owner_client: Client, variant: ProductVariant
+    app_client: Client, variant: ProductVariant
 ) -> None:
     payload = {"operation": "add", "quantity": "4", "reason": "Nhập lại"}
     headers = {"Idempotency-Key": "mobile-inventory-001"}
 
-    first = owner_client.post(
+    first = app_client.post(
         reverse("inventory-adjust", args=[variant.pk]), payload, headers=headers
     )
-    replay = owner_client.post(
+    replay = app_client.post(
         reverse("inventory-adjust", args=[variant.pk]), payload, headers=headers
     )
-    conflict = owner_client.post(
+    conflict = app_client.post(
         reverse("inventory-adjust", args=[variant.pk]),
         {**payload, "quantity": "5"},
         headers=headers,
@@ -140,10 +137,10 @@ def test_stock_status_uses_threshold_and_zero(variant: ProductVariant) -> None:
 
 @pytest.mark.django_db
 def test_create_product_with_multiple_sizes_creates_initial_history(
-    owner_client: Client,
+    app_client: Client,
 ) -> None:
     category = Category.objects.create(name="Áo thun")
-    response = owner_client.post(
+    response = app_client.post(
         reverse("product-create"),
         {
             "category": category.pk,
@@ -191,7 +188,7 @@ def test_create_product_with_multiple_sizes_creates_initial_history(
 
 @pytest.mark.django_db
 def test_product_create_idempotency_does_not_duplicate_product_or_inventory(
-    owner_client: Client,
+    app_client: Client,
 ) -> None:
     category = Category.objects.create(name="Quần")
     payload = {
@@ -215,8 +212,8 @@ def test_product_create_idempotency_does_not_duplicate_product_or_inventory(
     }
     headers = {"Idempotency-Key": "product-create-001"}
 
-    first = owner_client.post(reverse("product-create"), payload, headers=headers)
-    replay = owner_client.post(reverse("product-create"), payload, headers=headers)
+    first = app_client.post(reverse("product-create"), payload, headers=headers)
+    replay = app_client.post(reverse("product-create"), payload, headers=headers)
 
     assert first.status_code == 302
     assert replay.status_code == 302
@@ -231,7 +228,7 @@ def test_product_create_idempotency_does_not_duplicate_product_or_inventory(
 
 
 @pytest.mark.django_db
-def test_product_form_rejects_duplicate_sizes_ignoring_case(owner_client: Client) -> None:
+def test_product_form_rejects_duplicate_sizes_ignoring_case(app_client: Client) -> None:
     category = Category.objects.create(name="Áo thun")
     common = {
         "category": category.pk,
@@ -255,7 +252,7 @@ def test_product_form_rejects_duplicate_sizes_ignoring_case(owner_client: Client
             }
         )
 
-    response = owner_client.post(reverse("product-create"), common)
+    response = app_client.post(reverse("product-create"), common)
 
     assert response.status_code == 200
     assert "Không được nhập hai biến thể cùng size." in response.content.decode()
@@ -264,7 +261,7 @@ def test_product_form_rejects_duplicate_sizes_ignoring_case(owner_client: Client
 
 @pytest.mark.django_db
 def test_uploaded_image_is_resized_and_thumbnail_created(
-    owner_client: Client,
+    app_client: Client,
     tmp_path: Path,
 ) -> None:
     category = Category.objects.create(name="Váy")
@@ -276,7 +273,7 @@ def test_uploaded_image_is_resized_and_thumbnail_created(
         content_type="image/jpeg",
     )
     with override_settings(MEDIA_ROOT=tmp_path):
-        response = owner_client.post(
+        response = app_client.post(
             reverse("product-create"),
             {
                 "category": category.pk,
@@ -308,11 +305,11 @@ def test_uploaded_image_is_resized_and_thumbnail_created(
 
 @pytest.mark.django_db
 def test_product_upload_rejects_file_that_only_claims_to_be_an_image(
-    owner_client: Client,
+    app_client: Client,
 ) -> None:
     category = Category.objects.create(name="Nón")
     upload = SimpleUploadedFile("fake.jpg", b"not a JPEG", content_type="image/jpeg")
-    response = owner_client.post(
+    response = app_client.post(
         reverse("product-create"),
         {
             "category": category.pk,
@@ -348,14 +345,14 @@ def test_product_image_field_allows_mobile_camera_and_supported_image_types() ->
 
 @pytest.mark.django_db
 def test_cost_price_is_not_rendered_on_product_and_inventory_pages(
-    owner_client: Client,
+    app_client: Client,
     variant: ProductVariant,
 ) -> None:
-    session = owner_client.session
+    session = app_client.session
     session.pop(UNLOCKED_UNTIL_KEY, None)
     session.save()
-    product_response = owner_client.get(reverse("product-detail", args=[variant.product_id]))
-    inventory_response = owner_client.get(reverse("inventory-list"))
+    product_response = app_client.get(reverse("product-detail", args=[variant.product_id]))
+    inventory_response = app_client.get(reverse("inventory-list"))
 
     assert "100.000 ₫" not in product_response.content.decode()
     assert "100.000 ₫" not in inventory_response.content.decode()
@@ -363,14 +360,14 @@ def test_cost_price_is_not_rendered_on_product_and_inventory_pages(
 
 
 @pytest.mark.django_db
-def test_category_update_rejects_stale_revision(owner_client: Client) -> None:
+def test_category_update_rejects_stale_revision(app_client: Client) -> None:
     category = Category.objects.create(name="Áo khoác")
     url = reverse("category-update", args=[category.pk])
-    first = owner_client.post(
+    first = app_client.post(
         url,
         {"name": "Áo khoác mới", "description": "", "active": "on", "revision": "1"},
     )
-    stale = owner_client.post(
+    stale = app_client.post(
         url,
         {"name": "Ghi đè cũ", "description": "", "active": "on", "revision": "1"},
     )

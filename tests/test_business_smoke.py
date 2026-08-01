@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 
 import pytest
-from django.contrib.auth.models import User
 from django.test import Client
 from django.urls import reverse
 
@@ -12,10 +11,8 @@ from apps.sales.models import Sale
 
 
 @pytest.mark.django_db
-def test_owner_can_complete_then_cancel_a_sale_and_report_excludes_it(client: Client) -> None:
-    """Smoke test the everyday owner workflow across the real HTTP views."""
-    owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(owner)
+def test_lan_browser_can_complete_then_cancel_a_sale_and_report_excludes_it(client: Client) -> None:
+    """Smoke test the everyday no-account workflow across the real HTTP views."""
     client.post(
         reverse("security-action"),
         {"action": "setup", "new_pin": "2468", "confirm_pin": "2468"},

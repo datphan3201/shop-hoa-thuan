@@ -1,19 +1,16 @@
 # Use case nghiệp vụ
 
-## Vai trò
+## Phạm vi truy cập
 
-Phiên bản hiện tại có vai trò vận hành chính là **chủ shop/người dùng đã đăng nhập**. Django
-admin chỉ bật khi development `DEBUG=True`, không phải workflow production. Giá vốn có lớp ủy
-quyền tạm thời qua PIN, không phải role riêng.
+Ứng dụng dùng trực tiếp trong LAN được cấu hình; vì vậy không được public Internet hoặc mở
+port router. Giá vốn dùng PIN riêng, lưu hash và có session unlock tạm thời theo browser.
 
-## UC-01 — Thiết lập lần đầu
+## UC-01 — Thiết lập PIN giá vốn
 
-1. Mở `/setup/` trên database chưa có owner.
-2. Nhập username, mật khẩu và PIN giá vốn.
-3. Server tạo superuser và chỉ lưu PIN hash trong transaction.
-4. Route tự đóng sau thành công; first-run lần nữa bị từ chối, không ghi đè dữ liệu.
-
-Production chỉ installer/first-run runner gọi workflow này; service không tự chạy.
+1. Mở **Thiết lập bảo mật** trên installation chưa có PIN.
+2. Nhập và xác nhận PIN giá vốn.
+3. Server chỉ lưu hash PIN trong transaction và mở khóa tạm thời cho browser hiện tại.
+4. Các browser khác vẫn khóa giá vốn cho tới khi nhập PIN đúng.
 
 ## UC-02 — Catalog và ảnh
 
@@ -54,14 +51,14 @@ UI disable size hết hàng, nhưng server vẫn là authority kiểm tra tồn.
 
 - Dashboard/report chỉ dùng sale completed, ngày theo giờ Việt Nam.
 - Cost lock đóng: response/context/CSV/hóa đơn không có giá vốn, lợi nhuận hoặc số liệu suy ra.
-- Mở khóa cần PIN, rate-limit, tự hết hạn và khóa khi logout/khóa thủ công.
+- Mở khóa cần PIN, rate-limit, tự hết hạn, khóa thủ công hoặc khi browser session bị xóa.
 - Export cost cần unlock và xác nhận; export thường không chứa cost.
 
 ## UC-07 — Mobile/PWA
 
 - Mobile có drawer/bottom navigation, card/list catalog/tồn/sale history và form chạm-friendly.
 - Manifest có shortcut Bán hàng/Sản phẩm/Tồn kho. Worker chỉ cache static public GET.
-- Không cache authenticated HTML, media, cost/profit, API nghiệp vụ hoặc POST; không offline write.
+- Không cache HTML động, media, cost/profit, API nghiệp vụ hoặc POST; không offline write.
 - Camera, Add to Home Screen, viewport/touch thật vẫn cần Phase 13 device validation.
 
 ## UC-08 — Backup, restore, update (mục tiêu chưa hoàn thành)

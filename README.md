@@ -8,7 +8,7 @@ Hiện đã có quản lý loại mặt hàng, sản phẩm nhiều size, ảnh/
 điều chỉnh tồn kho nguyên tử kèm lịch sử.
 
 Giá vốn mặc định bị khóa bằng PIN riêng ở server. Khi khóa, giao diện không nhận giá vốn
-hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đăng xuất/đóng trình duyệt.
+hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đóng trình duyệt.
 
 ## Trạng thái
 
@@ -40,8 +40,8 @@ uv run python manage.py runserver 127.0.0.1:2505
 
 Mở `http://127.0.0.1:2505/`.
 
-Lần đầu sử dụng, mở `/setup/` để tạo tài khoản chủ shop. Sau khi tài khoản được tạo,
-route này tự đóng và không thể dùng để đăng ký thêm.
+Ứng dụng dùng trực tiếp trong LAN; mọi thiết bị trong mạng được cấu hình có thể sử dụng.
+PIN giá vốn vẫn bắt buộc để xem hoặc sửa dữ liệu nhạy cảm.
 
 ## Cấu hình
 

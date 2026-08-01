@@ -6,7 +6,6 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from django.contrib.auth.models import User
 from django.test import Client, override_settings
 from django.urls import reverse
 
@@ -47,8 +46,6 @@ def test_backup_contains_consistent_database_media_and_manifest(tmp_path: Path) 
 
 @pytest.mark.django_db(transaction=True)
 def test_backup_request_idempotency_creates_one_archive(client: Client, tmp_path: Path) -> None:
-    owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(owner)
     session = client.session
     session[UNLOCKED_UNTIL_KEY] = time.time() + 600
     session.save()

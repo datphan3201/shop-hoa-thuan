@@ -5,7 +5,7 @@
 | Phase | Trạng thái | Evidence | Gate còn lại |
 |---|---|---|---|
 | 1–7 | Hoàn thành | Nghiệp vụ, runtime hardening, lock/maintenance, health/media/logging test | Chứng nhận Windows thuộc phase phát hành. |
-| 8 | Hoàn thành trong WSL | Mobile/PWA, idempotency, concurrency, upload/private media | Camera/viewport/A2HS thật ở Phase 13. |
+| 8 | Hoàn thành trong WSL | Mobile/PWA, idempotency, concurrency, upload/media | Camera/viewport/A2HS thật ở Phase 13. |
 | 9 | Đang thực hiện | Waitress, launcher source, WinSW XML, device page; native server `/health/` PASS | WinSW/SCM/firewall/recovery cần UAC; reboot/LAN phone cần device validation. |
 | 10 | Chưa bắt đầu | PyInstaller server `onedir` proof-of-build | Bundle đủ utility và installer Inno Setup. |
 | 11 | Chưa bắt đầu | SQLite backup/maintenance foundation | Restore GUI, retention và restore thật. |
@@ -48,10 +48,10 @@ sau cleanup. **FAIL:** giữ log/data test, không chạm `C:\ProgramData\Shop H
 
 ## Phase 10 — Installer
 
-1. Tạo executable riêng cho server, launcher, migration, first-run, health.
+1. Tạo executable riêng cho server, launcher, migration và health.
 2. Bundle templates/static/migrations/dynamic middleware/version metadata; smoke staging.
-3. Inno Setup: Program Files app, ProgramData preserved, secret/config, migration/first-run,
-   service/firewall/health/shortcut.
+3. Inno Setup: Program Files app, ProgramData preserved, secret/config, migration,
+   service/firewall/health/shortcut và hướng dẫn thiết lập PIN.
 4. Test install/reinstall/uninstall giữ data và failure rollback.
 
 ## Phase 11 — Backup/restore

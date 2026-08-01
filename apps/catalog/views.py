@@ -24,7 +24,7 @@ from apps.catalog.services import (
     process_product_image,
 )
 from apps.core.concurrency import ConcurrentUpdateError, save_with_revision
-from apps.core.idempotency import client_key, IdempotencyConflictError, execute, replay_location
+from apps.core.idempotency import IdempotencyConflictError, client_key, execute, replay_location
 from apps.core.models import IdempotencyRecord
 from apps.core.security import cost_price_unlock_required, is_cost_price_unlocked
 

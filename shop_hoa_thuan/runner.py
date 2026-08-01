@@ -25,4 +25,3 @@ def run_migrations() -> None:
     with maintenance_operation("migration", timeout_seconds=60):
         call_command("migrate", interactive=False, verbosity=1)
         require_compatible_schema()
-

@@ -3,11 +3,10 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.db import connection
 from django.test import Client
 from django.urls import reverse
-
-User = get_user_model()
 
 
 @pytest.mark.django_db
@@ -47,7 +46,6 @@ def test_health_reports_database_unavailable_without_exception_details(client: C
         "dashboard",
         "category-list",
         "product-list",
-        "product-create",
         "inventory-list",
         "sale-list",
         "sale-create",
@@ -56,56 +54,14 @@ def test_health_reports_database_unavailable_without_exception_details(client: C
         "device-access-settings",
     ],
 )
-def test_management_pages_require_login(client: Client, route_name: str) -> None:
+def test_management_pages_are_available_without_an_account(client: Client, route_name: str) -> None:
     response = client.get(reverse(route_name))
 
-    assert response.status_code == 302
-    assert response.headers["Location"].startswith(reverse("login"))
+    assert response.status_code == 200
 
 
 @pytest.mark.django_db
-def test_first_run_setup_creates_only_owner_account(client: Client) -> None:
-    response = client.post(
-        reverse("first-run-setup"),
-        {
-            "username": "chushop",
-            "password1": "MatKhau-Rieng-2026!",
-            "password2": "MatKhau-Rieng-2026!",
-        },
-    )
-
-    assert response.status_code == 302
-    assert response.headers["Location"] == reverse("dashboard")
-    owner = User.objects.get(username="chushop")
-    assert owner.is_superuser is True
-    assert owner.is_staff is True
-    assert owner.check_password("MatKhau-Rieng-2026!")
-    assert client.session.get("_auth_user_id") == str(owner.pk)
-
-
-@pytest.mark.django_db
-def test_login_redirects_to_setup_when_owner_does_not_exist(client: Client) -> None:
-    response = client.get(reverse("login"))
-
-    assert response.status_code == 302
-    assert response.headers["Location"] == reverse("first-run-setup")
-
-
-@pytest.mark.django_db
-def test_first_run_setup_closes_after_owner_exists(client: Client) -> None:
-    User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-
-    response = client.get(reverse("first-run-setup"))
-
-    assert response.status_code == 302
-    assert response.headers["Location"] == reverse("login")
-
-
-@pytest.mark.django_db
-def test_authenticated_owner_can_open_all_phase_one_routes(client: Client) -> None:
-    owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(owner)
-
+def test_any_lan_browser_can_open_all_phase_one_routes(client: Client) -> None:
     route_names = (
         "dashboard",
         "category-list",
@@ -121,3 +77,18 @@ def test_authenticated_owner_can_open_all_phase_one_routes(client: Client) -> No
     for route_name in route_names:
         response = client.get(reverse(route_name))
         assert response.status_code == 200, route_name
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("path", ["/login/", "/logout/", "/setup/", "/admin/"])
+def test_legacy_account_and_admin_routes_are_not_exposed(client: Client, path: str) -> None:
+    assert client.get(path).status_code == 404
+
+
+@pytest.mark.django_db
+def test_application_exposes_no_account_routes_or_idempotency_user_column() -> None:
+    assert "django.contrib.auth" not in settings.INSTALLED_APPS
+    columns = connection.introspection.get_table_description(
+        connection.cursor(), "core_idempotencyrecord"
+    )
+    assert "user_id" not in {column.name for column in columns}

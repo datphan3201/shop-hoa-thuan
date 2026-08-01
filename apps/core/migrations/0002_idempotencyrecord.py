@@ -1,5 +1,4 @@
 from django.db import migrations, models
-import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -15,8 +14,11 @@ class Migration(migrations.Migration):
                 ("fingerprint", models.CharField(max_length=64)),
                 ("response_location", models.CharField(blank=True, max_length=300)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="auth.user")),
+                # This was an account foreign key in the first internal build.
+                # Keep only its database column shape so 0004 can safely convert
+                # already-installed replay records without loading an account app.
+                ("legacy_user_id", models.BigIntegerField(db_column="user_id")),
             ],
         ),
-        migrations.AddConstraint(model_name="idempotencyrecord", constraint=models.UniqueConstraint(fields=("user", "operation", "key"), name="idempotency_user_op_key")),
+        migrations.AddConstraint(model_name="idempotencyrecord", constraint=models.UniqueConstraint(fields=("legacy_user_id", "operation", "key"), name="idempotency_user_op_key")),
     ]

@@ -92,7 +92,7 @@ def test_maintenance_blocks_new_writes_but_allows_reads(
     runtime_settings: AbstractContextManager[object], client: Client
 ) -> None:
     with runtime_settings, maintenance_operation("backup"):
-        response = client.post("/login/", {"username": "x", "password": "x"})
+        response = client.post("/sales/create/", {})
         health = client.get("/health/")
     assert response.status_code == 503
     assert response.content.decode() == MAINTENANCE_MESSAGE
@@ -120,12 +120,8 @@ def test_backup_maintenance_entrypoint_is_not_its_own_active_write(
     client: Client, tmp_path: Path
 ) -> None:
     """A backup request must acquire maintenance, not wait on its middleware marker."""
-    from django.contrib.auth.models import User
-
     from apps.core.security import UNLOCKED_UNTIL_KEY
 
-    user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(user)
     session = client.session
     session[UNLOCKED_UNTIL_KEY] = time.time() + 600
     session.save()

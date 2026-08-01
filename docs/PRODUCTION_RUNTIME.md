@@ -10,8 +10,8 @@ hoặc timeout, rồi tự giải phóng state khi lỗi.
 
 ## Runner
 
-`server.py` không chạy migrate, seed, tạo user hay PIN. `migrate_runtime` và `first_run` là runner
-riêng dành cho installer/updater. Server kiểm tra migration graph trước khi listen và trả mã
+`server.py` không chạy migrate, seed hay thiết lập PIN. `migrate_runtime` là runner riêng dành
+cho installer/updater. Server kiểm tra migration graph trước khi listen và trả mã
 `SHOP-SERVER-003` khi schema chưa tương thích.
 
 ## Cấu hình và log
@@ -20,7 +20,7 @@ Version runtime đọc từ `pyproject.toml`; health, UI context và manifest ba
 `DJANGO_ALLOWED_HOSTS` không chấp nhận wildcard. HTTP LAN giữ secure-cookie/redirect tắt; chỉ đặt
 `SHOP_USE_HTTPS=true` khi reverse proxy/Tailscale đã cung cấp HTTPS. Log xoay tối đa 5 file mỗi
 nhóm trong `logs/`: server, security, business, backup, restore, update và service. Filter chung
-che password, PIN, secret, CSRF/session/authorization và cost price.
+che PIN, secret, CSRF/session/authorization và cost price.
 
 ## Giới hạn Windows
 

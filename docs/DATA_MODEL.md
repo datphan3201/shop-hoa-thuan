@@ -15,7 +15,7 @@ Category 1 ── * Product 1 ── * ProductVariant 1 ── * InventoryMoveme
                                       │
                                       └──────────── 1 ── * SaleItem * ── 1 Sale
 
-auth.User 1 ── * IdempotencyRecord
+Anonymous browser session 1 ── * IdempotencyRecord
 ShopSecuritySettings (singleton, pk=1)
 ```
 
@@ -48,7 +48,7 @@ lần; sale hủy không đóng góp doanh thu report.
 | Model | Mục đích | Constraint |
 |---|---|---|
 | `ShopSecuritySettings` | PIN hash và timeout cost lock | Singleton pk=1; timeout 1–120 phút; không lưu PIN gốc. |
-| `IdempotencyRecord` | Replay record thao tác ghi | Unique `(user, operation, key)`; fingerprint chặn same key/different payload. |
+| `IdempotencyRecord` | Replay record thao tác ghi | Unique `(client_key, operation, key)`; fingerprint chặn same key/different payload. |
 
 `response_location` chỉ lưu đường dẫn kết quả đã commit, không lưu payload nhạy cảm. Retention
 được xử lý bằng `purge_idempotency --days 30`.

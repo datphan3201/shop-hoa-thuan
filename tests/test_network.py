@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from django.contrib.auth.models import User
 from django.test import Client, override_settings
 
 from apps.core.network import discover_device_access, server_port
@@ -31,9 +30,7 @@ def test_invalid_server_port_is_rejected(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 @pytest.mark.django_db
-def test_device_access_page_is_private_and_renders_qr(client: Client) -> None:
-    user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(user)
+def test_device_access_page_renders_qr_without_login(client: Client) -> None:
     with override_settings():
         response = client.get("/settings/device-access/")
 

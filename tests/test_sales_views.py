@@ -5,7 +5,6 @@ import time
 from datetime import UTC, datetime
 
 import pytest
-from django.contrib.auth.models import User
 from django.test import Client
 from django.urls import reverse
 
@@ -17,8 +16,6 @@ from apps.sales.services import SaleLineInput, complete_sale
 
 @pytest.fixture
 def sales_owner_client(db: None, client: Client) -> Client:
-    owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(owner)
     return client
 
 

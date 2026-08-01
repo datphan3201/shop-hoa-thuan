@@ -1,6 +1,6 @@
 # Tiến độ Shop Hoà Thuận
 
-Cập nhật gần nhất: 2026-07-31
+Cập nhật gần nhất: 2026-08-01
 
 ## Trạng thái hiện tại
 
@@ -12,9 +12,24 @@ Cập nhật gần nhất: 2026-07-31
 - Phase 9 — Windows Service, launcher và LAN: **đang triển khai; chưa đạt gate**.
 - Phase 10–13 — installer, backup/restore, update/rollback và acceptance: **chưa triển khai**.
 
+### Cập nhật truy cập LAN — 2026-08-01
+
+- Đã bỏ toàn bộ luồng người dùng: route setup/đăng nhập/đăng xuất, middleware xác thực,
+  context, form, runner, admin site và admin registrations. Mọi route nghiệp vụ dùng trực tiếp
+  trong LAN; PIN giá vốn vẫn là lớp bảo vệ dữ liệu nhạy cảm theo browser session.
+- `IdempotencyRecord` không còn liên kết người dùng. Browser nhận client key ngẫu nhiên trong
+  session; unique constraint là `(client_key, operation, key)`.
+- Migration tương thích `core.0004` chuyển bản ghi replay cũ sang `legacy-<id>` rồi bỏ cột
+  cũ. Đã kiểm tra trên SQLite tạm: record cũ còn nguyên sau upgrade; cài database mới không tạo
+  bảng user. Bảng lịch sử còn sót trên installation cũ không tự xóa để tránh thao tác phá hủy.
+- Media sản phẩm được dùng trực tiếp trong LAN, nhưng vẫn chỉ nằm dưới media root, decode ảnh
+  thật và kiểm tra content type trước khi trả file.
+- Gate sau thay đổi: formatter, Ruff, mypy, Django check, migration check và `pytest --create-db`
+  đều PASS (`107 passed`).
+
 ### Evidence mới nhất Phase 9
 
-- Waitress server entry point giữ single-instance lease, không tự migrate/first-run và native
+- Waitress server entry point giữ single-instance lease, không tự migrate/thiết lập PIN và native
   PyInstaller `onedir` `ShopHoaThuanServer.exe` đã smoke PASS `/health/` trên Windows test data.
 - Source launcher, WinSW XML, logging/runtime data config, LAN/device access page và QR đã có.
 - Regression packaging đã sửa: import Django trước setup, logging filter dynamic, standard
@@ -43,8 +58,8 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - Bootstrap, HTMX và Chart.js được đóng gói local để ứng dụng hoạt động khi mất Internet.
 - PyInstaller `onedir`, Windows Service và Inno Setup là pipeline phát hành; máy shop
   không cần Python, uv, Git hay Node.js.
-- Truy cập LAN/Tailscale dùng HTTP ở bản đầu. Phiên đăng nhập, CSRF và giới hạn host vẫn
-  được bật; hướng dẫn thiết bị cảnh báo chỉ dùng mạng tin cậy.
+- Truy cập LAN/Tailscale dùng HTTP ở bản đầu. CSRF, browser session và giới hạn host vẫn
+  được bật; hướng dẫn thiết bị cảnh báo chỉ dùng mạng tin cậy vì không có lớp xác thực người dùng.
 - Cổng production cố định mặc định là `2505`. Địa chỉ local ưu tiên là
   `http://shophoathuan.local:2505`; IP LAN và QR luôn là phương án dự phòng.
 - `shophoathuan.local` dùng mDNS chỉ trong LAN, không đăng ký DNS công cộng, không mở port
@@ -62,18 +77,18 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - Waitress production entry point, PyInstaller `onedir`, WinSW và Inno Setup đã có
   scaffold ban đầu.
 - `/health/`, PWA manifest, trang thiết bị và backup bằng SQLite backup API đã có nền tảng.
-- Authentication, CSRF, Django session và khóa giá vốn phía server đã được triển khai.
+- CSRF, Django session browser và khóa giá vốn PIN phía server đã được triển khai.
 
 ### Khoảng trống phải xử lý trước khi phát hành
 
 | Mức | Hiện trạng | Thay đổi bắt buộc |
 |---|---|---|
 | P0 | Database hiện là `%PROGRAMDATA%\Shop Hoa Thuan\shop-hoa-thuan.sqlite3`; media và log cũng chưa theo cây thư mục yêu cầu | Chuẩn hóa thành `data\db.sqlite3`, `data\media`, `backups`, `rollback`, `logs`, `config`; hỗ trợ chuyển dữ liệu cũ an toàn và không ghi đè |
-| P0 | Server tự chạy migration và seed ở mỗi lần service start | Tách migration/first-run thành utility có backup, log và exit code; service bình thường chỉ khởi động ứng dụng |
+| P0 | Server tự chạy migration và seed ở mỗi lần service start | Tách migration thành utility có backup, log và exit code; service bình thường chỉ khởi động ứng dụng |
 | P0 | Chưa có maintenance mode, transaction drain hoặc khóa phối hợp backup/update/restore | Tạo cơ chế khóa liên tiến trình và trạng thái maintenance; chặn ghi mới, chờ ghi đang chạy hoàn tất trước khi dừng service |
-| P0 | Installer hiện chỉ copy file, đăng ký service và mở URL | Bổ sung first-run, tài khoản/PIN, firewall Private, health verification, rollback cài đặt và chính sách giữ dữ liệu khi uninstall |
+| P0 | Installer hiện chỉ copy file, đăng ký service và mở URL | Bổ sung thiết lập PIN, firewall Private, health verification, rollback cài đặt và chính sách giữ dữ liệu khi uninstall |
 | P0 | Chưa có restore/update/rollback hoạt động end-to-end | Xây GUI utility, preflight, checksum, backup trước thao tác, migration kiểm soát và rollback nguyên tử |
-| P0 | Media chỉ được Django phục vụ khi `DEBUG=True` | Thêm cơ chế phục vụ ảnh production an toàn, yêu cầu đăng nhập và không để lộ đường dẫn filesystem |
+| P0 | Media chỉ được Django phục vụ khi `DEBUG=True` | Thêm cơ chế phục vụ ảnh production an toàn, không để lộ đường dẫn filesystem |
 | P1 | `/health/` mới trả boolean database, chưa có version và server time | Trả schema tối thiểu ổn định: status, database, version, server time; không trả path/secret/traceback |
 | P1 | Version đang lặp trong `pyproject.toml` và installer | Tạo một nguồn version duy nhất, sinh `version.json` và dùng chung cho health, backup, installer, updater và log |
 | P1 | Secret nằm trực tiếp ở data root; log mới có một file chung | Chuyển secret/config vào `config`, tách log theo chức năng, rotation và bộ lọc dữ liệu nhạy cảm |
@@ -123,7 +138,7 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - [x] Tạo `AGENTS.md`, `PROGRESS.md`, `.env.example`.
 - [x] Khởi tạo Django, settings, logging, static/media/data dir.
 - [x] Tạo schema cốt lõi, migration và database constraints.
-- [x] Thiết lập đăng nhập/đăng xuất, bảo vệ route và tài khoản cài đặt lần đầu.
+- [x] Bỏ lớp xác thực người dùng; mọi route LAN dùng trực tiếp, giá vốn giữ PIN riêng.
 - [x] Tạo layout quản trị, sidebar/header/mobile navigation và route khung.
 - [x] Tạo `/health/` không làm lộ dữ liệu.
 - [x] Tạo backup nhất quán, kiểm tra archive và giao diện tải backup.
@@ -131,8 +146,8 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - [x] Format, lint, mypy, Django checks, migrations check và tests.
 - [x] Commit Phase 1.
 
-Điều kiện hoàn thành: ứng dụng khởi động bằng Waitress, đăng nhập được, route quản trị
-được bảo vệ, schema/migration sạch, health check hoạt động, toàn bộ kiểm tra Phase 1 qua.
+Điều kiện hoàn thành: ứng dụng khởi động bằng Waitress, route nghiệp vụ LAN hoạt động,
+schema/migration sạch, health check hoạt động, toàn bộ kiểm tra Phase 1 qua.
 
 ### Phase 2 — Sản phẩm và tồn kho
 
@@ -154,7 +169,7 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - [x] Chặn tạo/sửa giá vốn và tải backup khi đang khóa.
 - [x] Defer giá vốn khỏi queryset và không render số liệu nhạy cảm khi khóa.
 - [x] Thống kê vốn tồn, giá trị bán, lợi nhuận và tỷ suất theo từng size.
-- [x] Unit/integration tests cho PIN, expiry, logout, rate limit và response.
+- [x] Unit/integration tests cho PIN, expiry, browser-session clear, rate limit và response.
 - [x] Commit Phase 3.
 
 ### Phase 4 — Bán hàng
@@ -169,7 +184,7 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - [x] Chi tiết giao dịch và hóa đơn in không chứa giá vốn/lợi nhuận.
 - [x] Hủy đúng một lần, bắt buộc lý do, hoàn tồn và tạo `sale_return`.
 - [x] Test rollback, snapshot bất biến, múi giờ Việt Nam và bảo vệ dữ liệu giá vốn.
-- [x] Kiểm tra trực tiếp luồng login → chọn size → sửa giá → giảm giá → hoàn tất → hóa đơn.
+- [x] Kiểm tra trực tiếp luồng mở ứng dụng → chọn size → sửa giá → giảm giá → hoàn tất → hóa đơn.
 - [x] Commit Phase 4.
 
 Điều kiện hoàn thành: giao dịch nhiều size commit nguyên tử, không bán quá tồn khi cạnh
@@ -221,20 +236,19 @@ giao dịch/tồn kho/báo cáo và schema đã sẵn sàng cho hardening produc
 - [x] Xác nhận chỉ một Waitress process ghi database; tạo single-instance/process lock.
 - [x] Tạo maintenance state và operation lock dùng cho backup, restore, update và migration.
 - [x] Theo dõi số transaction ghi đang hoạt động để chặn ghi mới và chờ drain có timeout.
-- [ ] Ghi audit event cho các thao tác vận hành quan trọng mà không chứa mật khẩu, PIN,
+- [ ] Ghi audit event cho các thao tác vận hành quan trọng mà không chứa credential, PIN,
   cookie, secret hoặc toàn bộ giá vốn.
 
 #### Server, media, health, logging và version
 
-- [x] Tách `migrate`/`seed_data` khỏi server startup; tạo migration runner và first-run
-  runner có exit code ổn định.
+- [x] Tách `migrate`/`seed_data` khỏi server startup; tạo migration runner có exit code ổn định.
 - [x] Tạo một nguồn version duy nhất dùng chung runtime/health/UI/backup.
 - [x] Nâng `/health/` để kiểm tra query database nhẹ và trả status, database, version,
   server time UTC; luôn che traceback/path.
-- [x] Phục vụ media riêng tư; ảnh sản phẩm yêu cầu session đăng nhập,
-  hỗ trợ thumbnail/cache header an toàn và không lộ path thật.
+- [x] Phục vụ media LAN an toàn; ảnh sản phẩm chỉ dưới media root, hỗ trợ thumbnail/cache
+  header an toàn và không lộ path thật.
 - [x] Sinh `ALLOWED_HOSTS`, CSRF trusted origins và listen address từ config được kiểm soát.
-- [x] Tách log server, authentication, business, backup, restore, update và service;
+- [x] Tách log server, security, business, backup, restore, update và service;
   dùng rotating handler, redaction và mã lỗi thân thiện.
 
 #### Kiểm tra và tài liệu
@@ -254,9 +268,9 @@ không mất dữ liệu khi mô phỏng chuyển layout.
 
 - Runtime dùng lease file theo data directory, maintenance state/active-write marker có dọn stale
   PID và timeout; request ghi nhận thông báo bảo trì thay vì báo thành công giả.
-- Service không tự migrate/seed; migration và first-run là runner riêng. Health che toàn bộ lỗi
-  nội bộ và phân biệt `ok`, `maintenance`, `schema_incompatible`, `error`.
-- Media chỉ cho user đăng nhập, chỉ phục vụ JPEG/PNG/WebP dưới media root; version được dùng bởi
+- Service không tự migrate/seed; migration là runner riêng. Health che toàn bộ lỗi nội bộ và
+  phân biệt `ok`, `maintenance`, `schema_incompatible`, `error`.
+- Media LAN chỉ phục vụ JPEG/PNG/WebP dưới media root; version được dùng bởi
   UI context, health và manifest backup. Log xoay/redact theo nhóm runtime.
 - 78 test tự động đạt trước test process lease cuối; test process lease đạt riêng. Formatter,
   Ruff, mypy, check và migration check đạt trước thay đổi test cuối.
@@ -293,7 +307,7 @@ không mất dữ liệu khi mô phỏng chuyển layout.
   file tạm; không tạo product nửa hoàn chỉnh.
 - [x] Thêm optimistic concurrency bằng revision tăng dần cho form
   sửa; trả thông báo xung đột tiếng Việt thay vì ghi đè.
-- [x] Thiết kế idempotency record có owner, operation, key, request fingerprint và response
+- [x] Thiết kế idempotency record có browser client key, operation, key, request fingerprint và response
   và response reference; unique constraint ở database.
 - [x] Áp idempotency + transaction + PRG cho bán hàng, điều chỉnh kho, hủy sale, tạo product,
   upload ảnh và tạo backup.
@@ -303,11 +317,11 @@ không mất dữ liệu khi mô phỏng chuyển layout.
 #### PWA, cache và lỗi mạng
 
 - [x] Bổ sung PWA icon, manifest shortcut Bán hàng/Sản phẩm/Tồn kho và `display=standalone`.
-- [x] Service worker chỉ cache asset tĩnh; không cache HTML đã đăng nhập, API,
+- [x] Service worker chỉ cache asset tĩnh; không cache HTML động, API,
   giá vốn/lợi nhuận, POST, sale hay inventory response.
 - [ ] Hiển thị trạng thái mất kết nối và thông báo thay đổi chưa được xác nhận; chỉ toast
   thành công sau commit.
-- [x] Test route/layout mobile, CSRF/session/cost-lock regression; đăng nhập không tự mở khóa giá vốn.
+- [x] Test route/layout mobile, CSRF/session/cost-lock regression; browser mới không tự mở khóa giá vốn.
 - [x] Viết `docs/MOBILE_PWA.md` về mobile/PWA và giới hạn không có offline write.
 
 Điều kiện hoàn thành: toàn bộ nghiệp vụ hằng ngày dùng được ở viewport 360 px, không cuộn
@@ -322,7 +336,7 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
   bottom navigation không che nội dung nhờ padding mobile.
 - Upload ảnh gợi ý camera sau, preview cục bộ; server decode/verify JPEG/PNG/WebP, giới hạn
   10 MB/30 MP, xử lý EXIF/thumbnail; media private kiểm tra lại nội dung trước khi trả MIME.
-- `IdempotencyRecord` có unique constraint `(user, operation, key)`, fingerprint payload và URL
+- `IdempotencyRecord` có unique constraint `(client_key, operation, key)`, fingerprint payload và URL
   kết quả. Sale, điều chỉnh tồn, hủy sale, tạo product và backup chống gửi trùng; test thread
   xác minh hai submit cùng key chỉ commit một lần. Có lệnh `purge_idempotency --days 30`.
 - Category/product/variant và timeout security dùng revision compare-and-save atomically; stale
@@ -343,7 +357,7 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 - [ ] Cấu hình WinSW tên hiển thị `Shop Hoà Thuận Server`, automatic delayed start,
   graceful stop, working directory, environment và log path trong ProgramData.
 - [ ] Cấu hình restart hữu hạn/backoff; sau ngưỡng lỗi ghi mã lỗi và dừng restart loop.
-- [ ] Kiểm thử start khi chưa login, reboot, shutdown, crash, recovery và không có console.
+- [ ] Kiểm thử start trước khi có browser truy cập, reboot, shutdown, crash, recovery và không có console.
 
 #### Launcher và chẩn đoán
 
@@ -365,8 +379,8 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 - [ ] Trang `/settings/device-access/` ưu tiên URL
   `http://shophoathuan.local:2505`, đồng thời hiển thị hostname, health, LAN IPv4,
   `http://<IP-LAN>:2505`, QR, Tailscale IP nếu phát hiện được và trạng thái request.
-- [ ] Thêm khu vực **Mạng của máy chủ** trên `/settings/device-access/`, chỉ người đã
-  đăng nhập được xem, gồm loại kết nối, trạng thái, tên Wi-Fi (SSID) của máy Windows host
+- [ ] Thêm khu vực **Mạng của máy chủ** trên `/settings/device-access/`, hiển thị trong LAN,
+  gồm loại kết nối, trạng thái, tên Wi-Fi (SSID) của máy Windows host
   và nút **Làm mới thông tin mạng**.
 - [ ] Đọc SSID phía server bằng Windows Native Wi-Fi API hoặc cơ chế hệ thống ổn định
   tương đương và phải hoạt động khi Django chạy dưới Windows Service; không yêu cầu người
@@ -377,7 +391,7 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
   - `Máy chủ chưa kết nối mạng`;
   - `Không thể xác định mạng đang sử dụng`.
 - [ ] Nếu có nhiều network adapter, ưu tiên adapter đang kết nối và có đường mạng hoạt động.
-  Không trả mật khẩu, khóa bảo mật, BSSID, MAC hoặc cấu hình mạng nhạy cảm; không dùng SSID
+  Không trả credential, khóa bảo mật, BSSID, MAC hoặc cấu hình mạng nhạy cảm; không dùng SSID
   để xác thực/phân quyền và không ghi SSID vào log nếu không cần thiết.
 - [ ] Không hiển thị loopback/APIPA/adapter không hoạt động; không yêu cầu `ipconfig`.
 - [ ] Tài liệu hóa DHCP reservation, DNS router `home.arpa` tùy chọn và Tailscale; không
@@ -400,24 +414,23 @@ mở ứng dụng mà không có terminal; điện thoại truy cập được b
 - [ ] PyInstaller `onedir` đóng gói Python, Django, Waitress, templates/static/migrations và
   local assets; không phụ thuộc Python/uv/Git/Node trên host.
 - [ ] Tạo GUI executable cho launcher, backup, restore, updater; utility migration,
-  first-run, health và smoke test có thể chạy ẩn bởi installer.
+  health và smoke test có thể chạy ẩn bởi installer.
 - [ ] Đóng gói WinSW, version/changelog, license và checksum manifest.
 - [ ] Smoke test mọi executable trong thư mục staging trước khi tạo installer.
 
-#### Inno Setup và first-run
+#### Inno Setup và thiết lập PIN
 
 - [ ] Tạo `ShopHoaThuan-Setup-<version>.exe`, kiểm tra x64/Admin/dung lượng và version.
 - [ ] Copy app vào Program Files; chỉ tạo thư mục ProgramData còn thiếu, không ghi đè
   database/media/config.
-- [ ] Sinh secret an toàn, chạy migration runner, collect/static verify và first-run GUI
-  để tạo chủ shop/PIN.
+- [ ] Sinh secret an toàn, chạy migration runner, collect/static verify và hướng dẫn thiết lập PIN.
 - [ ] Đăng ký/start WinSW, tạo firewall Private rule, health check, Desktop/Start Menu
   shortcut và hiển thị URL/QR.
 - [ ] Nếu lỗi: dừng/gỡ service mới, rollback application files/rule/shortcut, giữ data,
   ghi log và hiển thị mã lỗi tiếng Việt.
 - [ ] Uninstaller mặc định giữ ProgramData; muốn xóa dữ liệu phải xác nhận hai lần và được
   đề nghị backup cuối.
-- [ ] Repair/reinstall/update cùng version không làm mất dữ liệu hoặc tạo lại account/PIN.
+- [ ] Repair/reinstall/update cùng version không làm mất dữ liệu hoặc tạo lại PIN.
 
 #### Chứng nhận cài đặt
 
@@ -492,7 +505,7 @@ trước restore.
 - [ ] Chạy migration runner có log và timeout, `manage.py check --deploy`, collect/static
   verification, start service, health và business smoke test.
 - [ ] Chỉ thoát maintenance và xóa staging khi toàn bộ bước đạt.
-- [ ] Giữ nguyên ProgramData data/media/backups/logs/config/account/PIN/sales/inventory.
+- [ ] Giữ nguyên ProgramData data/media/backups/logs/config/PIN/sales/inventory.
 
 #### Migration và rollback
 
@@ -517,15 +530,15 @@ maintenance/staging mồ côi.
 
 - [ ] Cài mới/reinstall/repair/uninstall trên Windows 10 và 11 x64 sạch; xác nhận không cần
   Python, uv, Git, Node, SQLite riêng hay terminal.
-- [ ] Service auto-start sau reboot, chạy khi chưa login, launcher/PWA không tạo server
+- [ ] Service auto-start sau reboot, chạy khi chưa có browser truy cập, launcher/PWA không tạo server
   trùng và đóng browser không dừng service.
-- [ ] Chạy E2E desktop và các viewport mobile: login, product + camera image + multi-size,
+- [ ] Chạy E2E desktop và các viewport mobile: mở ứng dụng, product + camera image + multi-size,
   cost unlock/edit, inventory, sale, report, cancel và backup.
 - [ ] Test hai thiết bị sửa đồng thời, hai sale tranh tồn kho, double-submit, request timeout
   sau commit, CSRF lỗi, session hết hạn và mất mạng.
 - [ ] Xác minh response/cache/log/CSV/hóa đơn không lộ giá vốn khi khóa.
 - [ ] Backup live rồi restore sang máy/thư mục sạch; so sánh counts, tổng tồn, sale gần nhất,
-  doanh thu, ảnh, account và PIN.
+  doanh thu, ảnh và PIN.
 - [ ] Update qua ít nhất hai version, migration lỗi, health lỗi, rollback code/database và
   chạy lại updater.
 - [ ] Mô phỏng mất điện/process termination tại checkpoint quan trọng trong giới hạn lab;
@@ -599,7 +612,7 @@ Không còn lỗi quan trọng đã xác nhận trong phạm vi Phase 3.
 - Django system/migration checks: đạt, không có model chưa migration.
 - `pytest`: 54 test đạt, gồm validation tổng tiền/dòng bán và transaction cạnh tranh SQLite.
 - Waitress smoke test: đạt.
-- Browser smoke test: đăng nhập, thêm size M, sửa giá thực tế, cảnh báo dưới giá niêm yết,
+- Browser smoke test: mở ứng dụng LAN, thêm size M, sửa giá thực tế, cảnh báo dưới giá niêm yết,
   giảm giá, hoàn tất giao dịch, xem chi tiết và hóa đơn đều đạt; console không có lỗi.
 - Response tìm sản phẩm khi khóa không chứa `cost_price`; hóa đơn không chứa giá vốn hoặc
   lợi nhuận.

@@ -4,9 +4,9 @@
 
 | Gate | Mục tiêu | Trạng thái hiện tại |
 |---|---|---|
-| Formatter/Ruff/mypy | Style, lỗi tĩnh, type contract | PASS ở gate WSL gần nhất trước thay đổi docs; phải chạy lại trước commit phase. |
-| Django check/migration check | Settings/schema sạch | PASS ở gate WSL gần nhất; phải chạy lại trước commit phase. |
-| Pytest | Nghiệp vụ, lock, maintenance, health, media, idempotency | 104 PASS ở WSL sau regression frozen startup; không thay thế gate phase cuối. |
+| Formatter/Ruff/mypy | Style, lỗi tĩnh, type contract | PASS sau thay đổi truy cập LAN (2026-08-01). |
+| Django check/migration check | Settings/schema sạch | PASS sau thay đổi truy cập LAN (2026-08-01). |
+| Pytest | Nghiệp vụ, lock, maintenance, health, media, idempotency | 107 PASS với `--create-db` sau thay đổi truy cập LAN; không thay thế gate phase cuối. |
 | Native Windows smoke | Artifact không cần Python dev | `ShopHoaThuanServer.exe` PASS `/health/` với Windows test data. |
 | SCM/firewall | Service, recovery, Private LAN/cleanup | Chưa chạy: cần UAC. |
 | Clean machine/device | Reboot, LAN phone, camera/PWA, installer | Chưa chạy: Phase 13. |
@@ -20,7 +20,7 @@ Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
 | Giá vốn/PIN | Lộ response, cache, CSV, log | Cost lock server, PIN hash/rate-limit, redaction, PWA static-only cache | Device/browser cache Phase 13. |
 | Sale/tồn | Double submit, race, partial commit | Atomic service, DB constraints, idempotency, movement audit | Multi-device LAN Phase 13. |
 | Runtime data | Hai server ghi DB, maintenance stuck | OS lease, write drain timeout/finally, stale tests | Windows SCM/crash/reboot. |
-| Upload/media | Fake image, traversal, public file | Pillow decode/verify, limits, authenticated media root | Camera/browser thật. |
+| Upload/media | Fake image, traversal, public file | Pillow decode/verify, limits, media root giới hạn đúng thư mục ảnh | Camera/browser thật. |
 | Network | Public exposure/host header/firewall | No port-forward, no wildcard host, Private firewall plan | LAN firewall inspection. |
 | Backup/update | Snapshot/restore/update mất data | Maintenance + SQLite backup foundation | End-to-end Phase 11–12. |
 

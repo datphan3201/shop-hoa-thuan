@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-from django.contrib.auth.models import User
 from django.test import Client
 from django.urls import reverse
 
@@ -12,9 +11,7 @@ from apps.catalog.models import Category, Product, ProductVariant
 
 
 @pytest.mark.django_db
-def test_authenticated_primary_routes_keep_mobile_navigation(client: Client) -> None:
-    owner = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
-    client.force_login(owner)
+def test_primary_routes_keep_mobile_navigation_without_login(client: Client) -> None:
     category = Category.objects.create(name="Áo")
     product = Product.objects.create(category=category, name="Áo mobile")
     variant = ProductVariant.objects.create(

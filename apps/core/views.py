@@ -1,7 +1,6 @@
 from base64 import b64encode
 from io import BytesIO
 from pathlib import Path
-from typing import cast
 
 import qrcode
 from django.conf import settings
@@ -11,7 +10,6 @@ from django.db import connection
 from django.db.models import Count, F, IntegerField, Sum
 from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
-from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -29,7 +27,7 @@ from apps.core.forms import (
     PinUnlockForm,
     SecurityTimeoutForm,
 )
-from apps.core.idempotency import client_key, IdempotencyConflictError, request_fingerprint
+from apps.core.idempotency import IdempotencyConflictError, client_key, request_fingerprint
 from apps.core.models import IdempotencyRecord, ShopSecuritySettings
 from apps.core.network import discover_device_access
 from apps.core.operations import maintenance_operation, maintenance_state
@@ -48,6 +46,7 @@ from apps.reports.services import (
 from apps.sales.models import Sale
 from shop_hoa_thuan.runner import schema_is_compatible
 from shop_hoa_thuan.version import application_version
+
 
 def dashboard(request: HttpRequest) -> HttpResponse:
     variants = ProductVariant.objects.select_related("product")

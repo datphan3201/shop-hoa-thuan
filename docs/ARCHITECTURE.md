@@ -19,7 +19,7 @@ Waitress (một process) ── Django Templates + HTMX + static local
         │
         ├── catalog / inventory / sales / reports services
         ├── idempotency + optimistic concurrency
-        ├── cost-price security, authentication, private media
+        ├── cost-price PIN security, LAN media delivery
         ├── server lease, maintenance và active-write coordination
         └── health + structured production logging
         │
@@ -34,11 +34,11 @@ cầu Service Control Manager start service khi cần, rồi mở browser; nó k
 
 | Lớp | Trách nhiệm | Quy tắc |
 |---|---|---|
-| `apps.core` | Auth, PIN, runtime, lock, health, private media, idempotency | Không trả cost khi khóa; không log secret/token/PIN. |
+| `apps.core` | PIN, runtime, lock, health, media, idempotency | Không trả cost khi khóa; không log secret/token/PIN. |
 | `apps.catalog` | Category, Product, Variant, InventoryMovement | Chỉ inventory service thay đổi `ProductVariant.quantity`. |
 | `apps.sales` | Giỏ, Sale, SaleItem, hủy sale | Bán/hủy trong `transaction.atomic()`; lưu snapshot. |
 | `apps.reports` | Dashboard, report, export | Chỉ tính sale hoàn thành; ngày theo `Asia/Ho_Chi_Minh`. |
-| `shop_hoa_thuan` | Settings, runtime, server, runner, version | Server không tự migrate hoặc first-run. |
+| `shop_hoa_thuan` | Settings, runtime, server, runner, version | Server không tự migrate hoặc thiết lập PIN. |
 
 Views giữ mỏng; forms validation; services thực hiện quy tắc/transaction; database giữ
 constraint quan trọng. Tiền lưu bằng số nguyên VND, không dùng float.
@@ -66,7 +66,7 @@ Không dùng live database trên OneDrive/cloud sync, USB, NAS hay network share
   rollback toàn bộ.
 - Hủy sale chỉ hợp lệ một lần, có lý do và tạo `sale_return`.
 - Server tính lại subtotal, discount và total; không tin tổng từ client.
-- Idempotency ràng buộc `(user, operation, key)` cùng fingerprint: retry cùng payload trả kết
+- Idempotency ràng buộc `(client_key, operation, key)` cùng fingerprint: retry cùng payload trả kết
   quả cũ, reuse key với payload khác bị từ chối.
 - Record quan trọng dùng `revision`; stale form bị từ chối thay vì ghi đè. Sale/tồn vẫn dùng
   transaction server authoritative.
@@ -81,17 +81,21 @@ lease.
 Maintenance lấy lease, chặn write mới, chờ active-write marker hiện hữu drain trong timeout,
 rồi chạy backup/migration/restore/update. Mọi path release lease/state bằng `finally`. Timeout
 không kill transaction đang ghi; maintenance kết thúc an toàn. Service runtime không migration
-hay first-run.
+hay thiết lập PIN.
 
 ## Bảo mật, media, health và log
 
-- Django auth, CSRF, HTTP-only cookie; `SHOP_USE_HTTPS=true` chỉ khi HTTPS thực có.
+- CSRF và browser session HTTP-only; `SHOP_USE_HTTPS=true` chỉ khi HTTPS thực có.
+- Không có account application, luồng xác thực người dùng, route đăng nhập hay admin site.
+  Migration tương thích chỉ chuyển khóa replay cũ thành browser key; không tự xóa bảng lịch sử
+  còn lại vì đó là thao tác schema phá hủy và phải có backup/retirement plan riêng.
 - `DJANGO_ALLOWED_HOSTS` không chấp nhận wildcard; dùng localhost, hostname/IP LAN phát hiện
   hoặc host cấu hình rõ.
 - Cost/PIN hash không ra response/context/export/log khi cost lock đóng.
-- Product media cần login, bị giới hạn trong media root và chỉ JPEG/PNG/WebP decode hợp lệ.
+- Product media chỉ phục vụ dưới media root và chỉ JPEG/PNG/WebP decode hợp lệ; LAN access là
+  một quyết định vận hành, không phải access-control boundary.
 - Log server, security, business, backup, restore, update, service xoay tối đa 5 file/category;
-  filter che password, PIN, session, CSRF, authorization, secret và cost price.
+  filter che PIN, session, CSRF, authorization, secret và cost price.
 - `/health/` nhẹ, không trả stack trace/path/secret/dữ liệu nghiệp vụ; phản ánh version,
   database, maintenance và schema compatibility.
 

@@ -14,12 +14,12 @@ def test_sensitive_logging_filter_redacts_credentials_and_costs() -> None:
         logging.ERROR,
         __file__,
         1,
-        "password=abc pin:2468 cost_price=100000",
+        "pin:2468 cost_price=100000",
         (),
         None,
     )
     assert SensitiveDataFilter().filter(record) is True
-    assert record.getMessage() == "password=[REDACTED] pin=[REDACTED] cost_price=[REDACTED]"
+    assert record.getMessage() == "pin=[REDACTED] cost_price=[REDACTED]"
 
 
 def test_logging_configuration_uses_imported_redaction_filter() -> None:

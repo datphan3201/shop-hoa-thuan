@@ -1,7 +1,7 @@
 # Windows Service và launcher
 
 Service production dùng WinSW, tên hiển thị **Shop Hoà Thuận Server** và chỉ chạy
-`ShopHoaThuanServer.exe`. Entry point server không chạy migration, first-run hay seed data; schema
+`ShopHoaThuanServer.exe`. Entry point server không chạy migration, thiết lập PIN hay seed data; schema
 không tương thích khiến server thoát bằng `SHOP-SERVER-003`.
 
 Service chạy Waitress trên cổng cấu hình `SHOP_SERVER_PORT` (mặc định 2505), lấy lock theo data

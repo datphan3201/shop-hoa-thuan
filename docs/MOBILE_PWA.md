@@ -7,9 +7,9 @@ mobile riêng; bảng desktop chỉ hiện từ breakpoint `lg`.
 ## Bán hàng và mạng chập chờn
 
 Mỗi lần gửi bán hàng, điều chỉnh tồn kho hoặc hủy giao dịch, trình duyệt gửi một idempotency key.
-Máy chủ lưu key theo tài khoản, loại thao tác và fingerprint của dữ liệu trong cùng transaction
+Máy chủ lưu key theo browser session ẩn danh, loại thao tác và fingerprint của dữ liệu trong cùng transaction
 với nghiệp vụ. Gửi lại cùng key/cùng dữ liệu trả về giao dịch đã commit; cùng key nhưng dữ liệu
-khác bị từ chối. Endpoint đã đăng nhập
+khác bị từ chối. Endpoint cùng browser session
 `/operations/idempotency/<operation>/<key>/` chỉ trả trạng thái hoàn thành và URL kết quả cho
 chính chủ sở hữu key.
 
@@ -29,12 +29,12 @@ Tồn kho và bán hàng vẫn dùng transaction phía server, không dùng opti
 Input ảnh chấp nhận JPEG, PNG và WebP, gợi ý camera sau (`capture=environment`) và hiển thị
 preview cục bộ. Máy chủ không tin extension hay MIME client: Pillow decode/verify nội dung thực,
 giới hạn file 10 MB và 30 megapixel, xử lý EXIF orientation, nén ảnh và tạo thumbnail. Media chỉ
-được phục vụ sau đăng nhập và server kiểm tra lại nội dung ảnh trước khi trả response.
+được phục vụ trong mạng LAN và server kiểm tra lại nội dung ảnh trước khi trả response.
 
 ## Cache PWA
 
 Manifest dùng tên `Shop Hoà Thuận`, display standalone và shortcut Bán hàng/Sản phẩm/Tồn kho.
-Service worker chỉ cache GET cùng origin trong `/static/`; không cache HTML đã đăng nhập, HTMX,
+Service worker chỉ cache GET cùng origin trong `/static/`; không cache HTML động, HTMX,
 media, POST, giao dịch, tồn kho, giá vốn hoặc lợi nhuận. Cache cũ được xóa khi activate worker
 mới.
 

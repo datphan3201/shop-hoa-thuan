@@ -25,8 +25,6 @@ RUNTIME_PATHS = ensure_runtime_layout()
 DATA_DIR = RUNTIME_PATHS.root
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",

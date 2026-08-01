@@ -16,7 +16,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.catalog.models import Category, ProductVariant
 from apps.catalog.services import InsufficientStockError
-from apps.core.idempotency import client_key, IdempotencyConflictError, execute
+from apps.core.idempotency import IdempotencyConflictError, client_key, execute
 from apps.core.models import IdempotencyRecord
 from apps.core.security import is_cost_price_unlocked
 from apps.sales.forms import SaleCancellationForm, SaleCreateForm

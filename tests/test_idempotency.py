@@ -5,7 +5,6 @@ from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.db import close_old_connections
 from django.test import Client
@@ -19,7 +18,6 @@ from apps.core.models import IdempotencyRecord
 
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_retries_with_same_key_commit_work_once() -> None:
-    user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
     barrier = Barrier(2)
 
     def submit() -> bool:
@@ -27,7 +25,7 @@ def test_concurrent_retries_with_same_key_commit_work_once() -> None:
         barrier.wait(timeout=5)
         try:
             outcome = execute(
-                user=user,
+                client="browser-a",
                 operation="test.write",
                 key="same-mobile-request",
                 payload={"value": 1},
@@ -48,9 +46,8 @@ def test_concurrent_retries_with_same_key_commit_work_once() -> None:
 
 @pytest.mark.django_db
 def test_same_key_with_different_payload_is_rejected() -> None:
-    user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
     execute(
-        user=user,
+        client="browser-a",
         operation="test.write",
         key="same-key",
         payload={"value": 1},
@@ -60,7 +57,7 @@ def test_same_key_with_different_payload_is_rejected() -> None:
 
     with pytest.raises(IdempotencyConflictError, match="không khớp"):
         execute(
-            user=user,
+            client="browser-a",
             operation="test.write",
             key="same-key",
             payload={"value": 2},
@@ -73,15 +70,14 @@ def test_same_key_with_different_payload_is_rejected() -> None:
 
 @pytest.mark.django_db
 def test_idempotency_cleanup_keeps_recent_records_and_removes_expired() -> None:
-    user = User.objects.create_user(username="chushop", password="MatKhau-Rieng-2026!")
     expired = IdempotencyRecord.objects.create(
-        user=user, operation="test", key="expired", fingerprint="a" * 64
+        client_key="browser-a", operation="test", key="expired", fingerprint="a" * 64
     )
     IdempotencyRecord.objects.filter(pk=expired.pk).update(
         created_at=timezone.now() - timedelta(days=31)
     )
     recent = IdempotencyRecord.objects.create(
-        user=user, operation="test", key="recent", fingerprint="b" * 64
+        client_key="browser-a", operation="test", key="recent", fingerprint="b" * 64
     )
 
     call_command("purge_idempotency", days=30)
@@ -91,11 +87,13 @@ def test_idempotency_cleanup_keeps_recent_records_and_removes_expired() -> None:
 
 
 @pytest.mark.django_db
-def test_status_endpoint_only_returns_completed_operation_to_its_owner(client: Client) -> None:
-    owner = User.objects.create_user(username="owner", password="MatKhau-Rieng-2026!")
-    other = User.objects.create_user(username="other", password="MatKhau-Rieng-2026!")
+def test_status_endpoint_only_returns_completed_operation_to_its_browser(client: Client) -> None:
+    owner_key = "browser-owner"
+    session = client.session
+    session["idempotency_client_key"] = owner_key
+    session.save()
     IdempotencyRecord.objects.create(
-        user=owner,
+        client_key=owner_key,
         operation="sale.complete",
         key="request-1",
         fingerprint="a" * 64,
@@ -103,10 +101,8 @@ def test_status_endpoint_only_returns_completed_operation_to_its_owner(client: C
     )
     url = reverse("idempotency-status", args=["sale.complete", "request-1"])
 
-    assert client.get(url).status_code == 302
-    client.force_login(other)
-    assert client.get(url).status_code == 404
-    client.force_login(owner)
+    other_client = Client()
+    assert other_client.get(url).status_code == 404
     response = client.get(url)
     assert response.status_code == 200
     assert response.json() == {"status": "completed", "location": "/sales/1/"}

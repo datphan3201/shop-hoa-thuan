@@ -65,13 +65,9 @@ module = ["qrcode", "qrcode.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [
-  "apps.catalog.admin",
-  "apps.catalog.forms",
-  "apps.core.admin",
-  "apps.core.forms",
-  "apps.sales.admin",
-]
+module = ["apps.catalog.forms", "apps.core.forms"]
+# django-stubs does not yet provide concrete generic arguments for Django's
+# ModelForm/BaseInlineFormSet base classes used by these form declarations.
 disallow_any_generics = false
 
 [tool.django-stubs]

@@ -4,7 +4,7 @@ from django.db import migrations, models
 def copy_legacy_owner_to_client_key(apps, schema_editor):
     record_model = apps.get_model("core", "IdempotencyRecord")
     for record in record_model.objects.all().iterator():
-        record.client_key = f"legacy-{record.user_id}"
+        record.client_key = f"legacy-{record.legacy_user_id}"
         record.save(update_fields=["client_key"])
 
 
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             preserve_default=False,
         ),
         migrations.RunPython(copy_legacy_owner_to_client_key, migrations.RunPython.noop),
-        migrations.RemoveField(model_name="idempotencyrecord", name="user"),
+        migrations.RemoveField(model_name="idempotencyrecord", name="legacy_user_id"),
         migrations.AddConstraint(
             model_name="idempotencyrecord",
             constraint=models.UniqueConstraint(
