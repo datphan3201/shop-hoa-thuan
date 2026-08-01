@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
@@ -48,52 +49,64 @@ def perform_update(package_path: Path, app_root: Path) -> str:
     from apps.core.backup import BackupError, create_backup, restore_backup
     from apps.core.operations import maintenance_operation
 
-    manifest_stage = Path(os.getenv("SHOP_UPDATE_STAGE", str(app_root.parent / "update-stage")))
-    manifest = stage_update_package(package_path, manifest_stage, application_version())
-    staged_app = manifest_stage / "application"
-    if not staged_app.is_dir():
-        raise UpdateError("Gói update thiếu thư mục application.")
+    configured_stage = os.getenv("SHOP_UPDATE_STAGE")
+    created_stage = configured_stage is None
+    manifest_stage = (
+        Path(configured_stage)
+        if configured_stage
+        else Path(tempfile.mkdtemp(prefix="update-stage-", dir=app_root.parent))
+    )
+    try:
+        if configured_stage and manifest_stage.exists():
+            shutil.rmtree(manifest_stage)
+        manifest = stage_update_package(package_path, manifest_stage, application_version())
+        staged_app = manifest_stage / "application"
+        if not staged_app.is_dir():
+            raise UpdateError("Gói update thiếu thư mục application.")
 
-    runtime_paths = ensure_runtime_layout()
-    rollback_app = runtime_paths.rollback / f"app-{application_version()}"
-    rollback_app.parent.mkdir(parents=True, exist_ok=True)
-    with maintenance_operation("update", timeout_seconds=60):
-        pre_update_backup = create_backup()
-        _service_command("stop")
-        try:
-            if rollback_app.exists():
-                shutil.rmtree(rollback_app)
-            shutil.copytree(app_root, rollback_app)
-            for source in staged_app.rglob("*"):
-                relative = source.relative_to(staged_app)
-                destination = app_root / relative
-                if source.is_dir():
-                    destination.mkdir(parents=True, exist_ok=True)
-                else:
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(source, destination)
-            migration_runner = app_root / "ShopHoaThuanMigration" / "ShopHoaThuanMigration.exe"
-            if not migration_runner.exists():
-                raise UpdateError("Gói update thiếu migration runner.")
-            result = subprocess.run([str(migration_runner)], check=False)
-            if result.returncode != 0:
-                raise UpdateError("Migration update thất bại.")
-            _service_command("start")
-            _wait_service_health()
-        except Exception as error:
+        runtime_paths = ensure_runtime_layout()
+        rollback_app = runtime_paths.rollback / f"app-{application_version()}"
+        rollback_app.parent.mkdir(parents=True, exist_ok=True)
+        with maintenance_operation("update", timeout_seconds=60):
+            pre_update_backup = create_backup()
             _service_command("stop")
-            if app_root.exists():
-                shutil.rmtree(app_root)
-            shutil.copytree(rollback_app, app_root)
             try:
-                restore_backup(pre_update_backup.path)
-            except BackupError as restore_error:
-                raise UpdateError(
-                    "Rollback update thất bại; cần giữ nguyên evidence để xử lý."
-                ) from restore_error
-            _service_command("start")
-            raise UpdateError("Update thất bại và đã rollback.") from error
-    return manifest.target_version
+                if rollback_app.exists():
+                    shutil.rmtree(rollback_app)
+                shutil.copytree(app_root, rollback_app)
+                for source in staged_app.rglob("*"):
+                    relative = source.relative_to(staged_app)
+                    destination = app_root / relative
+                    if source.is_dir():
+                        destination.mkdir(parents=True, exist_ok=True)
+                    else:
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(source, destination)
+                migration_runner = app_root / "ShopHoaThuanMigration" / "ShopHoaThuanMigration.exe"
+                if not migration_runner.exists():
+                    raise UpdateError("Gói update thiếu migration runner.")
+                result = subprocess.run([str(migration_runner)], check=False)
+                if result.returncode != 0:
+                    raise UpdateError("Migration update thất bại.")
+                _service_command("start")
+                _wait_service_health()
+            except Exception as error:
+                _service_command("stop")
+                if app_root.exists():
+                    shutil.rmtree(app_root)
+                shutil.copytree(rollback_app, app_root)
+                try:
+                    restore_backup(pre_update_backup.path)
+                except BackupError as restore_error:
+                    raise UpdateError(
+                        "Rollback update thất bại; cần giữ nguyên evidence để xử lý."
+                    ) from restore_error
+                _service_command("start")
+                raise UpdateError("Update thất bại và đã rollback.") from error
+        return manifest.target_version
+    finally:
+        if created_stage or configured_stage:
+            shutil.rmtree(manifest_stage, ignore_errors=True)
 
 
 def initialize_runtime_environment() -> None:

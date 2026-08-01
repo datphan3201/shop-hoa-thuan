@@ -22,7 +22,7 @@ def main() -> int:
     from django.core.management import call_command
 
     django.setup()
-    call_command("migrate_runtime", interactive=False, verbosity=1)
+    call_command("migrate_runtime", verbosity=1)
     return 0
 
 

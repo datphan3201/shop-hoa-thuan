@@ -249,13 +249,15 @@ def restore_backup(backup_path: Path) -> BackupInfo:
     backup_root = Path(settings.BACKUP_ROOT)
     backup_root.mkdir(parents=True, exist_ok=True)
     rollback_root.mkdir(parents=True, exist_ok=True)
-    current_backup = create_backup()
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
     staging_root = Path(tempfile.mkdtemp(prefix="restore-", dir=backup_root))
     old_database = rollback_root / f"db-{timestamp}.sqlite3"
     old_media = rollback_root / f"media-{timestamp}"
     try:
         staged_database, staged_media = _extract_backup(backup_path, staging_root)
+        # Validate the incoming package completely before creating the
+        # pre-restore safety copy or touching the live database/media paths.
+        current_backup = create_backup()
         connection.close()
         database_path.parent.mkdir(parents=True, exist_ok=True)
         if database_path.exists():

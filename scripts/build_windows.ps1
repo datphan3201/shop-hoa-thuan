@@ -18,6 +18,12 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($version)) {
 
 uv sync --group windows-build --python 3.12
 uv run python manage.py collectstatic --noinput
+# Deployment checks must exercise production-like settings.  These values are
+# process-local build fixtures; the installer generates the real runtime secret
+# and configuration in ProgramData.
+$env:DJANGO_DEBUG = "false"
+$env:DJANGO_SECRET_KEY = "build-check-$([guid]::NewGuid().ToString('N'))-not-for-runtime"
+$env:DJANGO_ALLOWED_HOSTS = "localhost,127.0.0.1"
 uv run python manage.py check --deploy
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/shop_hoa_thuan.spec"
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/migration_runner.spec"
