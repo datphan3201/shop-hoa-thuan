@@ -15,6 +15,18 @@ Cập nhật gần nhất: 2026-08-01
 - Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
 - Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
 
+### Trạng thái runtime và địa chỉ truy cập — 2026-08-01
+
+- Lần kiểm tra cuối: `http://127.0.0.1:2505/health/` chưa kết nối vì server/service hiện không
+  chạy thường trú. Native server trước đó đã smoke-test PASS trên test data và được dừng sau test;
+  không coi việc smoke-test là service production đang hoạt động.
+- URL host mặc định khi server được khởi động: `http://127.0.0.1:2505`.
+- Địa chỉ LAN phát hiện trên Windows host: `http://192.168.1.182:2505` và
+  `http://192.168.1.136:2505`; điện thoại phải cùng mạng với adapter tương ứng.
+- Hostname LAN tùy chọn: `http://shophoathuan.local:2505` nếu mDNS trên mạng hỗ trợ.
+- Khi service/launcher hoàn thiện, trang **Thiết bị và sao lưu** phải là nguồn hiển thị địa chỉ
+  thực tế thay vì giả định một IP cố định.
+
 ### Trạng thái thực tế sau lượt build cuối — 2026-08-01
 
 Các commit gần nhất đã push lên branch `bugfix`: `80d286e` (backup/restore GUI), `ead1fa7`
