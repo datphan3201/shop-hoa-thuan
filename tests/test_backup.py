@@ -13,6 +13,7 @@ from django.urls import reverse
 
 from apps.catalog.models import Category
 from apps.core.backup import (
+    BackupError,
     create_backup,
     list_backups,
     prune_backups,
@@ -84,6 +85,23 @@ def test_restore_replaces_database_and_media_after_validation(tmp_path: Path) ->
             ]
         assert original_media.read_text(encoding="utf-8") == "original"
         assert not (media_root / "new.txt").exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_invalid_restore_is_rejected_before_pre_restore_backup(tmp_path: Path) -> None:
+    backup_root = tmp_path / "backups"
+    media_root = tmp_path / "media"
+    media_root.mkdir()
+    invalid = backup_root / "invalid.zip"
+    backup_root.mkdir()
+    with zipfile.ZipFile(invalid, "w") as archive:
+        archive.writestr("manifest.json", "{}")
+
+    with override_settings(BACKUP_ROOT=backup_root, MEDIA_ROOT=media_root):
+        with pytest.raises(BackupError, match="Khôi phục thất bại"):
+            restore_backup(invalid)
+
+    assert list(backup_root.glob("shop-hoa-thuan-*.zip")) == []
 
 
 @pytest.mark.django_db(transaction=True)
