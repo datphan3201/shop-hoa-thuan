@@ -1,6 +1,6 @@
 # Tiến độ Shop Hoà Thuận
 
-Cập nhật gần nhất: 2026-08-01
+Cập nhật gần nhất: 2026-08-02
 
 ## Trạng thái hiện tại
 
@@ -9,7 +9,7 @@ Cập nhật gần nhất: 2026-08-01
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
-- Phase 9 — Windows Service, launcher và LAN: **đang triển khai; native server PASS, SCM/UAC gate chưa chạy**.
+- Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery/firewall test data PASS; reboot, clean install và LAN device còn lại**.
 - Phase 10 — PyInstaller và installer: **đã build artifact 1.0.0; clean-install/reinstall chưa đạt gate**.
 - Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
 - Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
@@ -71,7 +71,7 @@ Deployment warning phân loại:
   schema mismatch, migration ngoài ý muốn và warning build không giải thích được.
 - Chấp nhận có điều kiện cho HTTP LAN: `W004`, `W008`, `W012`, `W016`; chỉ dùng Private LAN
   tin cậy hoặc bật `SHOP_USE_HTTPS=true` khi có HTTPS/Tailscale phù hợp.
-- Chỉ xác minh trên Windows/device: SCM, firewall, ACL, reboot, clean install, LAN phone,
+- Chỉ xác minh trên Windows/device: ACL production, reboot, clean install, LAN phone,
   camera, Add to Home Screen, native update/rollback.
 
 Windows test evidence sau build cuối:
@@ -79,23 +79,25 @@ Windows test evidence sau build cuối:
 - `tests/test_operations.py`: **6 passed**.
 - `tests/test_runner.py tests/test_runtime.py`: **6 passed**.
 - `tests/test_update.py tests/test_windows_service_assets.py`: **18 passed**.
+- `phase9_test_service.ps1` chạy elevated: **PASS** — WinSW install/start, `/health/`, kill PID
+  recovery, stop/start và firewall Private; service/rule được cleanup, test data được giữ.
 - Full pytest WSL: **122 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
   WSL nhưng console bridge phát `KeyboardInterrupt` sau 101 test; không ghi nhận đó là full
   Windows PASS. Cần chạy lại trong PowerShell/Windows CI native ổn định trước release.
+- Output tiếng Việt của một số thông báo WinSW bị mojibake trong console hiện tại do code page;
+  đây là vấn đề hiển thị của terminal test, không làm fail service/health/recovery. Có thể chạy
+  lại với code page UTF-8 khi cần lưu log đọc được.
 
 ### Việc cần làm tiếp theo
 
-1. Mở PowerShell bằng **Run as administrator** và chạy
-   `scripts/windows/phase9_test_service.ps1` trên test data để xác nhận WinSW, SCM, restart,
-   crash recovery và firewall profile Private; cleanup phải đạt trước khi dùng production.
-2. Trên Windows sạch hoặc VM/Sandbox, chạy installer hiện tại, reboot, reinstall/repair và
+1. Trên Windows sạch hoặc VM/Sandbox, chạy installer hiện tại, reboot, reinstall/repair và
    uninstall mặc định; xác minh ProgramData, service, shortcut và không cần Python.
-3. Tạo test package 1.0.0 → 1.1.0, chạy restore và update/rollback trên data test độc lập;
+2. Tạo test package 1.0.0 → 1.1.0, chạy restore và update/rollback trên data test độc lập;
    failure injection phải chứng minh maintenance, database/media và application tree trở lại
    trạng thái nhất quán.
-4. Chạy checklist thiết bị thật trong `docs/USER_DEVICE_VALIDATION.md`: điện thoại LAN,
+3. Chạy checklist thiết bị thật trong `docs/USER_DEVICE_VALIDATION.md`: điện thoại LAN,
    camera, viewport, PWA Add to Home Screen và UX; không đưa dữ liệu thật vào failure injection.
-5. Chỉ sau khi các mục trên có evidence mới nâng kết luận Phase 13; nếu còn thiếu thì giữ
+4. Chỉ sau khi các mục trên có evidence mới nâng kết luận Phase 13; nếu còn thiếu thì giữ
    `CONDITIONALLY ACCEPTED`.
 
 Quy ước checklist: `[x]` nghĩa là implementation/test/tài liệu tương ứng đã có evidence;
@@ -131,8 +133,8 @@ tại là `CONDITIONALLY ACCEPTED` cho internal build validation, không phải 
   frozen bundle.
 - WinSW portable 2.12.0.0 được tải từ winget/official GitHub và hash `05B82D…B3A0DA` đã xác minh;
   đây là build/test tool tạm, chưa được commit vào repository.
-- Gate chưa chạy: Administrator integration service/Private firewall/controlled recovery;
-  reboot auto-start, LAN điện thoại và clean Windows vẫn là device validation.
+- Administrator integration service/Private firewall/controlled recovery: **PASS** trên test
+  data; reboot auto-start, LAN điện thoại và clean Windows vẫn là device validation.
 
 Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase tiếp theo ở
 `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/USE_CASES.md`,
@@ -457,7 +459,9 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 - [x] Cấu hình WinSW tên hiển thị `Shop Hoà Thuận Server`, automatic delayed start,
   graceful stop, working directory, environment và log path trong ProgramData.
 - [x] Cấu hình restart hữu hạn/backoff; sau ngưỡng lỗi WinSW dừng restart loop.
-- [ ] Kiểm thử start trước khi có browser truy cập, reboot, shutdown, crash, recovery và không có console.
+- [x] Kiểm thử start trước khi có browser truy cập, kill PID/recovery, stop/start lại và không tạo
+  server thứ hai trên test service.
+- [ ] Kiểm thử reboot/autostart và shutdown Windows thật.
 
 #### Launcher và chẩn đoán
 
@@ -474,7 +478,8 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
   Private; mDNS chưa được tự động mở.
 - [x] Installer/launcher và trang thiết bị ghi rõ ứng dụng dùng trực tiếp trong LAN: không tạo
   account, không quảng bá Internet, PIN chỉ bảo vệ giá vốn và firewall chỉ được phép Private.
-- [ ] Chạy helper bằng Administrator và xác minh rule thật trên Windows host.
+- [x] Chạy helper bằng Administrator; service, health, recovery và firewall Private đã PASS trên
+  test data, service/rule được cleanup.
 - [ ] Quảng bá hostname `shophoathuan.local` bằng mDNS trong LAN từ cùng server/service,
   không tạo thêm server ghi database và không phụ thuộc DNS Internet.
 - [ ] Phát hiện/xử lý trùng tên mDNS; trang thiết bị phải hiển thị tên thực tế đang được
@@ -533,7 +538,7 @@ mở ứng dụng mà không có terminal; điện thoại truy cập được b
   installation chưa có PIN.
 - [x] Đã có flow đăng ký/start WinSW, tạo firewall Private rule, health check, Desktop/Start Menu
   shortcut và URL khởi động; việc chạy thật cần Administrator.
-- [ ] Xác minh flow installer/service/firewall/health trên Windows sạch hoặc elevated host.
+- [ ] Xác minh flow installer/service/firewall/health trên Windows sạch.
 - [ ] Nếu lỗi: dừng/gỡ service mới, rollback application files/rule/shortcut, giữ data,
   ghi log và hiển thị mã lỗi tiếng Việt.
 - [x] Uninstaller không khai báo xóa ProgramData mặc định.

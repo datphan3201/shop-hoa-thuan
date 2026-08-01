@@ -2,8 +2,8 @@
 
 ## Chưa thể xác minh trong môi trường hiện tại
 
-- Windows Service Control Manager, đăng ký/gỡ service và Private firewall cần PowerShell
-  Administrator; token hiện tại không elevated.
+- Service Control Manager, WinSW, crash recovery và firewall Private đã PASS trên test data bằng
+  PowerShell Administrator; clean-install, production ACL và reboot/autostart vẫn chưa có evidence.
 - Reboot/autostart, clean Windows install, reinstall/repair/uninstall và ACL ProgramData chưa
   có evidence trên máy sạch.
 - Điện thoại thật: LAN, camera orientation, touch UX, PWA Add to Home Screen và mất mạng.

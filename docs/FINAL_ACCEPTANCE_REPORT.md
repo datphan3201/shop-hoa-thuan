@@ -3,7 +3,7 @@
 ## Kết luận hiện tại
 
 **CONDITIONALLY ACCEPTED** — bản build và integration nội bộ đã có bằng chứng, nhưng chưa
-được tuyên bố `ACCEPTED FOR PRODUCTION RELEASE`. Các gate cần UAC, reboot, clean Windows và
+được tuyên bố `ACCEPTED FOR PRODUCTION RELEASE`. Clean Windows, production ACL, reboot và
 thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện tại.
 
 ## Evidence đã có
@@ -14,6 +14,8 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 - Windows Python 3.12.10, PyInstaller 6.21.0 và Inno Setup 6.7.3.
 - Native server `/health/` đạt trên test data.
 - Native migration runner đạt, in được tiếng Việt và giải phóng maintenance lock.
+- WinSW/SCM test data đạt: install/start, health, kill-process recovery, stop/start lại và
+  firewall Private; service/rule được cleanup thành công.
 - Health executable trả mã `SHOP-HEALTH-001` khi server chưa sẵn sàng.
 - Installer `ShopHoaThuan-Setup-1.0.0.exe` build thành công.
 - Backup/restore, update validation, tree replacement và exception-path được test trong WSL.
@@ -36,7 +38,7 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 
 ## Còn lại trước production
 
-UAC service/firewall/recovery, clean Windows, reboot, LAN phone, camera/PWA thật, restore độc
-lập và update/rollback native phải có PASS. Full Windows suite cũng cần được chạy trong một
-console native ổn định hoặc Windows CI không bị cầu WSL ngắt. Cho tới khi đó release decision
-không được nâng cấp khỏi `CONDITIONALLY ACCEPTED`.
+Clean Windows, reboot, LAN phone, camera/PWA thật, restore độc lập và update/rollback native
+phải có PASS. Full Windows suite cũng cần được chạy trong một console native ổn định hoặc
+Windows CI không bị cầu WSL ngắt. Cho tới khi đó release decision không được nâng cấp khỏi
+`CONDITIONALLY ACCEPTED`.

@@ -9,7 +9,7 @@
 | Pytest WSL | Nghiệp vụ, lock, maintenance, health, media, idempotency, backup/update | **PASS — 122 passed, 1 warning** (2026-08-01). |
 | Pytest Windows | Native compatibility/regression | Các nhóm runtime/operations/update/service assets pass; full process qua cầu WSL–Windows bị console interrupt, không ghi PASS giả. |
 | Native Windows smoke | Artifact không cần Python dev | `ShopHoaThuanServer.exe` và migration PASS; health utility trả mã 1 khi server không sẵn sàng. |
-| SCM/firewall | Service, recovery, Private LAN/cleanup | Chưa chạy: cần UAC. |
+| SCM/firewall | Service, recovery, Private LAN/cleanup | **PASS trên test data**; clean install/reboot/ACL còn lại. |
 | Clean machine/device | Reboot, LAN phone, camera/PWA, installer | Chưa chạy: Phase 13. |
 
 Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
@@ -20,7 +20,7 @@ Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
 |---|---|---|---|
 | Giá vốn/PIN | Lộ response, cache, CSV, log | Cost lock server, PIN hash/rate-limit, redaction, PWA static-only cache | Device/browser cache Phase 13. |
 | Sale/tồn | Double submit, race, partial commit | Atomic service, DB constraints, idempotency, movement audit | Multi-device LAN Phase 13. |
-| Runtime data | Hai server ghi DB, maintenance stuck | OS lease, write drain timeout/finally, stale tests | Windows SCM/crash/reboot. |
+| Runtime data | Hai server ghi DB, maintenance stuck | OS lease, write drain timeout/finally, stale tests, WinSW crash recovery | Windows reboot/ACL. |
 | Upload/media | Fake image, traversal, public file | Pillow decode/verify, limits, media root giới hạn đúng thư mục ảnh | Camera/browser thật. |
 | Network | Public exposure/host header/firewall | No port-forward, no wildcard host, Private firewall plan | LAN firewall inspection. |
 | Backup/update | Snapshot/restore/update mất data | Maintenance + SQLite backup API + staged rollback tests | End-to-end Windows Phase 11–12. |

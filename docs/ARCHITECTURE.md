@@ -119,6 +119,6 @@ manifest và artifact dùng cùng giá trị.
 ## Trạng thái Windows
 
 PyInstaller native server, migration, health, launcher, update, backup và restore utilities đã
-build; server/migration/health smoke PASS trên Windows test data. Gate WinSW/SCM/firewall/recovery,
-clean install, restore/update native và thiết bị thật vẫn cần evidence; xem
+build; server/migration/health smoke và WinSW/SCM/firewall/recovery test data PASS trên Windows.
+Clean install, reboot, restore/update native và thiết bị thật vẫn cần evidence; xem
 [roadmap](DELIVERY_ROADMAP.md) và [known limitations](KNOWN_LIMITATIONS.md).

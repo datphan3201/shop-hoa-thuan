@@ -14,9 +14,11 @@ service nếu cần, chờ hữu hạn và mở trình duyệt. Nó không spawn
 
 ## Trạng thái và integration test cần Administrator
 
-Native `ShopHoaThuanServer.exe` đã smoke-test `/health/` trên Windows test data. Phase 9 chưa
-PASS vì SCM/WinSW/firewall/recovery chưa chạy được nếu không nâng quyền UAC. Không dùng test
-script này với `%ProgramData%\Shop Hoa Thuan` production.
+Native `ShopHoaThuanServer.exe` đã smoke-test `/health/`. Script integration đã chạy elevated
+trên test data và đạt WinSW install/start, health, kill-process recovery, stop/start lại và
+firewall Private; service/rule được cleanup thành công. Đây là PASS cho test data, chưa phải
+clean-install/reboot/production-data acceptance. Không dùng script này với
+`%ProgramData%\Shop Hoa Thuan` production.
 
 Sau khi Phase 10 tạo `dist\ShopHoaThuan\ShopHoaThuanServer.exe` và có WinSW x64 đã xác minh,
 mở PowerShell **Run as administrator** và chạy đúng một script:
@@ -44,3 +46,11 @@ production. Data/log test được giữ để điều tra. Dọn thủ công kh
 ```
 
 Cleanup giữ test data để điều tra; chỉ xóa sau khi đã xác minh đúng đường dẫn và không cần log.
+
+### Kết quả gần nhất
+
+- `phase9_test_service.ps1`: PASS trên `C:\ProgramData\Shop Hoa Thuan Test`.
+- WinSW install/start, `/health/`, kill PID/recovery và stop/start: PASS.
+- Firewall rule `Shop Hoa Thuan Test LAN 2505` với profile Private: PASS; rule/service được gỡ.
+- Một số dòng tiếng Việt hiển thị sai trong console do code page Windows; không ảnh hưởng
+  exit status hoặc kết quả service. Dùng code page UTF-8 khi thu thập log đọc được.

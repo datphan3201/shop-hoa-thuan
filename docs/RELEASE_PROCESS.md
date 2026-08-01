@@ -15,8 +15,8 @@
 - Installer SHA-256: `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`.
 - Toolchain build: Windows Python 3.12.10, PyInstaller 6.21.0, Inno Setup 6.7.3,
   WinSW 2.12.0.0; WinSW SHA-256 đã xác minh trước khi đưa vào staging.
-- Native server/migration/health smoke đã đạt trên test data. Service SCM, firewall, clean
-  install, reboot và thiết bị thật chưa được ghi PASS khi chưa có quyền/evidence tương ứng.
+- Native server/migration/health smoke và service SCM/firewall/recovery test data đã đạt. Clean
+  install, production ACL, reboot và thiết bị thật chưa được ghi PASS khi chưa có evidence tương ứng.
 
 ## Checklist release
 

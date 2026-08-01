@@ -17,9 +17,9 @@
 - [x] native migration runner
 - [x] installer artifact and SHA-256
 - [x] native server `/health/` smoke on isolated test data
-- [ ] Administrator service/firewall/recovery
+- [x] Administrator service/firewall/recovery trên test data
+- [ ] Production/clean Windows service ACL, reboot/autostart
 - [ ] clean Windows install/reinstall/uninstall
-- [ ] reboot/autostart
 
 ## Data safety gate
 

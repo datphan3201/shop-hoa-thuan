@@ -6,7 +6,7 @@
 |---|---|---|---|
 | 1–7 | Hoàn thành | Nghiệp vụ, runtime hardening, lock/maintenance, health/media/logging test | Chứng nhận Windows thuộc phase phát hành. |
 | 8 | Hoàn thành trong WSL | Mobile/PWA, idempotency, concurrency, upload/media | Camera/viewport/A2HS thật ở Phase 13. |
-| 9 | Đang triển khai, native smoke PASS | Waitress, launcher source, WinSW XML, device page, native server/migration/health smoke | WinSW/SCM/firewall/recovery cần UAC; reboot/LAN phone cần device validation. |
+| 9 | Service test data PASS, acceptance pending | Waitress, launcher source, WinSW XML, device page, native server/migration/health smoke, SCM/recovery/firewall test | Clean install, reboot/autostart, LAN phone và production ACL cần device validation. |
 | 10 | Build artifact PASS, acceptance pending | PyInstaller server + standalone utilities + Inno Setup installer build PASS | Clean install/reinstall/uninstall trên Windows sạch chưa chạy. |
 | 11 | Backend/GUI/WSL PASS, native acceptance pending | SQLite backup API, manifest/checksum/integrity, restore và GUI utility | Restore bằng installer/service thật và retention scheduler cần kiểm thử thêm. |
 | 12 | WSL validation PASS, native acceptance pending | Package validation, staging cleanup, complete tree replacement, rollback primitives | 1.0.0→1.1.0 với SCM/migration/health failure injection chưa chạy. |
@@ -28,7 +28,7 @@ chỉ phục vụ mở khóa PIN giá vốn và idempotency; nó không là cơ 
 - Phase 13 phải đánh giá biên LAN, Wi-Fi khách, firewall và rò rỉ dữ liệu giá vốn; PIN không
   được xem là kiểm soát truy cập cho sale/inventory.
 
-## Việc ngay: hoàn tất Phase 9
+## Việc ngay: hoàn tất validation còn lại của Phase 9
 
 ### Integration test service cần Administrator
 
@@ -48,12 +48,13 @@ rule `Shop Hoa Thuan Test LAN 2505`. Nó explicit migrate data test (không ph�
 install/start service, health, kill PID để test recovery, stop/start lại và tự gỡ service/rule.
 Data/log test được giữ để điều tra.
 
-**PASS:** health thành công trước/sau recovery; firewall chỉ Private; không còn test service/rule
-sau cleanup. **FAIL:** giữ log/data test, không chạm `C:\ProgramData\Shop Hoa Thuan` production.
+**Đã đạt:** health thành công trước/sau recovery; firewall chỉ Private; test service/rule đã
+được cleanup. **Còn lại:** clean Windows, reboot/autostart và LAN phone. Không chạm
+`C:\ProgramData\Shop Hoa Thuan` production.
 
 ### Sau test SCM
 
-1. Build launcher `.exe`; smoke khi service đã chạy và khi service dừng.
+1. Smoke launcher `.exe` khi service đã chạy và khi service dừng.
 2. Kiểm tra URL/QR trên LAN thật, không Internet và sau đổi IP.
 3. Chuẩn bị/check reboot auto-start và phone LAN; ghi `REQUIRES USER DEVICE VALIDATION` nếu chưa
    thể chạy, không đánh dấu PASS.
