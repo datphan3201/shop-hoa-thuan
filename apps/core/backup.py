@@ -188,14 +188,15 @@ def validate_backup(backup_path: Path) -> dict[str, object]:
                 raise BackupError("Phiên bản file sao lưu chưa được hỗ trợ.")
             database_metadata = manifest.get("database")
             if isinstance(database_metadata, dict) and database_metadata.get("sha256"):
-                with tempfile.NamedTemporaryFile() as database_file:
-                    database_file.write(archive.read(database_name))
-                    database_file.flush()
-                    if _sha256(Path(database_file.name)) != database_metadata["sha256"]:
+                # Windows does not allow reopening a NamedTemporaryFile while
+                # its handle is still open.  Write into a temporary directory,
+                # close the file, then hash/open it read-only on both platforms.
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    database_path = Path(temporary_directory) / "database.sqlite3"
+                    database_path.write_bytes(archive.read(database_name))
+                    if _sha256(database_path) != database_metadata["sha256"]:
                         raise BackupError("Checksum database trong file sao lưu không khớp.")
-                    with sqlite3.connect(
-                        f"file:{database_file.name}?mode=ro", uri=True
-                    ) as database:
+                    with sqlite3.connect(f"file:{database_path}?mode=ro", uri=True) as database:
                         result = database.execute("PRAGMA integrity_check").fetchone()
                     if not result or result[0] != "ok":
                         raise BackupError("Database trong file sao lưu không toàn vẹn.")
