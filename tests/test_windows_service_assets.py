@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from shop_hoa_thuan import launcher
 
 
@@ -39,6 +41,16 @@ def test_pyinstaller_bundle_keeps_django_logging_filter() -> None:
     assert 'project_root / "pyproject.toml"' in spec
     assert "a.zipfiles" in spec
     assert "sys.path.insert(0, str(project_root))" in spec
+
+
+@pytest.mark.parametrize("spec_name", ["health_check.spec", "launcher.spec", "update_gui.spec"])
+def test_standalone_windows_specs_embed_runtime_binaries(spec_name: str) -> None:
+    root = Path(__file__).resolve().parents[1]
+    spec = (root / "packaging" / "pyinstaller" / spec_name).read_text(encoding="utf-8")
+
+    assert "a.binaries" in spec
+    assert "a.zipfiles" in spec
+    assert "a.datas" in spec
 
 
 def test_native_server_smoke_script_uses_only_the_packaged_server() -> None:

@@ -34,7 +34,9 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    [],
+    a.binaries,
+    a.zipfiles,
+    a.datas,
     name="ShopHoaThuanUpdate",
     debug=False,
     bootloader_ignore_signals=False,

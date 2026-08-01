@@ -19,7 +19,9 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    [],
+    a.binaries,
+    a.zipfiles,
+    a.datas,
     name="ShopHoaThuanLauncher",
     debug=False,
     bootloader_ignore_signals=False,
