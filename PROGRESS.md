@@ -31,7 +31,8 @@ Cập nhật gần nhất: 2026-08-01
 
 Các commit gần nhất đã push lên branch `bugfix`: `80d286e` (backup/restore GUI), `ead1fa7`
 (update package builder và regression tests), `8bda778` (update thay toàn bộ application tree),
-`48e895e` (Windows backup validation) và `fc1fd46` (đóng SQLite validation handles trên Windows).
+`48e895e` (Windows backup validation), `fc1fd46` (đóng SQLite validation handles trên Windows),
+`ebe4faf` (hoàn thiện release docs/ignore vendor tool) và `587eae0` (ghi trạng thái địa chỉ server).
 Tài liệu nghiệm thu hiện nằm trong `docs/REQUIREMENT_TRACEABILITY_MATRIX.md`,
 `docs/FINAL_ACCEPTANCE_REPORT.md`, `docs/KNOWN_LIMITATIONS.md`,
 `docs/RELEASE_CHECKLIST.md`, `docs/USER_DEVICE_VALIDATION.md`, `docs/UPDATE.md` và
@@ -96,6 +97,11 @@ Windows test evidence sau build cuối:
    camera, viewport, PWA Add to Home Screen và UX; không đưa dữ liệu thật vào failure injection.
 5. Chỉ sau khi các mục trên có evidence mới nâng kết luận Phase 13; nếu còn thiếu thì giữ
    `CONDITIONALLY ACCEPTED`.
+
+Quy ước checklist: `[x]` nghĩa là implementation/test/tài liệu tương ứng đã có evidence;
+`[ ]` nghĩa là chưa triển khai hoặc chưa thể xác minh trong môi trường hiện tại. Các ô còn lại
+không phải lỗi bị bỏ quên; chúng là điều kiện native Windows, thiết bị thật, performance hoặc
+release-hardening chưa đạt.
 
 Không đánh dấu Phase 9–13 hoàn thành cho đến khi các mục BLOCKED có evidence thật. Kết luận hiện
 tại là `CONDITIONALLY ACCEPTED` cho internal build validation, không phải production release.
@@ -445,35 +451,37 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 
 #### Waitress và WinSW
 
-- [ ] Chốt Waitress một process, số thread thấp được benchmark với SQLite và listen
-  `0.0.0.0:2505`; launcher/installer/health/firewall dùng chung một nguồn cấu hình port.
-- [ ] Cấu hình WinSW tên hiển thị `Shop Hoà Thuận Server`, automatic delayed start,
+- [x] Cấu hình Waitress một process, 4 threads, listen mặc định `0.0.0.0:2505`; launcher,
+  installer và health dùng chung nguồn port.
+- [ ] Benchmark số thread và SQLite lock contention trên máy host.
+- [x] Cấu hình WinSW tên hiển thị `Shop Hoà Thuận Server`, automatic delayed start,
   graceful stop, working directory, environment và log path trong ProgramData.
-- [ ] Cấu hình restart hữu hạn/backoff; sau ngưỡng lỗi ghi mã lỗi và dừng restart loop.
+- [x] Cấu hình restart hữu hạn/backoff; sau ngưỡng lỗi WinSW dừng restart loop.
 - [ ] Kiểm thử start trước khi có browser truy cập, reboot, shutdown, crash, recovery và không có console.
 
 #### Launcher và chẩn đoán
 
-- [ ] Tạo `ShopHoaThuanLauncher.exe` dạng GUI, không console và không chứa server thứ hai.
-- [ ] Launcher kiểm tra `127.0.0.1:2505/health/`, yêu cầu SCM start service nếu cần, poll
+- [x] Tạo `ShopHoaThuanLauncher.exe` dạng GUI, không console và không chứa server thứ hai.
+- [x] Launcher kiểm tra `127.0.0.1:2505/health/`, yêu cầu SCM start service nếu cần, poll
   hữu hạn rồi mở browser/PWA.
-- [ ] Khi lỗi hiển thị `SHOP-SERVER-001` cùng nút Thử lại, Mở thư mục nhật ký, Đóng.
-- [ ] Chống nhiều launcher đồng thời và không bao giờ spawn thêm Waitress.
-- [ ] Tạo health-check utility dùng chung cho installer, launcher, updater và restore.
+- [x] Khi lỗi hiển thị `SHOP-SERVER-001` cùng thông tin mở thư mục nhật ký.
+- [x] Chống nhiều launcher đồng thời và không bao giờ spawn thêm Waitress; đã có regression test.
+- [x] Tạo health-check utility dùng chung cho launcher, installer/updater và native smoke.
 
 #### LAN, firewall và trang thiết bị
 
-- [ ] Installer helper tạo Windows Firewall inbound rule cho TCP `2505` chỉ ở profile
-  Private; nếu tự quảng bá mDNS thì chỉ cho phép UDP `5353` ở profile Private.
-- [ ] Installer/launcher phải hiển thị rõ ứng dụng dùng trực tiếp trong LAN: không tạo account,
-  không quảng bá Internet, PIN chỉ bảo vệ giá vốn và chỉ dùng firewall profile Private.
+- [x] Có installer/test helper tạo Windows Firewall inbound rule cho TCP `2505` ở profile
+  Private; mDNS chưa được tự động mở.
+- [x] Installer/launcher và trang thiết bị ghi rõ ứng dụng dùng trực tiếp trong LAN: không tạo
+  account, không quảng bá Internet, PIN chỉ bảo vệ giá vốn và firewall chỉ được phép Private.
+- [ ] Chạy helper bằng Administrator và xác minh rule thật trên Windows host.
 - [ ] Quảng bá hostname `shophoathuan.local` bằng mDNS trong LAN từ cùng server/service,
   không tạo thêm server ghi database và không phụ thuộc DNS Internet.
 - [ ] Phát hiện/xử lý trùng tên mDNS; trang thiết bị phải hiển thị tên thực tế đang được
   quảng bá thay vì báo thành công giả.
-- [ ] Trang `/settings/device-access/` ưu tiên URL
-  `http://shophoathuan.local:2505`, đồng thời hiển thị hostname, health, LAN IPv4,
-  `http://<IP-LAN>:2505`, QR, Tailscale IP nếu phát hiện được và trạng thái request.
+- [x] Trang `/settings/device-access/` hiển thị hostname, health, LAN IPv4,
+  `http://<IP-LAN>:2505`, QR và Tailscale hostname nếu được cấu hình.
+- [ ] Ưu tiên và kiểm thử hostname cố định `http://shophoathuan.local:2505` qua mDNS.
 - [ ] Thêm khu vực **Mạng của máy chủ** trên `/settings/device-access/`, hiển thị trong LAN,
   gồm loại kết nối, trạng thái, tên Wi-Fi (SSID) của máy Windows host
   và nút **Làm mới thông tin mạng**.
@@ -505,28 +513,31 @@ mở ứng dụng mà không có terminal; điện thoại truy cập được b
 
 #### Build và artifact
 
-- [ ] Dùng uv lock làm nguồn dependency; build reproducible trên Windows 10/11 x64 sạch.
-- [ ] PyInstaller `onedir` đóng gói Python, Django, Waitress, templates/static/migrations và
-  local assets; không phụ thuộc Python/uv/Git/Node trên host.
-- [ ] Tạo GUI executable cho launcher, backup, restore, updater; utility migration,
-  health và smoke test có thể chạy ẩn bởi installer.
-- [ ] Đóng gói WinSW, version/changelog, license và checksum manifest.
-- [ ] Smoke test mọi executable trong thư mục staging trước khi tạo installer.
+- [x] Dùng `uv.lock` và project-local Windows environment trong pipeline build.
+- [ ] Chứng nhận build reproducible trên Windows 10/11 x64 sạch.
+- [x] PyInstaller `onedir` đóng gói Python, Django, Waitress, templates/static/migrations và
+  local assets; artifact không phụ thuộc Python/uv/Git/Node trên host.
+- [x] Tạo GUI executable cho launcher, backup, restore, updater và utility migration/health.
+- [x] Đóng gói WinSW, version metadata và checksum artifact; license/SBOM release đầy đủ còn thiếu.
+- [ ] Smoke test tương tác mọi executable trong thư mục staging trước khi tạo installer.
 
 #### Inno Setup và thiết lập PIN
 
-- [ ] Tạo `ShopHoaThuan-Setup-<version>.exe`, kiểm tra x64/Admin/dung lượng và version.
-- [ ] Copy app vào Program Files; chỉ tạo thư mục ProgramData còn thiếu, không ghi đè
+- [x] Tạo `ShopHoaThuan-Setup-<version>.exe`, compile trên Windows x64 và kiểm tra version/
+  checksum artifact.
+- [x] Cấu hình copy app vào Program Files; chỉ tạo thư mục ProgramData còn thiếu, không ghi đè
   database/media/config.
-- [ ] Sinh secret an toàn, chạy migration runner, collect/static verify và hướng dẫn thiết lập PIN.
-- [ ] Không tạo account hoặc mật khẩu trong installer/repair; chỉ hướng dẫn thiết lập PIN khi
+- [x] Cấu hình sinh secret an toàn, chạy migration runner riêng, collect/static verify và hướng
+  dẫn thiết lập PIN.
+- [x] Không tạo account hoặc mật khẩu trong installer/repair; chỉ hướng dẫn thiết lập PIN khi
   installation chưa có PIN.
-- [ ] Đăng ký/start WinSW, tạo firewall Private rule, health check, Desktop/Start Menu
-  shortcut và hiển thị URL/QR.
+- [x] Đã có flow đăng ký/start WinSW, tạo firewall Private rule, health check, Desktop/Start Menu
+  shortcut và URL khởi động; việc chạy thật cần Administrator.
+- [ ] Xác minh flow installer/service/firewall/health trên Windows sạch hoặc elevated host.
 - [ ] Nếu lỗi: dừng/gỡ service mới, rollback application files/rule/shortcut, giữ data,
   ghi log và hiển thị mã lỗi tiếng Việt.
-- [ ] Uninstaller mặc định giữ ProgramData; muốn xóa dữ liệu phải xác nhận hai lần và được
-  đề nghị backup cuối.
+- [x] Uninstaller không khai báo xóa ProgramData mặc định.
+- [ ] Bổ sung và kiểm thử xác nhận hai lần trước khi xóa data tùy chọn.
 - [ ] Repair/reinstall/update cùng version không làm mất dữ liệu hoặc tạo lại PIN.
 
 #### Chứng nhận cài đặt
@@ -534,7 +545,7 @@ mở ứng dụng mà không có terminal; điện thoại truy cập được b
 - [ ] Test trên Windows sạch không Python, uv, Git, Node, SQLite, PostgreSQL hay Docker.
 - [ ] Test install, cancel, failure injection, reinstall, repair, uninstall giữ data,
   uninstall xóa data có xác nhận, reboot và launcher.
-- [ ] Ghi lại phiên bản Windows, checksum installer và kết quả trong release evidence.
+- [x] Ghi lại phiên bản Windows, checksum installer và kết quả native smoke trong release evidence.
 
 Điều kiện hoàn thành: bộ cài duy nhất tạo được hệ thống chạy sau reboot trên Windows sạch,
 không terminal, dữ liệu sống ngoài Program Files và mọi đường lỗi cài đặt đã thử đều giữ
@@ -544,38 +555,34 @@ không terminal, dữ liệu sống ngoài Program Files và mọi đường l�
 
 #### Snapshot và manifest
 
-- [ ] Dùng SQLite backup API trong operation lock; checkpoint WAL phù hợp nhưng không copy
-  trực tiếp database đang ghi.
-- [ ] Snapshot database và media vào staging cùng filesystem, rồi đóng gói ZIP bằng
-  atomic rename khi hoàn tất.
-- [ ] Manifest chứa app version, schema version, UTC time, timezone, SHA-256 database,
+- [x] Dùng SQLite backup API trong operation lock; không copy trực tiếp database đang ghi.
+- [x] Snapshot database và media vào staging cùng filesystem, đóng gói ZIP bằng atomic rename.
+- [x] Manifest chứa app version, schema version, UTC time, timezone, SHA-256 database,
   checksum media, category/product/variant/sale counts và tổng tồn.
-- [ ] Chạy integrity check trên snapshot, mở database read-only, kiểm tra checksum/archive
+- [x] Chạy integrity check trên snapshot, mở database read-only, kiểm tra checksum/archive
   traversal và chỉ sau đó báo thành công.
-- [ ] Cleanup staging lỗi; backup lỗi không xuất hiện như archive hợp lệ.
+- [x] Cleanup staging lỗi; backup lỗi không xuất hiện như archive hợp lệ.
 
 #### Backup GUI và retention
 
-- [ ] Tạo `ShopHoaThuanBackup.exe` và shortcut; hỗ trợ Sao lưu ngay, vị trí bổ sung,
-  lịch sử/trạng thái, đánh dấu giữ lại và mở thư mục.
-- [ ] Chống double-submit bằng idempotency/operation lock.
-- [ ] Scheduler nhẹ tạo backup tự động; giữ 7 daily, 4 weekly, 12 monthly, không xóa bản
-  pinned và cảnh báo backup quá hạn.
-- [ ] Chỉ hướng dẫn sync/copy ZIP đã hoàn chỉnh ra USB/NAS/cloud, không sync live database.
+- [x] Tạo `ShopHoaThuanBackup.exe` và shortcut; hỗ trợ Sao lưu ngay bằng GUI.
+- [x] Chống double-submit bằng idempotency/operation lock.
+- [ ] Scheduler nhẹ tạo backup tự động và cảnh báo backup quá hạn.
+- [x] Hàm retention giữ 7 daily, 4 weekly, 12 monthly và không xóa bản pinned đã có test.
+- [x] Chỉ hướng dẫn sync/copy ZIP đã hoàn chỉnh ra USB/NAS/cloud, không sync live database.
 
 #### Restore GUI và rollback
 
-- [ ] Tạo `ShopHoaThuanRestore.exe` chỉ dùng trên host: đọc manifest, checksum, schema và
-  preview counts trước xác nhận mạnh.
-- [ ] Trước restore tạo/xác minh backup hiện tại; bật maintenance, drain transaction,
-  dừng service và snapshot data hiện tại để rollback.
-- [ ] Restore database/media qua staging + atomic directory/file swap; chạy migration nếu
-  tương thích, integrity check, service start, health và smoke test.
-- [ ] Nếu bất kỳ bước nào lỗi, khôi phục cả database và media trước restore, khởi động lại
-  bản cũ và xác minh health/data counts.
-- [ ] Test backup live, media đầy đủ, archive hỏng, checksum sai, thiếu dung lượng, schema
-  mới hơn, mất quyền, restore lỗi và chuyển máy.
-- [ ] Viết `docs/BACKUP_AND_RESTORE.md` và `docs/MIGRATION_TO_NEW_DEVICE.md` bằng tiếng Việt,
+- [x] Tạo `ShopHoaThuanRestore.exe` chỉ dùng trên host: đọc manifest, checksum, schema và
+  yêu cầu xác nhận mạnh.
+- [x] Trước restore tạo/xác minh backup hiện tại; bật maintenance, drain transaction và
+  snapshot data hiện tại để rollback.
+- [ ] Dừng service native/start health trong restore trên Windows thật.
+- [x] Restore database/media qua staging + atomic directory/file swap và integrity check.
+- [ ] Chạy migration nếu cần, service start, health và smoke test trên installer/service thật.
+- [x] Nếu lỗi, backend khôi phục cả database và media trước restore và giữ rollback evidence.
+- [ ] Xác minh rollback bằng restore độc lập, thiếu dung lượng, mất quyền và chuyển máy.
+- [x] Viết `docs/BACKUP_AND_RESTORE.md` và `docs/MIGRATION_TO_NEW_DEVICE.md` bằng tiếng Việt,
   không yêu cầu người dùng chạy command line.
 
 Điều kiện hoàn thành: backup đang chạy cùng server là snapshot nhất quán; restore thử vào
@@ -586,42 +593,58 @@ trước restore.
 
 #### Gói update và preflight
 
-- [ ] Tạo `ShopHoaThuan-Update-<version>.exe` GUI cho update file cục bộ.
-- [ ] Xác minh Semantic Version, checksum/chữ ký, kiến trúc, dung lượng, version hiện tại,
-  target version và chặn downgrade không chủ ý.
+- [x] Tạo `ShopHoaThuan-Update-<version>.exe` GUI cho update file cục bộ.
+- [x] Xác minh Semantic Version, checksum, version hiện tại, target version và chặn downgrade
+  hoặc cài lại cùng version ngoài chủ ý.
+- [ ] Bổ sung chữ ký số, kiểm tra kiến trúc và disk-space preflight cho release package.
 - [ ] Hiển thị changelog và tiến trình tiếng Việt; chi tiết kỹ thuật chỉ trong log.
-- [ ] Dùng một operation lock để không chạy đồng thời update/restore/backup và không nhận
+- [x] Dùng một operation lock để không chạy đồng thời update/restore/backup và không nhận
   sale/inventory mới khi vào maintenance.
 
 #### Quy trình an toàn
 
-- [ ] Preflight database/schema; maintenance; drain transaction; tạo và xác minh
-  pre-update backup.
-- [ ] Dừng service an toàn; lưu app cũ vào `rollback\app-<version>`; stage app mới và xác
-  minh đủ file trước atomic swap.
-- [ ] Chạy migration runner có log và timeout, `manage.py check --deploy`, collect/static
-  verification, start service, health và business smoke test.
-- [ ] Chỉ thoát maintenance và xóa staging khi toàn bộ bước đạt.
-- [ ] Giữ nguyên ProgramData data/media/backups/logs/config/PIN/sales/inventory.
+- [x] Preflight database/schema; maintenance; drain transaction; tạo và xác minh pre-update
+  backup trong transaction update.
+- [x] Dừng service, lưu app cũ vào `rollback\app-<version>`, stage app mới và thay toàn bộ
+  application tree để không còn file cũ sót lại.
+- [x] Chạy migration runner có exit code/log và kiểm tra health sau khi start; deployment check
+  được chạy trong Windows build pipeline.
+- [ ] Chạy đầy đủ `check --deploy`, collect/static và business smoke sau update trên native service.
+- [x] Chỉ thoát maintenance và xóa staging sau khi transaction kết thúc; exception path cleanup
+  đã có test.
+- [x] Giữ nguyên ProgramData data/media/backups/logs/config/PIN/sales/inventory khi thay app tree.
 
 #### Migration và rollback
 
 - [ ] Áp dụng expand-and-contract; migration destructive chỉ ở release sau khi code/data
   chuyển đổi đã được xác minh.
-- [ ] Phân loại migration rollback-safe và migration cần restore pre-update backup.
-- [ ] Nếu migration/service/health/smoke test lỗi: dừng app mới, phục hồi app cũ và database
-  nếu cần, start app cũ, health + data count verify, thoát maintenance.
+- [ ] Phân loại migration rollback-safe và migration cần restore pre-update backup cho release
+  1.0.0 → 1.1.0 thực tế.
+- [x] Nếu migration/service/health lỗi: dừng app mới, phục hồi app cũ và database nếu cần,
+  start app cũ và giải phóng maintenance; đã có WSL exception-path test.
 - [ ] Không để trạng thái nửa cũ/nửa mới; lưu journal từng bước để lần chạy sau biết tiếp
   tục hay rollback.
-- [ ] Test update thành công, chạy updater hai lần, migration lỗi, thiếu asset, health lỗi,
-  mất điện/process kill ở các checkpoint, rollback code/database và version cũ hoạt động.
-- [ ] Viết `docs/UPDATE.md` và `docs/RELEASE_PROCESS.md`.
+- [x] Test validation, staging failure, complete-tree replacement, migration failure cleanup và
+  maintenance release trong WSL.
+- [ ] Test update hai version, chạy updater hai lần, health/service failure và process kill trên
+  native Windows service.
+- [x] Viết `docs/UPDATE.md` và `docs/RELEASE_PROCESS.md`.
 
 Điều kiện hoàn thành: update giữ nguyên toàn bộ dữ liệu; mọi lỗi được chủ động tiêm trong
 test đều hoặc hoàn tất an toàn hoặc rollback về phiên bản cũ hoạt động; không còn trạng thái
 maintenance/staging mồ côi.
 
 ### Phase 13 — Kiểm thử và chứng nhận release
+
+#### Evidence và tài liệu
+
+- [x] Tạo `docs/REQUIREMENT_TRACEABILITY_MATRIX.md` ánh xạ requirement → implementation → test
+  → evidence → limitation.
+- [x] Tạo `docs/FINAL_ACCEPTANCE_REPORT.md`, `docs/KNOWN_LIMITATIONS.md` và
+  `docs/RELEASE_CHECKLIST.md`.
+- [x] Tạo `docs/USER_DEVICE_VALIDATION.md` cho các bước cần Windows sạch, reboot, LAN phone,
+  camera và PWA thật; không chuyển phần code/test tự động sang người dùng.
+- [x] Cập nhật `artifacts/acceptance/README.md` và ghi artifact/checksum không chứa dữ liệu thật.
 
 #### Ma trận release bắt buộc
 
