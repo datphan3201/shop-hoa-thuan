@@ -6,8 +6,9 @@ Shop Hoà Thuận là ứng dụng nội bộ cho shop quần áo: danh mục, s
 bán hàng, hủy giao dịch, báo cáo và bảo vệ giá vốn. Mục tiêu phát hành là phần mềm cài trên
 Windows, dùng từ thiết bị trong LAN mà không yêu cầu cloud hay terminal trên máy người dùng.
 
-Phase 1–8 đã hoàn thành trong WSL; Phase 9–13 đã có nền tảng source/build nhưng chưa đạt toàn
-bộ acceptance gate Windows và thiết bị thật. Chưa được dùng dữ liệu thật cho failure injection.
+Phase 1–8 đã hoàn thành trong WSL. Phase 9–12 có source, test nền tảng và Windows artifact;
+Phase 13 có evidence nội bộ nhưng chưa đạt toàn bộ acceptance gate Windows/thiết bị thật.
+Không dùng dữ liệu thật cho failure injection.
 
 ## Sơ đồ thành phần
 

@@ -62,9 +62,10 @@ UI disable size hết hàng, nhưng server vẫn là authority kiểm tra tồn.
 - Không cache HTML động, media, cost/profit, API nghiệp vụ hoặc POST; không offline write.
 - Camera, Add to Home Screen, viewport/touch thật vẫn cần Phase 13 device validation.
 
-## UC-08 — Backup, restore, update (mục tiêu chưa hoàn thành)
+## UC-08 — Backup, restore, update
 
-Thiết kế đã chốt nhưng GUI production chưa tồn tại:
+Backend, GUI web và native utility đã có; acceptance qua service/installer Windows thật vẫn là
+gate còn lại:
 
 - Backup: maintenance → block write mới → drain write cũ → SQLite backup API → integrity/
   checksum → DB + media + manifest.
@@ -73,4 +74,6 @@ Thiết kế đã chốt nhưng GUI production chưa tồn tại:
 - Update: validate package/version → pre-update backup → stop/stage/swap app → migration →
   health/smoke → rollback khi lỗi.
 
-Xem [roadmap](DELIVERY_ROADMAP.md) để biết thứ tự và gate thực hiện.
+Các test WSL đã bao phủ snapshot, checksum, integrity, restore, staging, tree replacement,
+maintenance timeout và exception path. Xem [roadmap](DELIVERY_ROADMAP.md) và
+[known limitations](KNOWN_LIMITATIONS.md) để biết phần còn chờ Windows native.

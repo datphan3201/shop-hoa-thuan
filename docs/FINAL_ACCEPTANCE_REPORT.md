@@ -17,6 +17,11 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 - Health executable trả mã `SHOP-HEALTH-001` khi server chưa sẵn sàng.
 - Installer `ShopHoaThuan-Setup-1.0.0.exe` build thành công.
 - Backup/restore, update validation, tree replacement và exception-path được test trong WSL.
+- Native Windows test groups: operations 6 pass, runner/runtime 6 pass, update/service assets
+  18 pass; full suite qua cầu WSL–Windows bị `KeyboardInterrupt` ở process console và vì vậy
+  không được ghi là full Windows PASS.
+- Artifact installer SHA-256 hiện tại:
+  `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`.
 
 ## Findings đã sửa
 
@@ -32,5 +37,6 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 ## Còn lại trước production
 
 UAC service/firewall/recovery, clean Windows, reboot, LAN phone, camera/PWA thật, restore độc
-lập và update/rollback native phải có PASS. Cho tới khi đó release decision không được nâng
-cấp khỏi `CONDITIONALLY ACCEPTED`.
+lập và update/rollback native phải có PASS. Full Windows suite cũng cần được chạy trong một
+console native ổn định hoặc Windows CI không bị cầu WSL ngắt. Cho tới khi đó release decision
+không được nâng cấp khỏi `CONDITIONALLY ACCEPTED`.

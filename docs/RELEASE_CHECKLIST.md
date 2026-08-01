@@ -16,6 +16,7 @@
 - [x] native server health smoke
 - [x] native migration runner
 - [x] installer artifact and SHA-256
+- [x] native server `/health/` smoke on isolated test data
 - [ ] Administrator service/firewall/recovery
 - [ ] clean Windows install/reinstall/uninstall
 - [ ] reboot/autostart

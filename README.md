@@ -12,10 +12,11 @@ hoặc lợi nhuận; phiên mở khóa tự hết hạn và biến mất khi đ
 
 ## Trạng thái
 
-Phase 1–8 đã hoàn thành; Phase 9 (Windows Service, launcher và LAN) đang triển khai. Native
-Windows server đã smoke-test `/health/`, nhưng gate WinSW/SCM/firewall, installer,
-backup/restore, update/rollback, clean Windows và thiết bị thật chưa đạt. Không dùng dữ liệu
-thật cho đến khi Phase 13 có chứng nhận release.
+Phase 1–8 đã hoàn thành trong WSL. Phase 9–12 đã có source, test nền tảng và artifact Windows;
+native server/migration/health smoke đã đạt, nhưng WinSW/SCM/firewall, clean-install,
+restore/update native và thiết bị thật còn chờ validation có quyền Administrator hoặc thiết bị.
+Phase 13 hiện là `CONDITIONALLY ACCEPTED` cho internal build validation, chưa phải
+`ACCEPTED FOR PRODUCTION RELEASE`.
 
 ## Tài liệu
 
@@ -64,7 +65,8 @@ Development mặc định dùng `.data/`. Bản Windows sẽ dùng thư mục d�
 ngoài thư mục cài đặt. Database, media, backup và secret thật không được commit.
 
 Trang **Thiết bị và sao lưu** có thể tạo và tải file backup nhất quán gồm SQLite, media
-và manifest. Khôi phục có xác nhận sẽ được hoàn thiện và kiểm thử ở Phase 11.
+và manifest; restore có xác nhận và rollback nền tảng đã có test. Không dùng dữ liệu thật cho
+failure injection và phải kiểm thử restore trên bản sao trước khi vận hành production.
 
 ## Kiểm tra
 
@@ -82,8 +84,10 @@ Xem [PROGRESS.md](PROGRESS.md) để biết checklist phase, evidence và trạn
 ## Đóng gói Windows
 
 Khung phát hành nằm trong `packaging/` và `scripts/build_windows.ps1`. PyInstaller phải chạy
-native trên Windows, không cross-compile từ WSL. Máy đích sẽ không cần Python/uv/Git/Node; bộ
-cài hoàn chỉnh vẫn là công việc Phase 10 và chỉ phát hành sau chứng nhận Phase 13.
+native trên Windows, không cross-compile từ WSL. Bản build hiện tại đã tạo
+`dist/installer/ShopHoaThuan-Setup-1.0.0.exe` cùng server, migration, health, launcher,
+backup, restore và update utility. Máy đích không cần Python/uv/Git/Node; clean-install,
+service thật và acceptance cuối vẫn phải hoàn thành trước khi phát hành production.
 
 Địa chỉ local dự kiến sau khi hoàn thiện Phase 9 là
 `http://shophoathuan.local:2505`. Nếu mDNS không khả dụng, trang thiết bị sẽ hiển thị

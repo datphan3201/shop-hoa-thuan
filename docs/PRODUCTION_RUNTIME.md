@@ -31,5 +31,7 @@ application tree và dọn staging trong mọi exception path.
 
 ## Giới hạn Windows
 
-Lease/maintenance được test trên Linux local filesystem. WinSW, shutdown SCM, ACL ProgramData,
-installer và PyInstaller chỉ được chứng nhận ở Phase 9–10 trên Windows sạch.
+Lease/maintenance đã có test WSL và test process native trong nhóm test Windows. Native server,
+migration và health smoke đã đạt trên Windows 11 test data. WinSW, shutdown SCM, Private firewall,
+ACL ProgramData, clean installer, reboot, restore/update native và LAN device vẫn cần phiên
+Administrator/thiết bị thật; không coi các mục này là PASS khi chưa có evidence.

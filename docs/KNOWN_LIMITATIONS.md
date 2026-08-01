@@ -9,6 +9,9 @@
 - Điện thoại thật: LAN, camera orientation, touch UX, PWA Add to Home Screen và mất mạng.
 - Tailscale/HTTPS/mDNS/hostname resolution trên Android/iOS.
 - Update/rollback failure injection khi service đang chạy native.
+- Full pytest Windows qua cầu WSL có thể bị console bridge gửi `KeyboardInterrupt`; các nhóm
+  operations, runner/runtime, update và Windows asset đã pass riêng. Cần chạy full suite trong
+  PowerShell native ổn định hoặc Windows CI trước khi ghi nhận Windows full PASS.
 
 ## Giới hạn thiết kế
 

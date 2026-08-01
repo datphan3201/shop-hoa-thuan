@@ -18,7 +18,8 @@ Cập nhật gần nhất: 2026-08-01
 ### Trạng thái thực tế sau lượt build cuối — 2026-08-01
 
 Các commit gần nhất đã push lên branch `bugfix`: `80d286e` (backup/restore GUI), `ead1fa7`
-(update package builder và regression tests), `8bda778` (update thay toàn bộ application tree).
+(update package builder và regression tests), `8bda778` (update thay toàn bộ application tree),
+`48e895e` (Windows backup validation) và `fc1fd46` (đóng SQLite validation handles trên Windows).
 Tài liệu nghiệm thu hiện nằm trong `docs/REQUIREMENT_TRACEABILITY_MATRIX.md`,
 `docs/FINAL_ACCEPTANCE_REPORT.md`, `docs/KNOWN_LIMITATIONS.md`,
 `docs/RELEASE_CHECKLIST.md`, `docs/USER_DEVICE_VALIDATION.md`, `docs/UPDATE.md` và
@@ -30,8 +31,14 @@ Windows build evidence:
 - `ShopHoaThuanServer.exe`: native `/health/` smoke PASS trên test data.
 - `ShopHoaThuanMigration.exe`: migration runner PASS, output Unicode PASS, không tự chạy từ server.
 - `ShopHoaThuanHealth.exe`: không có server trả `SHOP-HEALTH-001`, exit code 1 như thiết kế.
-- Installer `ShopHoaThuan-Setup-1.0.0.exe`: compile PASS; SHA-256 phải lấy lại từ artifact hiện
-  hành sau mỗi rebuild, không ghi hash cũ vào tài liệu.
+- Installer `ShopHoaThuan-Setup-1.0.0.exe`: compile PASS; SHA-256 artifact hiện tại là
+  `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`.
+- Kích thước artifact hiện tại: installer 195,550,176 bytes; server 7,599,613 bytes;
+  migration 7,603,330 bytes; health 20,147,834 bytes; launcher 32,929,919 bytes;
+  update 33,044,818 bytes; backup 33,046,256 bytes; restore 33,046,194 bytes.
+- SHA-256 native smoke set: server `B9C0EC6BA302016DFFBB8392FE91B9BE1C2E77AA07A6B68C990253789AB62120`;
+  migration `FF3E127320DDA4ACAF956E8D3D4C536C4A532A850A34DB032F05C4ADD3EE2AA2`;
+  health `B684D3DB63B9BC58E8239417160121083A9456249931F8A347C37FB9D3716421`.
 - Standalone health/launcher/update/backup/restore specs đã nhúng runtime binaries; lỗi thiếu
   `python312.dll` đã được bắt bằng smoke test và sửa.
 
@@ -53,6 +60,30 @@ Deployment warning phân loại:
   tin cậy hoặc bật `SHOP_USE_HTTPS=true` khi có HTTPS/Tailscale phù hợp.
 - Chỉ xác minh trên Windows/device: SCM, firewall, ACL, reboot, clean install, LAN phone,
   camera, Add to Home Screen, native update/rollback.
+
+Windows test evidence sau build cuối:
+
+- `tests/test_operations.py`: **6 passed**.
+- `tests/test_runner.py tests/test_runtime.py`: **6 passed**.
+- `tests/test_update.py tests/test_windows_service_assets.py`: **18 passed**.
+- Full pytest WSL: **122 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
+  WSL nhưng console bridge phát `KeyboardInterrupt` sau 101 test; không ghi nhận đó là full
+  Windows PASS. Cần chạy lại trong PowerShell/Windows CI native ổn định trước release.
+
+### Việc cần làm tiếp theo
+
+1. Mở PowerShell bằng **Run as administrator** và chạy
+   `scripts/windows/phase9_test_service.ps1` trên test data để xác nhận WinSW, SCM, restart,
+   crash recovery và firewall profile Private; cleanup phải đạt trước khi dùng production.
+2. Trên Windows sạch hoặc VM/Sandbox, chạy installer hiện tại, reboot, reinstall/repair và
+   uninstall mặc định; xác minh ProgramData, service, shortcut và không cần Python.
+3. Tạo test package 1.0.0 → 1.1.0, chạy restore và update/rollback trên data test độc lập;
+   failure injection phải chứng minh maintenance, database/media và application tree trở lại
+   trạng thái nhất quán.
+4. Chạy checklist thiết bị thật trong `docs/USER_DEVICE_VALIDATION.md`: điện thoại LAN,
+   camera, viewport, PWA Add to Home Screen và UX; không đưa dữ liệu thật vào failure injection.
+5. Chỉ sau khi các mục trên có evidence mới nâng kết luận Phase 13; nếu còn thiếu thì giữ
+   `CONDITIONALLY ACCEPTED`.
 
 Không đánh dấu Phase 9–13 hoàn thành cho đến khi các mục BLOCKED có evidence thật. Kết luận hiện
 tại là `CONDITIONALLY ACCEPTED` cho internal build validation, không phải production release.
@@ -326,8 +357,9 @@ không mất dữ liệu khi mô phỏng chuyển layout.
 - `check --deploy` chỉ còn W004/W008/W012/W016 cho HTTP LAN có chủ đích. Không bật HSTS,
   HTTPS redirect hoặc secure cookie khi máy chủ vẫn phục vụ HTTP LAN; bật `SHOP_USE_HTTPS=true`
   khi triển khai HTTPS/Tailscale. W009 xuất phát từ secret test ngắn, không phải cấu hình runtime.
-- WinSW/SCM shutdown, ACL ProgramData, installer/PyInstaller và filesystem Windows thực vẫn phải
-  chứng nhận trong Phase 9–10; Phase 8 chưa bắt đầu.
+- Tại thời điểm snapshot Phase 7, WinSW/SCM shutdown, ACL ProgramData, installer/PyInstaller
+  và filesystem Windows thực vẫn phải chứng nhận trong Phase 9–10. Đây là ghi chú lịch sử;
+  Phase 8 hiện đã đạt gate WSL và các phase phát hành đang ở trạng thái nêu tại đầu file.
 - Review độc lập đã thay lease stale-rename bằng advisory file lock của OS: cách cũ có TOCTOU có
   thể đổi tên lease mới của process khác. Maintenance state giờ xác định bằng lock đang được giữ,
   không chỉ PID trong JSON nên state đã release không bị báo maintenance do PID vẫn sống.

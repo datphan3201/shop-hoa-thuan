@@ -6,8 +6,9 @@
 |---|---|---|
 | Formatter/Ruff/mypy | Style, lỗi tĩnh, type contract | PASS sau thay đổi truy cập LAN (2026-08-01). |
 | Django check/migration check | Settings/schema sạch | PASS sau thay đổi truy cập LAN (2026-08-01). |
-| Pytest | Nghiệp vụ, lock, maintenance, health, media, idempotency, backup/update | Chạy lại sau commit tài liệu; số test và warning ghi trong `PROGRESS.md`, không thay thế gate phase cuối. |
-| Native Windows smoke | Artifact không cần Python dev | `ShopHoaThuanServer.exe` PASS `/health/` với Windows test data. |
+| Pytest WSL | Nghiệp vụ, lock, maintenance, health, media, idempotency, backup/update | **PASS — 122 passed, 1 warning** (2026-08-01). |
+| Pytest Windows | Native compatibility/regression | Các nhóm runtime/operations/update/service assets pass; full process qua cầu WSL–Windows bị console interrupt, không ghi PASS giả. |
+| Native Windows smoke | Artifact không cần Python dev | `ShopHoaThuanServer.exe` và migration PASS; health utility trả mã 1 khi server không sẵn sàng. |
 | SCM/firewall | Service, recovery, Private LAN/cleanup | Chưa chạy: cần UAC. |
 | Clean machine/device | Reboot, LAN phone, camera/PWA, installer | Chưa chạy: Phase 13. |
 

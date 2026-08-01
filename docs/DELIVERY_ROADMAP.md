@@ -1,16 +1,16 @@
 # Roadmap phát hành và việc cần làm tiếp theo
 
-## Trạng thái tại 2026-07-31
+## Trạng thái tại 2026-08-01
 
 | Phase | Trạng thái | Evidence | Gate còn lại |
 |---|---|---|---|
 | 1–7 | Hoàn thành | Nghiệp vụ, runtime hardening, lock/maintenance, health/media/logging test | Chứng nhận Windows thuộc phase phát hành. |
 | 8 | Hoàn thành trong WSL | Mobile/PWA, idempotency, concurrency, upload/media | Camera/viewport/A2HS thật ở Phase 13. |
-| 9 | Đang thực hiện | Waitress, launcher source, WinSW XML, device page; native server/migration/health smoke PASS | WinSW/SCM/firewall/recovery cần UAC; reboot/LAN phone cần device validation. |
-| 10 | Artifact PASS, acceptance pending | PyInstaller server + standalone utilities + Inno Setup installer build PASS | Clean install/reinstall/uninstall trên Windows sạch chưa chạy. |
-| 11 | Backend PASS, native acceptance pending | SQLite backup API, manifest/checksum/integrity, restore và GUI source | Restore bằng installer/service thật và retention scheduler cần kiểm thử thêm. |
+| 9 | Đang triển khai, native smoke PASS | Waitress, launcher source, WinSW XML, device page, native server/migration/health smoke | WinSW/SCM/firewall/recovery cần UAC; reboot/LAN phone cần device validation. |
+| 10 | Build artifact PASS, acceptance pending | PyInstaller server + standalone utilities + Inno Setup installer build PASS | Clean install/reinstall/uninstall trên Windows sạch chưa chạy. |
+| 11 | Backend/GUI/WSL PASS, native acceptance pending | SQLite backup API, manifest/checksum/integrity, restore và GUI utility | Restore bằng installer/service thật và retention scheduler cần kiểm thử thêm. |
 | 12 | WSL validation PASS, native acceptance pending | Package validation, staging cleanup, complete tree replacement, rollback primitives | 1.0.0→1.1.0 với SCM/migration/health failure injection chưa chạy. |
-| 13 | Đang lập evidence, chưa accepted | Traceability, acceptance, limitations, checklist và user validation docs | UAC, reboot, clean Windows, LAN phone và camera thật. |
+| 13 | Evidence lập xong ở mức internal, chưa accepted | Traceability, acceptance, limitations, checklist và user validation docs | UAC, reboot, clean Windows, LAN phone và camera thật. |
 
 Không bắt đầu phase kế tiếp trước khi gate phase hiện tại đạt hoặc được ghi rõ `BLOCKED FOR
 DEVICE VALIDATION`; không ghi PASS giả.
@@ -38,7 +38,7 @@ portable đã tải/xác minh. Mở PowerShell bằng **Run as administrator** v
 ```powershell
 & "C:\Projects\ShopHoaThuan\scripts\windows\phase9_test_service.ps1" `
   -AppRoot "C:\Projects\ShopHoaThuan\dist\ShopHoaThuan" `
-  -WinSwPath "C:\Users\phant\AppData\Local\Temp\ShopHoaThuan-tools\winsw\Windows Service Wrapper_2.12.0.0_X64_portable_en-US.exe" `
+  -WinSwPath "C:\Projects\ShopHoaThuan\packaging\vendor\WinSW-x64.exe" `
   -ProjectRoot "C:\Projects\ShopHoaThuan" `
   -PythonExe "C:\Projects\ShopHoaThuan\.venv-windows\Scripts\python.exe"
 ```
@@ -69,14 +69,16 @@ sau cleanup. **FAIL:** giữ log/data test, không chạm `C:\ProgramData\Shop H
 
 ## Phase 11 — Backup/restore
 
-1. Backup package DB/media/manifest version-schema-timezone/checksum/counts.
+1. Backup package DB/media/manifest version-schema-timezone/checksum/counts; implementation và
+   WSL restore test đã đạt.
 2. Maintenance + SQLite backup API + integrity, GUI và retention 7 daily/4 weekly/12 monthly.
 3. Restore validate → backup current → stage/swap → migration/integrity/health → rollback.
 4. Test restore thật, media/count/tồn/sale/config và failure path.
 
 ## Phase 12 — Update/rollback
 
-1. Tạo update 1.0.0 → 1.1.0 migration additive, validate package/version/checksum/disk/schema.
+1. Tạo update 1.0.0 → 1.1.0 migration additive, validate package/version/checksum/disk/schema;
+   validation/staging/tree replacement đã đạt trong WSL.
 2. Maintenance/drain/pre-backup → stop service → stage/swap → migration/deploy check → health.
 3. Tiêm lỗi migration/service/health/asset; rollback app/data/service/maintenance.
 

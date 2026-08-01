@@ -24,7 +24,7 @@ mở PowerShell **Run as administrator** và chạy đúng một script:
 ```powershell
 & "C:\Projects\ShopHoaThuan\scripts\windows\phase9_test_service.ps1" `
   -AppRoot "C:\Projects\ShopHoaThuan\dist\ShopHoaThuan" `
-  -WinSwPath "C:\Users\phant\AppData\Local\Temp\ShopHoaThuan-tools\winsw\Windows Service Wrapper_2.12.0.0_X64_portable_en-US.exe" `
+  -WinSwPath "C:\Projects\ShopHoaThuan\packaging\vendor\WinSW-x64.exe" `
   -ProjectRoot "C:\Projects\ShopHoaThuan" `
   -PythonExe "C:\Projects\ShopHoaThuan\.venv-windows\Scripts\python.exe"
 ```
@@ -38,7 +38,7 @@ production. Data/log test được giữ để điều tra. Dọn thủ công kh
 ```powershell
 & "C:\Projects\ShopHoaThuan\scripts\windows\phase9_test_service.ps1" `
   -AppRoot "C:\Projects\ShopHoaThuan\dist\ShopHoaThuan" `
-  -WinSwPath "C:\Users\phant\AppData\Local\Temp\ShopHoaThuan-tools\winsw\Windows Service Wrapper_2.12.0.0_X64_portable_en-US.exe" `
+  -WinSwPath "C:\Projects\ShopHoaThuan\packaging\vendor\WinSW-x64.exe" `
   -ProjectRoot "C:\Projects\ShopHoaThuan" `
   -PythonExe "C:\Projects\ShopHoaThuan\.venv-windows\Scripts\python.exe" -Cleanup
 ```
