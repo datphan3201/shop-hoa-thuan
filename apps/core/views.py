@@ -1,3 +1,4 @@
+import tempfile
 from base64 import b64encode
 from io import BytesIO
 from pathlib import Path
@@ -19,7 +20,7 @@ from PIL import Image, UnidentifiedImageError
 from qrcode.image.svg import SvgPathImage
 
 from apps.catalog.models import Product, ProductVariant
-from apps.core.backup import BackupError, create_backup, list_backups
+from apps.core.backup import BackupError, create_backup, list_backups, restore_backup
 from apps.core.concurrency import ConcurrentUpdateError, save_with_revision
 from apps.core.forms import (
     PinChangeForm,
@@ -30,7 +31,7 @@ from apps.core.forms import (
 from apps.core.idempotency import IdempotencyConflictError, client_key, request_fingerprint
 from apps.core.models import IdempotencyRecord, ShopSecuritySettings
 from apps.core.network import discover_device_access
-from apps.core.operations import maintenance_operation, maintenance_state
+from apps.core.operations import MaintenanceTimeoutError, maintenance_operation, maintenance_state
 from apps.core.security import (
     cost_price_unlock_required,
     is_cost_price_unlocked,
@@ -268,6 +269,39 @@ def create_backup_view(request: HttpRequest) -> HttpResponse:
         messages.error(request, "Không thể tạo bản sao lưu. Vui lòng thử lại.")
     else:
         messages.success(request, f"Đã tạo bản sao lưu {backup.path.name}.")
+    return redirect("device-access-settings")
+
+
+@cost_price_unlock_required
+@require_POST
+def restore_backup_view(request: HttpRequest) -> HttpResponse:
+    confirmation = request.POST.get("restore_confirmation", "").strip()
+    uploaded = request.FILES.get("backup_file")
+    if confirmation != "KHÔI PHỤC" or uploaded is None:
+        messages.error(request, "Chọn file backup và nhập đúng xác nhận KHÔI PHỤC.")
+        return redirect("device-access-settings")
+
+    backup_root = Path(settings.BACKUP_ROOT)
+    backup_root.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", suffix=".zip", prefix="restore-upload-", dir=backup_root, delete=False
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            for chunk in uploaded.chunks():
+                temporary_file.write(chunk)
+        with maintenance_operation("restore", timeout_seconds=60):
+            restore_backup(temporary_path)
+    except (BackupError, MaintenanceTimeoutError, OSError, RuntimeError):
+        messages.error(request, "Không thể khôi phục. Dữ liệu hiện tại vẫn được giữ lại.")
+    else:
+        messages.success(
+            request, "Đã khôi phục dữ liệu. Vui lòng kiểm tra lại tồn kho và giao dịch."
+        )
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
     return redirect("device-access-settings")
 
 

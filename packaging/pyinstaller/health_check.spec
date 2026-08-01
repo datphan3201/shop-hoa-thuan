@@ -1,0 +1,29 @@
+from pathlib import Path
+import sys
+
+from PyInstaller.utils.hooks import collect_submodules
+
+project_root = Path(SPECPATH).parent.parent
+sys.path.insert(0, str(project_root))
+a = Analysis(
+    [str(project_root / "shop_hoa_thuan" / "health_check.py")],
+    pathex=[str(project_root)],
+    hiddenimports=[*collect_submodules("apps.core"), *collect_submodules("shop_hoa_thuan")],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=["django"],
+    noarchive=False,
+)
+pyz = PYZ(a.pure)
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    name="ShopHoaThuanHealth",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=True,
+)

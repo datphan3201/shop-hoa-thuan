@@ -74,3 +74,19 @@ def test_launcher_requests_windows_service_and_never_spawns_waitress() -> None:
         assert launcher.main() == 0
 
     start.assert_called_once()
+
+
+def test_installer_runs_migration_and_opens_direct_lan_application() -> None:
+    root = Path(__file__).resolve().parents[1]
+    installer = (root / "packaging" / "installer" / "ShopHoaThuan.iss").read_text(
+        encoding="utf-8"
+    )
+    build_script = (root / "scripts" / "build_windows.ps1").read_text(encoding="utf-8")
+
+    assert "#error AppVersion" in installer
+    assert "ShopHoaThuanMigration.exe" in installer
+    assert "http://127.0.0.1:2505/setup/" not in installer
+    assert 'Filename: "http://127.0.0.1:2505/"' in installer
+    assert "pyproject.toml" in build_script
+    assert "migration_runner.spec" in build_script
+    assert "update_gui.spec" in build_script

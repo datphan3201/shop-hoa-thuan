@@ -24,6 +24,11 @@ urlpatterns = [
         name="backup-create",
     ),
     path(
+        "settings/device-access/backup/restore/",
+        views.restore_backup_view,
+        name="backup-restore",
+    ),
+    path(
         "settings/device-access/backup/<str:filename>/",
         views.download_backup,
         name="backup-download",

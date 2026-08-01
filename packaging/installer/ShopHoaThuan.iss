@@ -1,5 +1,7 @@
 #define AppName "Shop Hoà Thuận"
-#define AppVersion "0.1.0"
+#ifndef AppVersion
+  #error AppVersion must be supplied from pyproject.toml by the Windows build script.
+#endif
 #define AppPublisher "Shop Hoà Thuận"
 #define AppExeName "ShopHoaThuanServer.exe"
 
@@ -23,17 +25,22 @@ UninstallDisplayIcon={app}\{#AppExeName}
 
 [Files]
 Source: "..\..\dist\ShopHoaThuan\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\dist\ShopHoaThuanMigration\*"; DestDir: "{app}\ShopHoaThuanMigration"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\dist\ShopHoaThuanHealth.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\ShopHoaThuanLauncher.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\ShopHoaThuanUpdate.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\winsw\ShopHoaThuanService.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\vendor\WinSW-x64.exe"; DestDir: "{app}"; DestName: "ShopHoaThuanService.exe"; Flags: ignoreversion
 
 [Icons]
-Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "http://127.0.0.1:2505/"
-Name: "{group}\Shop Hoà Thuận"; Filename: "http://127.0.0.1:2505/"
+Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.exe"
+Name: "{group}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.exe"
 
 [Run]
+Filename: "{app}\ShopHoaThuanMigration\ShopHoaThuanMigration.exe"; Parameters: ""; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "install"; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "start"; Flags: runhidden waituntilterminated
-Filename: "http://127.0.0.1:2505/setup/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait
+Filename: "http://127.0.0.1:2505/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait
 
 [UninstallRun]
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist
@@ -41,3 +48,9 @@ Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "uninstall"; Flags: runhi
 
 [Dirs]
 Name: "{commonappdata}\Shop Hoa Thuan"; Permissions: users-modify
+Name: "{commonappdata}\Shop Hoa Thuan\data"; Permissions: users-modify
+Name: "{commonappdata}\Shop Hoa Thuan\data\media"; Permissions: users-modify
+Name: "{commonappdata}\Shop Hoa Thuan\backups"; Permissions: users-modify
+Name: "{commonappdata}\Shop Hoa Thuan\rollback"; Permissions: users-modify
+Name: "{commonappdata}\Shop Hoa Thuan\logs"; Permissions: users-modify
+Name: "{commonappdata}\Shop Hoa Thuan\config"; Permissions: users-modify
