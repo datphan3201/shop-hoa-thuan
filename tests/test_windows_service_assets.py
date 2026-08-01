@@ -78,9 +78,7 @@ def test_launcher_requests_windows_service_and_never_spawns_waitress() -> None:
 
 def test_installer_runs_migration_and_opens_direct_lan_application() -> None:
     root = Path(__file__).resolve().parents[1]
-    installer = (root / "packaging" / "installer" / "ShopHoaThuan.iss").read_text(
-        encoding="utf-8"
-    )
+    installer = (root / "packaging" / "installer" / "ShopHoaThuan.iss").read_text(encoding="utf-8")
     build_script = (root / "scripts" / "build_windows.ps1").read_text(encoding="utf-8")
 
     assert "#error AppVersion" in installer

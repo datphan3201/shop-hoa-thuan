@@ -27,7 +27,13 @@ uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/update_gui.spec"
 
 $iscc = Get-Command iscc -ErrorAction SilentlyContinue
 if ($null -eq $iscc) {
-    throw "Thiếu Inno Setup Compiler (iscc). Cài tool chính thức trước khi tạo installer."
+    $candidate = Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe"
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        $iscc = Get-Item -LiteralPath $candidate
+    }
+    else {
+        throw "Thiếu Inno Setup Compiler (iscc). Cài tool chính thức trước khi tạo installer."
+    }
 }
 if (-not (Test-Path -LiteralPath "packaging\vendor\WinSW-x64.exe" -PathType Leaf)) {
     throw "Thiếu packaging\vendor\WinSW-x64.exe đã xác minh checksum."
