@@ -29,12 +29,16 @@ Source: "..\..\dist\ShopHoaThuanMigration\*"; DestDir: "{app}\ShopHoaThuanMigrat
 Source: "..\..\dist\ShopHoaThuanHealth.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\dist\ShopHoaThuanLauncher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\dist\ShopHoaThuanUpdate.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\ShopHoaThuanBackup.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\ShopHoaThuanRestore.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\winsw\ShopHoaThuanService.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\vendor\WinSW-x64.exe"; DestDir: "{app}"; DestName: "ShopHoaThuanService.exe"; Flags: ignoreversion
 
 [Icons]
 Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.exe"
 Name: "{group}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.exe"
+Name: "{group}\Sao lưu Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanBackup.exe"
+Name: "{group}\Khôi phục Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanRestore.exe"
 
 [Run]
 Filename: "{app}\ShopHoaThuanMigration\ShopHoaThuanMigration.exe"; Parameters: ""; Flags: runhidden waituntilterminated

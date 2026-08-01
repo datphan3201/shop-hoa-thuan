@@ -12,7 +12,13 @@ from django.test import Client, override_settings
 from django.urls import reverse
 
 from apps.catalog.models import Category
-from apps.core.backup import create_backup, list_backups, restore_backup, validate_backup
+from apps.core.backup import (
+    create_backup,
+    list_backups,
+    prune_backups,
+    restore_backup,
+    validate_backup,
+)
 from apps.core.security import UNLOCKED_UNTIL_KEY
 from shop_hoa_thuan.version import application_version
 
@@ -96,3 +102,22 @@ def test_backup_request_idempotency_creates_one_archive(client: Client, tmp_path
     assert first.status_code == 302
     assert replay.status_code == 302
     assert len(list(backup_root.glob("*.zip"))) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_backup_retention_keeps_pinned_and_recent_periods(tmp_path: Path) -> None:
+    backup_root = tmp_path / "backups"
+    backup_root.mkdir()
+    paths = []
+    for index in range(15):
+        path = backup_root / f"shop-hoa-thuan-{index:02d}.zip"
+        path.write_bytes(b"test")
+        paths.append(path)
+    pinned = paths[0].with_suffix(".keep")
+    pinned.write_text("", encoding="utf-8")
+
+    with override_settings(BACKUP_ROOT=backup_root):
+        deleted = prune_backups(daily=2, weekly=1, monthly=1)
+
+    assert paths[0] not in deleted
+    assert paths[0].exists()

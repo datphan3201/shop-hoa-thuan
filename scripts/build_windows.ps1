@@ -30,6 +30,8 @@ uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/migration_runner.s
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/health_check.spec"
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/launcher.spec"
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/update_gui.spec"
+uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/backup_gui.spec"
+uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/restore_gui.spec"
 
 $iscc = Get-Command iscc -ErrorAction SilentlyContinue
 if ($null -eq $iscc) {

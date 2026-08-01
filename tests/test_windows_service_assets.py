@@ -100,3 +100,13 @@ def test_installer_runs_migration_and_opens_direct_lan_application() -> None:
     assert "pyproject.toml" in build_script
     assert "migration_runner.spec" in build_script
     assert "update_gui.spec" in build_script
+    assert "backup_gui.spec" in build_script
+    assert "restore_gui.spec" in build_script
+
+
+def test_installer_contains_backup_and_restore_utilities() -> None:
+    root = Path(__file__).resolve().parents[1]
+    installer = (root / "packaging" / "installer" / "ShopHoaThuan.iss").read_text(encoding="utf-8")
+
+    assert "ShopHoaThuanBackup.exe" in installer
+    assert "ShopHoaThuanRestore.exe" in installer

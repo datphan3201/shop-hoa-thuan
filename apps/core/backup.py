@@ -302,3 +302,44 @@ def list_backups() -> list[BackupInfo]:
             BackupInfo(path=backup_path, created_at=modified, size=backup_path.stat().st_size)
         )
     return sorted(backups, key=lambda backup: backup.created_at, reverse=True)
+
+
+def prune_backups(
+    *,
+    daily: int = 7,
+    weekly: int = 4,
+    monthly: int = 12,
+) -> list[Path]:
+    """Remove unpinned archives outside the daily/weekly/monthly retention windows."""
+    backups = list_backups()
+    keep: set[Path] = set()
+    daily_keys: set[tuple[int, int, int]] = set()
+    weekly_keys: set[tuple[int, int]] = set()
+    monthly_keys: set[tuple[int, int]] = set()
+    for backup in backups:
+        if backup.path.with_suffix(".keep").exists():
+            keep.add(backup.path)
+            continue
+        created = backup.created_at
+        day = (created.year, created.month, created.day)
+        week = created.isocalendar()
+        month = (created.year, created.month)
+        if len(daily_keys) < daily:
+            daily_keys.add(day)
+            keep.add(backup.path)
+        if len(weekly_keys) < weekly:
+            weekly_keys.add((week.year, week.week))
+            keep.add(backup.path)
+        if len(monthly_keys) < monthly:
+            monthly_keys.add(month)
+            keep.add(backup.path)
+
+    deleted: list[Path] = []
+    for backup in backups:
+        if backup.path in keep:
+            continue
+        backup.path.unlink(missing_ok=True)
+        deleted.append(backup.path)
+    if deleted:
+        logger.info("Đã áp dụng retention backup deleted=%s", len(deleted))
+    return deleted
