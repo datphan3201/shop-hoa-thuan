@@ -44,4 +44,4 @@ if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup build thất bại."
 }
 
-Write-Host "Build Windows hoàn tất version $version: dist/ và dist/installer/."
+Write-Host "Build Windows hoàn tất version ${version}: dist/ và dist/installer/."
