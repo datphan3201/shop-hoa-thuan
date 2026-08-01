@@ -71,8 +71,11 @@ def _sha256(path: Path) -> str:
 
 
 def _sqlite_integrity_ok(path: Path) -> bool:
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as database:
+    database = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
         row = database.execute("PRAGMA integrity_check").fetchone()
+    finally:
+        database.close()
     return bool(row and row[0] == "ok")
 
 

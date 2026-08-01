@@ -196,8 +196,11 @@ def validate_backup(backup_path: Path) -> dict[str, object]:
                     database_path.write_bytes(archive.read(database_name))
                     if _sha256(database_path) != database_metadata["sha256"]:
                         raise BackupError("Checksum database trong file sao lưu không khớp.")
-                    with sqlite3.connect(f"file:{database_path}?mode=ro", uri=True) as database:
+                    database = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True)
+                    try:
                         result = database.execute("PRAGMA integrity_check").fetchone()
+                    finally:
+                        database.close()
                     if not result or result[0] != "ok":
                         raise BackupError("Database trong file sao lưu không toàn vẹn.")
             return manifest
@@ -229,8 +232,11 @@ def _extract_backup(backup_path: Path, staging: Path) -> tuple[Path, Path]:
                 _write_zip_member(archive, member, media_path / relative)
     if not manifest:
         raise BackupError("Manifest của file sao lưu không hợp lệ.")
-    with sqlite3.connect(f"file:{database_path}?mode=ro", uri=True) as database:
+    database = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True)
+    try:
         result = database.execute("PRAGMA integrity_check").fetchone()
+    finally:
+        database.close()
     if not result or result[0] != "ok":
         raise BackupError("Database khôi phục không vượt qua kiểm tra toàn vẹn.")
     media_metadata = manifest.get("media")
