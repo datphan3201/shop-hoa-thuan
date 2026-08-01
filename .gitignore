@@ -12,6 +12,7 @@ htmlcov/
 .ruff_cache/
 dist/
 build/
+packaging/vendor/
 staticfiles/
 *.spec.bak
 *.log
