@@ -13,6 +13,8 @@ from apps.core.network import server_port
 
 
 def main() -> int:
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     attempts = int(os.getenv("SHOP_HEALTH_ATTEMPTS", "20"))
     url = f"http://127.0.0.1:{server_port()}/health/"
     for _ in range(max(1, attempts)):

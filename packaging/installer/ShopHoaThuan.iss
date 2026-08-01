@@ -43,8 +43,8 @@ Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "start"; Flags: runhidden
 Filename: "http://127.0.0.1:2505/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait
 
 [UninstallRun]
-Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist
-Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist
+Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "ShopHoaThuanServiceStop"
+Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "ShopHoaThuanServiceUninstall"
 
 [Dirs]
 Name: "{commonappdata}\Shop Hoa Thuan"; Permissions: users-modify

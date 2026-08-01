@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 
 from shop_hoa_thuan.runtime import (
     ensure_runtime_layout,
@@ -12,6 +13,12 @@ from shop_hoa_thuan.runtime import (
 
 
 def main() -> int:
+    # Native Windows services/installers may expose a legacy code page such as
+    # cp1258.  Keep the operator-facing Vietnamese diagnostics printable while
+    # preserving a normal console on terminals that already use UTF-8.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "shop_hoa_thuan.settings")
     os.environ.setdefault("DJANGO_DEBUG", "false")
     os.environ.setdefault("DJANGO_SECRET_KEY", ensure_runtime_secret())
