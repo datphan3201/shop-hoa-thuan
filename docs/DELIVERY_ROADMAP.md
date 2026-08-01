@@ -15,6 +15,19 @@
 Không bắt đầu phase kế tiếp trước khi gate phase hiện tại đạt hoặc được ghi rõ `BLOCKED FOR
 DEVICE VALIDATION`; không ghi PASS giả.
 
+## Điều kiện truy cập xuyên phase
+
+Ứng dụng dùng trực tiếp trong LAN, không có account hoặc mật khẩu nghiệp vụ. Browser session
+chỉ phục vụ mở khóa PIN giá vốn và idempotency; nó không là cơ chế phân quyền. Vì vậy:
+
+- Phase 9 phải xác minh firewall chỉ profile Private, không public Internet/port-forward và
+  launcher không tạo server thứ hai.
+- Phase 10 không được tạo hay reset account; installer chỉ tạo runtime secret và hướng dẫn PIN
+  khi chưa được thiết lập.
+- Phase 11–12 phải giữ nguyên PIN hash/config hiện có khi backup, restore, update hoặc rollback.
+- Phase 13 phải đánh giá biên LAN, Wi-Fi khách, firewall và rò rỉ dữ liệu giá vốn; PIN không
+  được xem là kiểm soát truy cập cho sale/inventory.
+
 ## Việc ngay: hoàn tất Phase 9
 
 ### Integration test service cần Administrator

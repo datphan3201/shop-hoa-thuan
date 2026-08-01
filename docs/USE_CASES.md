@@ -4,6 +4,7 @@
 
 Ứng dụng dùng trực tiếp trong LAN được cấu hình; vì vậy không được public Internet hoặc mở
 port router. Giá vốn dùng PIN riêng, lưu hash và có session unlock tạm thời theo browser.
+PIN chỉ giới hạn giá vốn; catalog, tồn kho và bán hàng dùng chung cho các thiết bị trong LAN.
 
 ## UC-01 — Thiết lập PIN giá vốn
 

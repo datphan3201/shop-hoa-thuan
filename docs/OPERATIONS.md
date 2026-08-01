@@ -15,8 +15,15 @@
 ## Giá vốn
 
 Giá vốn bị khóa mặc định. Mở khóa yêu cầu PIN và phiên chỉ tồn tại trong phiên trình duyệt;
-đăng xuất, khóa thủ công hoặc hết thời hạn sẽ khóa lại. Khi khóa, màn hình, báo cáo, CSV,
+đóng trình duyệt, khóa thủ công hoặc hết thời hạn sẽ khóa lại. Khi khóa, màn hình, báo cáo, CSV,
 hóa đơn và kết quả tìm kiếm không nhận giá vốn hay lợi nhuận suy ra từ giá vốn.
+
+## Truy cập trong LAN
+
+Không có bước đăng nhập. Mọi thiết bị trong LAN tin cậy có thể dùng nghiệp vụ chung; PIN chỉ
+bảo vệ giá vốn và không hạn chế thao tác bán hàng hoặc tồn kho. Không mở port router, không dùng
+mạng Wi-Fi khách/công cộng và chỉ cho phép firewall profile Private. Nếu mất thiết bị hoặc nghi
+ngờ truy cập lạ, ngắt thiết bị khỏi mạng, kiểm tra log và đổi PIN giá vốn.
 
 ## Báo cáo
 

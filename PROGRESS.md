@@ -60,6 +60,9 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
   không cần Python, uv, Git hay Node.js.
 - Truy cập LAN/Tailscale dùng HTTP ở bản đầu. CSRF, browser session và giới hạn host vẫn
   được bật; hướng dẫn thiết bị cảnh báo chỉ dùng mạng tin cậy vì không có lớp xác thực người dùng.
+- Browser session chỉ giữ cost-PIN unlock và idempotency client key, không biểu thị danh tính hay
+  quyền nghiệp vụ. Firewall Private, không port-forward và kỷ luật LAN tin cậy là biên truy cập;
+  PIN không thay thế kiểm soát truy cập cho sale/inventory.
 - Cổng production cố định mặc định là `2505`. Địa chỉ local ưu tiên là
   `http://shophoathuan.local:2505`; IP LAN và QR luôn là phương án dự phòng.
 - `shophoathuan.local` dùng mDNS chỉ trong LAN, không đăng ký DNS công cộng, không mở port
@@ -93,7 +96,7 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 | P1 | Version đang lặp trong `pyproject.toml` và installer | Tạo một nguồn version duy nhất, sinh `version.json` và dùng chung cho health, backup, installer, updater và log |
 | P1 | Secret nằm trực tiếp ở data root; log mới có một file chung | Chuyển secret/config vào `config`, tách log theo chức năng, rotation và bộ lọc dữ liệu nhạy cảm |
 | P1 | WinSW chưa ghi log đúng `ProgramData\logs`, tên service chưa đúng, chưa có single-instance lock | Chuẩn hóa service `Shop Hoà Thuận Server`, một instance, restart hữu hạn, shutdown an toàn và mã lỗi chẩn đoán |
-| P1 | PWA manifest thiếu icon/shortcut; chưa có cache policy | Bổ sung icon/shortcut và service worker chỉ cache application shell công khai; không cache private response hay request ghi |
+| P1 | PWA manifest thiếu icon/shortcut; chưa có cache policy | Bổ sung icon/shortcut và service worker chỉ cache static GET; không cache response động hay request ghi |
 | P1 | Mobile chủ yếu là bảng cuộn ngang | Chuyển nghiệp vụ chính sang card/list responsive, form một cột và thao tác chạm tối thiểu 44 px |
 | P1 | Chưa có idempotency và optimistic concurrency tổng quát | Tạo idempotency record/unique constraint cho thao tác quan trọng và version/`updated_at` guard cho form sửa |
 | P1 | Backup manifest mới ở mức cơ bản | Thêm schema/app version, checksum, thống kê dữ liệu, retention, xác minh restore và GUI không dùng terminal |
@@ -205,7 +208,8 @@ nội bộ.
 
 - [x] Hoàn thiện unit/integration/E2E smoke tests cho sản phẩm, tồn kho, khóa giá vốn, bán
   hàng và báo cáo.
-- [x] Audit auth, CSRF, session, PIN, dữ liệu nhạy cảm và SQLite integrity trong phạm vi app.
+- [x] Audit truy cập LAN trực tiếp, CSRF, session, PIN, dữ liệu nhạy cảm và SQLite integrity
+  trong phạm vi app.
 - [x] Hoàn thiện empty/error state và tài liệu nghiệp vụ tại `docs/OPERATIONS.md`.
 - [x] Chốt schema nghiệp vụ làm đầu vào cho kế hoạch migration production.
 - [x] Commit Phase 6.
@@ -254,7 +258,7 @@ giao dịch/tồn kho/báo cáo và schema đã sẵn sàng cho hardening produc
 #### Kiểm tra và tài liệu
 
 - [x] Test đường dẫn development, nâng cấp layout cũ, single-instance, maintenance,
-  transaction drain, health schema, media auth và log redaction.
+  transaction drain, health schema, media LAN, migration tương thích browser key và log redaction.
 - [ ] Chạy test SQLite WAL/backup/shutdown trên filesystem local; không hỗ trợ database live
   trong OneDrive, USB, NAS hoặc network share.
 - [x] Viết `docs/PRODUCTION_RUNTIME.md` cho runtime/config/lock; tài liệu installer Windows
@@ -331,11 +335,11 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 ### Kết quả Phase 8 — 2026-07-31
 
 - PWA có manifest/icon/shortcut local và worker chỉ cache GET dưới `/static/`; worker xóa cache
-  cũ, không cache HTML riêng tư, media, dữ liệu giá vốn hoặc thao tác ghi.
+  cũ, không cache HTML động, media, dữ liệu giá vốn hoặc thao tác ghi.
 - Product, inventory và lịch sử/chi tiết sale có card mobile; desktop giữ bảng. Off-canvas và
   bottom navigation không che nội dung nhờ padding mobile.
 - Upload ảnh gợi ý camera sau, preview cục bộ; server decode/verify JPEG/PNG/WebP, giới hạn
-  10 MB/30 MP, xử lý EXIF/thumbnail; media private kiểm tra lại nội dung trước khi trả MIME.
+  10 MB/30 MP, xử lý EXIF/thumbnail; media LAN kiểm tra lại nội dung trước khi trả MIME.
 - `IdempotencyRecord` có unique constraint `(client_key, operation, key)`, fingerprint payload và URL
   kết quả. Sale, điều chỉnh tồn, hủy sale, tạo product và backup chống gửi trùng; test thread
   xác minh hai submit cùng key chỉ commit một lần. Có lệnh `purge_idempotency --days 30`.
@@ -372,6 +376,8 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 
 - [ ] Installer helper tạo Windows Firewall inbound rule cho TCP `2505` chỉ ở profile
   Private; nếu tự quảng bá mDNS thì chỉ cho phép UDP `5353` ở profile Private.
+- [ ] Installer/launcher phải hiển thị rõ ứng dụng dùng trực tiếp trong LAN: không tạo account,
+  không quảng bá Internet, PIN chỉ bảo vệ giá vốn và chỉ dùng firewall profile Private.
 - [ ] Quảng bá hostname `shophoathuan.local` bằng mDNS trong LAN từ cùng server/service,
   không tạo thêm server ghi database và không phụ thuộc DNS Internet.
 - [ ] Phát hiện/xử lý trùng tên mDNS; trang thiết bị phải hiển thị tên thực tế đang được
@@ -424,6 +430,8 @@ mở ứng dụng mà không có terminal; điện thoại truy cập được b
 - [ ] Copy app vào Program Files; chỉ tạo thư mục ProgramData còn thiếu, không ghi đè
   database/media/config.
 - [ ] Sinh secret an toàn, chạy migration runner, collect/static verify và hướng dẫn thiết lập PIN.
+- [ ] Không tạo account hoặc mật khẩu trong installer/repair; chỉ hướng dẫn thiết lập PIN khi
+  installation chưa có PIN.
 - [ ] Đăng ký/start WinSW, tạo firewall Private rule, health check, Desktop/Start Menu
   shortcut và hiển thị URL/QR.
 - [ ] Nếu lỗi: dừng/gỡ service mới, rollback application files/rule/shortcut, giữ data,
@@ -550,8 +558,8 @@ maintenance/staging mồ côi.
   cấu hình tương đương host; ghi ngưỡng chấp nhận và RAM ổn định khi soak test.
 - [ ] Audit query count/N+1, pagination, thumbnail/lazy loading, Waitress threads và SQLite
   lock contention.
-- [ ] Audit auth, CSRF, session cookie, PIN rate limit, upload, path traversal, backup ZIP,
-  host header, log redaction, firewall và secret/config ACL.
+- [ ] Audit biên truy cập LAN trực tiếp, CSRF, session cookie, PIN rate limit, upload, path
+  traversal, backup ZIP, host header, log redaction, firewall và secret/config ACL.
 - [ ] Kiểm tra disk-full, database corrupt, media thiếu, clock/timezone, DST không áp dụng
   tại Việt Nam và thời điểm sát 0 giờ.
 - [ ] Hoàn thiện `docs/TROUBLESHOOTING.md`, ảnh/mô tả trực quan và bảng mã lỗi.
