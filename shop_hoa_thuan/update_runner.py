@@ -51,11 +51,11 @@ def perform_update(package_path: Path, app_root: Path) -> str:
 
     configured_stage = os.getenv("SHOP_UPDATE_STAGE")
     created_stage = configured_stage is None
-    manifest_stage = (
-        Path(configured_stage)
-        if configured_stage
-        else Path(tempfile.mkdtemp(prefix="update-stage-", dir=app_root.parent))
-    )
+    if configured_stage is None:
+        cleanup_root = Path(tempfile.mkdtemp(prefix="update-stage-", dir=app_root.parent))
+    else:
+        cleanup_root = Path(configured_stage)
+    manifest_stage = cleanup_root / "package" if created_stage else cleanup_root
     try:
         if configured_stage and manifest_stage.exists():
             shutil.rmtree(manifest_stage)
@@ -74,14 +74,12 @@ def perform_update(package_path: Path, app_root: Path) -> str:
                 if rollback_app.exists():
                     shutil.rmtree(rollback_app)
                 shutil.copytree(app_root, rollback_app)
-                for source in staged_app.rglob("*"):
-                    relative = source.relative_to(staged_app)
-                    destination = app_root / relative
-                    if source.is_dir():
-                        destination.mkdir(parents=True, exist_ok=True)
-                    else:
-                        destination.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(source, destination)
+                # An update package is a complete application tree.  Replacing
+                # the directory prevents stale binaries/assets from creating a
+                # mixed old/new runtime after a successful update.
+                if app_root.exists():
+                    shutil.rmtree(app_root)
+                shutil.copytree(staged_app, app_root)
                 migration_runner = app_root / "ShopHoaThuanMigration" / "ShopHoaThuanMigration.exe"
                 if not migration_runner.exists():
                     raise UpdateError("Gói update thiếu migration runner.")
@@ -105,8 +103,7 @@ def perform_update(package_path: Path, app_root: Path) -> str:
                 raise UpdateError("Update thất bại và đã rollback.") from error
         return manifest.target_version
     finally:
-        if created_stage or configured_stage:
-            shutil.rmtree(manifest_stage, ignore_errors=True)
+        shutil.rmtree(cleanup_root, ignore_errors=True)
 
 
 def initialize_runtime_environment() -> None:

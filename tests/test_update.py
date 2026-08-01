@@ -4,11 +4,15 @@ import hashlib
 import json
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
+from django.test import override_settings
 
 from apps.core.update import UpdateError, stage_update_package, validate_update_package
 from scripts.build_update_package import build_package
+from shop_hoa_thuan.runtime import RuntimePaths
+from shop_hoa_thuan.update_runner import perform_update
 
 
 def _package(path: Path, *, target: str = "1.1.0", checksum: str | None = None) -> None:
@@ -66,6 +70,44 @@ def test_update_package_builder_uses_application_prefix_and_atomic_output(tmp_pa
 
     assert manifest.target_version == "1.1.0"
     assert manifest.files[0][0] == "application/ShopHoaThuanServer.exe"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_update_replaces_complete_tree_and_releases_maintenance(tmp_path: Path) -> None:
+    package = tmp_path / "update.zip"
+    runner = b"migration runner"
+    manifest = {
+        "format_version": 1,
+        "current_version": "1.0.0",
+        "target_version": "1.1.0",
+        "schema_version": "core:0004",
+        "files": [
+            {"path": "application/new.txt", "sha256": hashlib.sha256(b"new").hexdigest()},
+            {
+                "path": "application/ShopHoaThuanMigration/ShopHoaThuanMigration.exe",
+                "sha256": hashlib.sha256(runner).hexdigest(),
+            },
+        ],
+    }
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("update-manifest.json", json.dumps(manifest))
+        archive.writestr("application/new.txt", b"new")
+        archive.writestr("application/ShopHoaThuanMigration/ShopHoaThuanMigration.exe", runner)
+
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    (app_root / "old.txt").write_text("old", encoding="utf-8")
+    runtime = RuntimePaths(tmp_path / "runtime")
+    with (
+        override_settings(RUNTIME_PATHS=runtime, BACKUP_ROOT=tmp_path / "backups"),
+        patch("shop_hoa_thuan.update_runner.subprocess.run") as run,
+        patch("shop_hoa_thuan.update_runner._wait_service_health"),
+    ):
+        run.return_value.returncode = 0
+        assert perform_update(package, app_root) == "1.1.0"
+
+    assert (app_root / "new.txt").read_text(encoding="utf-8") == "new"
+    assert not (app_root / "old.txt").exists()
 
 
 @pytest.mark.parametrize(
