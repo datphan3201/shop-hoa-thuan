@@ -6,6 +6,8 @@
   PowerShell Administrator; clean-install, production ACL và reboot/autostart vẫn chưa có evidence.
 - Reboot/autostart, clean Windows install, reinstall/repair/uninstall và ACL ProgramData chưa
   có evidence trên máy sạch.
+- Lần clean-install đầu tiên của artifact 1.0.0 bị chặn bởi hostname Windows tự phát hiện có dấu
+  gạch dưới; source đã sửa và artifact cũ không còn là bằng chứng hợp lệ. Cần rebuild rồi chạy lại.
 - Điện thoại thật: LAN, camera orientation, touch UX, PWA Add to Home Screen và mất mạng.
 - Tailscale/HTTPS/mDNS/hostname resolution trên Android/iOS.
 - Update/rollback failure injection khi service đang chạy native.

@@ -137,32 +137,42 @@ def ensure_runtime_secret() -> str:
 
 
 def production_allowed_hosts() -> list[str]:
+    def is_valid_host(host: str) -> bool:
+        candidate = host.strip("[]")
+        try:
+            ipaddress.ip_address(candidate)
+        except ValueError:
+            return bool(
+                re.fullmatch(
+                    r"[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?",
+                    host,
+                )
+            )
+        return True
+
     configured = os.getenv("DJANGO_ALLOWED_HOSTS", "")
     if configured:
         hosts = [host.strip() for host in configured.split(",") if host.strip()]
         if "*" in hosts:
             raise RuntimeError("DJANGO_ALLOWED_HOSTS không được dùng '*' ở production.")
         for host in hosts:
-            candidate = host.strip("[]")
-            try:
-                ipaddress.ip_address(candidate)
-            except ValueError:
-                if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?", host):
-                    raise RuntimeError("DJANGO_ALLOWED_HOSTS chứa hostname không hợp lệ.") from None
+            if not is_valid_host(host):
+                raise RuntimeError("DJANGO_ALLOWED_HOSTS chứa hostname không hợp lệ.")
         return hosts
     hostname = socket.gethostname().strip()
-    return [
-        host
-        for host in (
-            "localhost",
-            "127.0.0.1",
-            "[::1]",
-            "shophoathuan.local",
-            hostname,
-            *lan_ipv4_addresses(),
-        )
-        if host
-    ]
+    discovered_hosts = (
+        "localhost",
+        "127.0.0.1",
+        "[::1]",
+        "shophoathuan.local",
+        hostname,
+        *lan_ipv4_addresses(),
+    )
+    # A Windows computer name may contain an underscore.  It is not a valid
+    # HTTP Host value, so skip an automatically discovered name rather than
+    # making the server unable to start.  Explicit configuration remains
+    # strict and is rejected above when invalid.
+    return [host for host in discovered_hosts if host and is_valid_host(host)]
 
 
 def runtime_data_dir() -> Path:

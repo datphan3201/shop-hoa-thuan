@@ -10,7 +10,7 @@ Cập nhật gần nhất: 2026-08-02
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
 - Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery/firewall test data PASS; reboot, clean install và LAN device còn lại**.
-- Phase 10 — PyInstaller và installer: **đã build artifact 1.0.0; clean-install/reinstall chưa đạt gate**.
+- Phase 10 — PyInstaller và installer: **đã phát hiện và sửa lỗi startup trên clean-install; cần rebuild artifact rồi xác minh lại**.
 - Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
 - Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
 - Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
@@ -88,9 +88,22 @@ Windows test evidence sau build cuối:
   đây là vấn đề hiển thị của terminal test, không làm fail service/health/recovery. Có thể chạy
   lại với code page UTF-8 khi cần lưu log đọc được.
 
+Clean-install finding — 2026-08-02:
+
+- Installer 1.0.0 đã đăng ký được `ShopHoaThuanServer`, nhưng `/health/` không mở và database
+  không được tạo tại `C:\ProgramData\Shop Hoa Thuan\data\db.sqlite3`.
+- WinSW log xác định root cause: hostname Windows tự phát hiện có dấu gạch dưới
+  (`SHOP_SERVER_TEST` trong test) bị đưa vào `DJANGO_ALLOWED_HOSTS`, sau đó validation production
+  từ chối hostname đó và server thoát trước khi bind cổng.
+- Đã sửa `production_allowed_hosts()` để bỏ qua hostname tự phát hiện không hợp lệ; hostname do
+  người vận hành cấu hình vẫn bị reject. Đã thêm regression test cho lỗi này.
+- Artifact hash ở trên thuộc build trước khi sửa; phải rebuild Windows artifact trước khi chạy
+  lại clean-install gate.
+
 ### Việc cần làm tiếp theo
 
-1. Trên Windows sạch hoặc VM/Sandbox, chạy installer hiện tại, reboot, reinstall/repair và
+1. Đồng bộ source fix sang Windows, rebuild installer; sau đó trên Windows sạch hoặc VM/Sandbox,
+   chạy installer, reboot, reinstall/repair và
    uninstall mặc định; xác minh ProgramData, service, shortcut và không cần Python.
 2. Tạo test package 1.0.0 → 1.1.0, chạy restore và update/rollback trên data test độc lập;
    failure injection phải chứng minh maintenance, database/media và application tree trở lại

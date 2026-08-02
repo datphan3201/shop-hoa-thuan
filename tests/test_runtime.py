@@ -4,6 +4,8 @@ import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from shop_hoa_thuan.runtime import (
     ensure_runtime_layout,
     migrate_legacy_layout,
@@ -59,3 +61,40 @@ def test_default_production_hosts_include_discovered_lan_ip(monkeypatch: object)
     assert "localhost" in hosts
     assert "127.0.0.1" in hosts
     assert "192.168.1.10" in hosts
+
+
+def test_default_production_hosts_skip_invalid_discovered_windows_hostname(
+    monkeypatch: object,
+) -> None:
+    monkeypatch.delenv("DJANGO_ALLOWED_HOSTS", raising=False)  # type: ignore[attr-defined]
+    with (
+        patch("shop_hoa_thuan.runtime.socket.gethostname", return_value="SHOP_SERVER_TEST"),
+        patch("shop_hoa_thuan.runtime.lan_ipv4_addresses", return_value=[]),
+    ):
+        hosts = production_allowed_hosts()
+
+    assert "SHOP_SERVER_TEST" not in hosts
+    assert "localhost" in hosts
+    assert "127.0.0.1" in hosts
+
+
+def test_auto_discovered_hosts_round_trip_through_environment(monkeypatch: object) -> None:
+    monkeypatch.delenv("DJANGO_ALLOWED_HOSTS", raising=False)  # type: ignore[attr-defined]
+    with (
+        patch("shop_hoa_thuan.runtime.socket.gethostname", return_value="SHOP_SERVER_TEST"),
+        patch("shop_hoa_thuan.runtime.lan_ipv4_addresses", return_value=[]),
+    ):
+        hosts = production_allowed_hosts()
+        monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", ",".join(hosts))  # type: ignore[attr-defined]
+        assert production_allowed_hosts() == hosts
+
+
+@pytest.mark.parametrize("value", ["*", "SHOP_SERVER_TEST"])
+def test_explicit_invalid_production_hosts_remain_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    value: str,
+) -> None:
+    monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", value)
+
+    with pytest.raises(RuntimeError, match=r"hostname|\*"):
+        production_allowed_hosts()

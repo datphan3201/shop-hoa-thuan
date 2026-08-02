@@ -35,6 +35,10 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 4. Restore tạo pre-restore backup trước khi validate package; đã đảo thứ tự để package sai
    không chạm dữ liệu vận hành.
 5. Installer có warning `UninstallRun` thiếu `RunOnceId`; đã bổ sung định danh.
+6. Clean-install 1.0.0 phát hiện hostname Windows tự động có dấu gạch dưới làm server từ chối
+   `DJANGO_ALLOWED_HOSTS` và thoát trước khi bind cổng; đã lọc hostname tự phát hiện không hợp lệ,
+   giữ validation nghiêm ngặt cho cấu hình explicit và thêm regression test. Artifact Windows phải
+   được rebuild trước khi lặp lại clean-install.
 
 ## Còn lại trước production
 
