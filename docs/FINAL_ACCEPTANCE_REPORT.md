@@ -8,7 +8,7 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 
 ## Evidence đã có
 
-- WSL full pytest sau thay đổi cuối: **131 passed, 1 warning**; warning là
+- WSL full pytest sau thay đổi cuối: **136 passed, 1 warning**; warning là
   `override_settings(DATABASES=...)` trong restore test.
 - Ruff, mypy, Django system check và migration consistency check đạt.
 - Windows Python 3.12.10, PyInstaller 6.21.0 và Inno Setup 6.7.3.

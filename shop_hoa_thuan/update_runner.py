@@ -110,11 +110,17 @@ def _configure_firewall(app_root: Path) -> None:
         raise UpdateError(f"Không thể cấu hình firewall Private: {detail}")
 
 
-def perform_update(package_path: Path, app_root: Path) -> str:
+def perform_update(
+    package_path: Path,
+    app_root: Path,
+    *,
+    current_version: str | None = None,
+) -> str:
     """Run a bounded update with app and database rollback on failure."""
     from apps.core.backup import BackupError, create_backup, restore_backup
     from apps.core.operations import maintenance_operation
 
+    current_version = current_version or application_version()
     configured_stage = os.getenv("SHOP_UPDATE_STAGE")
     created_stage = configured_stage is None
     if configured_stage is None:
@@ -125,13 +131,13 @@ def perform_update(package_path: Path, app_root: Path) -> str:
     try:
         if configured_stage and manifest_stage.exists():
             shutil.rmtree(manifest_stage)
-        manifest = stage_update_package(package_path, manifest_stage, application_version())
+        manifest = stage_update_package(package_path, manifest_stage, current_version)
         staged_app = manifest_stage / "application"
         if not staged_app.is_dir():
             raise UpdateError("Gói update thiếu thư mục application.")
 
         runtime_paths = ensure_runtime_layout()
-        rollback_app = runtime_paths.rollback / f"app-{application_version()}"
+        rollback_app = runtime_paths.rollback / f"app-{current_version}"
         rollback_app.parent.mkdir(parents=True, exist_ok=True)
         firewall_was_present = _firewall_rule_exists()
         with maintenance_operation("update", timeout_seconds=60):
@@ -192,7 +198,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cập nhật Shop Hoà Thuận từ gói cục bộ.")
     parser.add_argument("package", type=Path)
     parser.add_argument("--app-root", type=Path, required=True)
+    parser.add_argument("--current-version")
     args = parser.parse_args()
     initialize_runtime_environment()
     django.setup()
-    raise SystemExit(perform_update(args.package, args.app_root))
+    raise SystemExit(
+        perform_update(args.package, args.app_root, current_version=args.current_version)
+    )

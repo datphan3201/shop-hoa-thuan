@@ -138,3 +138,5 @@ def test_update_gui_runs_from_external_worker_before_replacing_application_tree(
     assert '"--execute"' in update_gui
     assert "shutil.copy2(sys.executable, worker)" in update_gui
     assert 'tempfile.mkdtemp(prefix="update-worker-"' in update_gui
+    assert "_installed_version" in update_gui
+    assert '"--current-version"' in update_gui

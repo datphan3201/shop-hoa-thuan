@@ -57,11 +57,11 @@ Windows build evidence:
 
 WSL quality gate sau các thay đổi code/tài liệu: `ruff format --check` PASS (112 files), Ruff
 PASS, mypy PASS (88 source files), Django system check PASS, migration check PASS và full pytest
-PASS: **131 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
+PASS: **136 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
 `override_settings(DATABASES=...)` trong restore test, không phải test fail.
 
 Django deployment check với production test env (`DEBUG=false`, secret test dài, hosts
-`localhost,127.0.0.1`) PASS với đúng 4 warning có chủ đích: `W004`, `W008`, `W012`, `W016`.
+`localhost,127.0.0.1,192.168.1.69`) PASS với đúng 4 warning có chủ đích: `W004`, `W008`, `W012`, `W016`.
 `W009` và `W018` chỉ xuất hiện khi chạy nhầm bằng development env và không được chấp nhận
 trong build.
 
@@ -81,7 +81,7 @@ Windows test evidence sau build cuối:
 - `tests/test_update.py tests/test_windows_service_assets.py`: **18 passed**.
 - `phase9_test_service.ps1` chạy elevated: **PASS** — WinSW install/start, `/health/`, kill PID
   recovery, stop/start và firewall Private; service/rule được cleanup, test data được giữ.
-- Full pytest WSL baseline: **122 passed, 1 warning**; sau network/update changes: **131 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
+- Full pytest WSL baseline: **122 passed, 1 warning**; sau network/update/bootstrap changes: **136 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
   WSL nhưng console bridge phát `KeyboardInterrupt` sau 101 test; không ghi nhận đó là full
   Windows PASS. Cần chạy lại trong PowerShell/Windows CI native ổn định trước release.
 - Output tiếng Việt của một số thông báo WinSW bị mojibake trong console hiện tại do code page;
@@ -114,6 +114,10 @@ Update UI/network fix — 1.1.0:
   nếu không lấy được thì fallback về private IPv4 discovery.
 - Update package 1.0.0 → 1.1.0 phải được build từ frozen tree có `configure_firewall.ps1`; native
   update và rollback chưa có evidence.
+- Updater portable 1.1.0 đọc version đang chạy từ `/health/`, mặc định dùng
+  `C:\Program Files\Shop Hoa Thuan` khi chạy ngoài application tree, rồi chuyển rõ version cài
+  hiện tại cho update worker. Vì vậy có thể nâng cài đặt 1.0.0 bằng updater mới mà không uninstall;
+  cần native Windows test để đóng evidence.
 
 ### Việc cần làm tiếp theo
 

@@ -11,6 +11,7 @@ from django.test import override_settings
 
 from apps.core.update import UpdateError, stage_update_package, validate_update_package
 from scripts.build_update_package import build_package
+from shop_hoa_thuan import update_gui
 from shop_hoa_thuan.runtime import RuntimePaths
 from shop_hoa_thuan.update_runner import _configure_firewall, perform_update
 from shop_hoa_thuan.version import application_version
@@ -159,3 +160,38 @@ def test_windows_update_configures_firewall_from_new_application_tree(tmp_path: 
     ]
     assert command[command.index("-Action") + 1] == "Install"
     assert command[command.index("-ProgramPath") + 1].endswith("ShopHoaThuanServer.exe")
+
+
+class _HealthResponse:
+    def __init__(self, payload: bytes) -> None:
+        self.payload = payload
+
+    def __enter__(self) -> _HealthResponse:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return self.payload
+
+
+def test_portable_update_reads_version_from_running_health_endpoint() -> None:
+    with patch(
+        "shop_hoa_thuan.update_gui.urlopen",
+        return_value=_HealthResponse(b'{"version":"1.0.0"}'),
+    ):
+        assert update_gui._installed_version() == "1.0.0"
+
+
+def test_portable_update_falls_back_to_bundled_version_when_health_is_unavailable() -> None:
+    with patch("shop_hoa_thuan.update_gui.urlopen", side_effect=OSError):
+        assert update_gui._installed_version() == application_version()
+
+
+def test_portable_update_falls_back_when_health_payload_is_not_an_object() -> None:
+    with patch(
+        "shop_hoa_thuan.update_gui.urlopen",
+        return_value=_HealthResponse(b'["not-an-object"]'),
+    ):
+        assert update_gui._installed_version() == application_version()
