@@ -8,7 +8,7 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 
 ## Evidence đã có
 
-- WSL full pytest sau thay đổi cuối: **122 passed, 1 warning**; warning là
+- WSL full pytest sau thay đổi cuối: **126 passed, 1 warning**; warning là
   `override_settings(DATABASES=...)` trong restore test.
 - Ruff, mypy, Django system check và migration consistency check đạt.
 - Windows Python 3.12.10, PyInstaller 6.21.0 và Inno Setup 6.7.3.
@@ -18,12 +18,16 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
   firewall Private; service/rule được cleanup thành công.
 - Health executable trả mã `SHOP-HEALTH-001` khi server chưa sẵn sàng.
 - Installer `ShopHoaThuan-Setup-1.0.0.exe` build thành công.
+- Native installer smoke sau khi rebuild: service `ShopHoaThuanServer` chạy, `/health/` trả HTTP
+  200 với `status=ok`, `database=true`, `schema=true`, `version=1.0.0`, và database tồn tại
+  đúng trong `C:\ProgramData\Shop Hoa Thuan\data\db.sqlite3`.
 - Backup/restore, update validation, tree replacement và exception-path được test trong WSL.
 - Native Windows test groups: operations 6 pass, runner/runtime 6 pass, update/service assets
   18 pass; full suite qua cầu WSL–Windows bị `KeyboardInterrupt` ở process console và vì vậy
   không được ghi là full Windows PASS.
-- Artifact installer SHA-256 hiện tại:
-  `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`.
+- Hash SHA-256 của artifact rebuild cần được bổ sung từ output Windows; hash
+  `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6` là bản build trước lỗi
+  hostname và không còn là release evidence.
 
 ## Findings đã sửa
 

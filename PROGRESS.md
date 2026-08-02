@@ -10,7 +10,7 @@ Cập nhật gần nhất: 2026-08-02
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
 - Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery/firewall test data PASS; reboot, clean install và LAN device còn lại**.
-- Phase 10 — PyInstaller và installer: **đã phát hiện và sửa lỗi startup trên clean-install; cần rebuild artifact rồi xác minh lại**.
+- Phase 10 — PyInstaller và installer: **install/service/health/database smoke PASS; reboot, reinstall và uninstall giữ dữ liệu còn lại**.
 - Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
 - Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
 - Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
@@ -44,8 +44,8 @@ Windows build evidence:
 - `ShopHoaThuanServer.exe`: native `/health/` smoke PASS trên test data.
 - `ShopHoaThuanMigration.exe`: migration runner PASS, output Unicode PASS, không tự chạy từ server.
 - `ShopHoaThuanHealth.exe`: không có server trả `SHOP-HEALTH-001`, exit code 1 như thiết kế.
-- Installer `ShopHoaThuan-Setup-1.0.0.exe`: compile PASS; SHA-256 artifact hiện tại là
-  `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`.
+- Installer `ShopHoaThuan-Setup-1.0.0.exe`: compile PASS; SHA-256 của build trước lỗi hostname là
+  `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`; hash rebuild cần bổ sung.
 - Kích thước artifact hiện tại: installer 195,550,176 bytes; server 7,599,613 bytes;
   migration 7,603,330 bytes; health 20,147,834 bytes; launcher 32,929,919 bytes;
   update 33,044,818 bytes; backup 33,046,256 bytes; restore 33,046,194 bytes.
@@ -57,7 +57,7 @@ Windows build evidence:
 
 WSL quality gate sau các thay đổi code/tài liệu: `ruff format --check` PASS (111 files), Ruff
 PASS, mypy PASS (88 source files), Django system check PASS, migration check PASS và full pytest
-PASS: **122 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
+PASS: **126 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
 `override_settings(DATABASES=...)` trong restore test, không phải test fail.
 
 Django deployment check với production test env (`DEBUG=false`, secret test dài, hosts
@@ -97,13 +97,16 @@ Clean-install finding — 2026-08-02:
   từ chối hostname đó và server thoát trước khi bind cổng.
 - Đã sửa `production_allowed_hosts()` để bỏ qua hostname tự phát hiện không hợp lệ; hostname do
   người vận hành cấu hình vẫn bị reject. Đã thêm regression test cho lỗi này.
-- Artifact hash ở trên thuộc build trước khi sửa; phải rebuild Windows artifact trước khi chạy
-  lại clean-install gate.
+- Đã rebuild và chạy lại trên Windows test: `ShopHoaThuanServer` ở trạng thái `Running`,
+  `/health/` trả HTTP 200 với `status=ok`, `database=true`, `schema=true`, `version=1.0.0`,
+  và `C:\ProgramData\Shop Hoa Thuan\data\db.sqlite3` tồn tại.
+- Hash mới của installer cần được ghi lại từ output `Get-FileHash`; hash cũ ở phần artifact là
+  build trước lỗi và không dùng làm release evidence.
 
 ### Việc cần làm tiếp theo
 
-1. Đồng bộ source fix sang Windows, rebuild installer; sau đó trên Windows sạch hoặc VM/Sandbox,
-   chạy installer, reboot, reinstall/repair và
+1. Trên Windows test hiện tại, reboot rồi kiểm tra service/health tự khởi động; sau đó kiểm tra
+   reinstall/repair và
    uninstall mặc định; xác minh ProgramData, service, shortcut và không cần Python.
 2. Tạo test package 1.0.0 → 1.1.0, chạy restore và update/rollback trên data test độc lập;
    failure injection phải chứng minh maintenance, database/media và application tree trở lại

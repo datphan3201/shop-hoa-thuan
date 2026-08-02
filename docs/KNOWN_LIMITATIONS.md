@@ -2,12 +2,12 @@
 
 ## Chưa thể xác minh trong môi trường hiện tại
 
-- Service Control Manager, WinSW, crash recovery và firewall Private đã PASS trên test data bằng
-  PowerShell Administrator; clean-install, production ACL và reboot/autostart vẫn chưa có evidence.
-- Reboot/autostart, clean Windows install, reinstall/repair/uninstall và ACL ProgramData chưa
-  có evidence trên máy sạch.
-- Lần clean-install đầu tiên của artifact 1.0.0 bị chặn bởi hostname Windows tự phát hiện có dấu
-  gạch dưới; source đã sửa và artifact cũ không còn là bằng chứng hợp lệ. Cần rebuild rồi chạy lại.
+- Service Control Manager, WinSW, crash recovery, firewall Private và native installer
+  service/health/database smoke đã PASS trên Windows test.
+- Reboot/autostart, reinstall/repair/uninstall giữ dữ liệu, production ACL và clean Windows
+  acceptance đầy đủ vẫn chưa có evidence.
+- Lần clean-install đầu tiên bị chặn bởi hostname Windows tự phát hiện có dấu gạch dưới; source
+  đã sửa, rebuild và native health smoke sau sửa đã PASS.
 - Điện thoại thật: LAN, camera orientation, touch UX, PWA Add to Home Screen và mất mạng.
 - Tailscale/HTTPS/mDNS/hostname resolution trên Android/iOS.
 - Update/rollback failure injection khi service đang chạy native.
