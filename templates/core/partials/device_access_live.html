@@ -1,0 +1,18 @@
+<dl class="mobile-record-grid mb-3">
+  <dt>Tên máy chủ</dt><dd>{{ access.hostname }}</dd>
+  <dt>Wi-Fi đang dùng</dt><dd>{{ access.wifi_label }}</dd>
+  <dt>Trạng thái</dt><dd>{% if maintenance %}Đang bảo trì{% else %}Đang chạy{% endif %}</dd>
+  <dt>Địa chỉ máy này</dt><dd><a href="{{ access.localhost_url }}">{{ access.localhost_url }}</a></dd>
+</dl>
+{% if access.lan_urls %}
+  <div class="mb-3">
+    <strong>Địa chỉ Wi-Fi/LAN hiện tại</strong>
+    {% for url in access.lan_urls %}<a class="d-block" href="{{ url }}">{{ url }}</a>{% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-warning">Chưa tìm thấy địa chỉ LAN riêng. Hãy kiểm tra kết nối mạng của máy chủ.</div>
+{% endif %}
+{% if access.tailscale_url %}<div class="mb-3"><strong>Tailscale</strong><a class="d-block" href="{{ access.tailscale_url }}">{{ access.tailscale_url }}</a></div>{% endif %}
+<img class="border rounded p-2 bg-white" src="{{ qr_code }}" width="180" height="180" alt="Mã QR mở Shop Hoà Thuận trên điện thoại" data-qr-target="{{ qr_target }}">
+<div class="small text-secondary mt-2">Địa chỉ và mã QR tự cập nhật khi máy đổi Wi-Fi.</div>
+<div class="notice-box mt-3">Dùng điện thoại cùng Wi-Fi, quét QR hoặc mở một địa chỉ LAN ở trên. Không mở port router.</div>

@@ -40,6 +40,7 @@ Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.e
 Name: "{group}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.exe"
 Name: "{group}\Sao lưu Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanBackup.exe"
 Name: "{group}\Khôi phục Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanRestore.exe"
+Name: "{group}\Cập nhật Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanUpdate.exe"
 
 [Run]
 Filename: "{app}\ShopHoaThuanMigration\ShopHoaThuanMigration.exe"; Parameters: ""; Flags: runhidden waituntilterminated

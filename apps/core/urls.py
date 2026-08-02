@@ -19,6 +19,11 @@ urlpatterns = [
         name="device-access-settings",
     ),
     path(
+        "settings/device-access/live/",
+        views.device_access_live,
+        name="device-access-live",
+    ),
+    path(
         "settings/device-access/backup/create/",
         views.create_backup_view,
         name="backup-create",

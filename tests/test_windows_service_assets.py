@@ -102,6 +102,8 @@ def test_installer_runs_migration_and_opens_direct_lan_application() -> None:
     assert "update_gui.spec" in build_script
     assert "backup_gui.spec" in build_script
     assert "restore_gui.spec" in build_script
+    assert 'Copy-Item "packaging\\installer\\configure_firewall.ps1"' in build_script
+    assert "Cập nhật Shop Hoà Thuận" in installer
 
 
 def test_installer_contains_backup_and_restore_utilities() -> None:
@@ -127,3 +129,12 @@ def test_installer_configures_only_private_firewall_for_packaged_server() -> Non
     assert "-Program $ProgramPath" in firewall
     assert "Public" not in firewall
     assert "-LocalPort $Port" in firewall
+
+
+def test_update_gui_runs_from_external_worker_before_replacing_application_tree() -> None:
+    root = Path(__file__).resolve().parents[1]
+    update_gui = (root / "shop_hoa_thuan" / "update_gui.py").read_text(encoding="utf-8")
+
+    assert '"--execute"' in update_gui
+    assert "shutil.copy2(sys.executable, worker)" in update_gui
+    assert 'tempfile.mkdtemp(prefix="update-worker-"' in update_gui

@@ -10,19 +10,9 @@
       <div class="panel-heading">
         <h2 class="h5 mb-0">Truy cập từ điện thoại</h2>
       </div>
-      <dl class="mobile-record-grid mb-3">
-        <dt>Tên máy chủ</dt><dd>{{ access.hostname }}</dd>
-        <dt>Trạng thái</dt><dd>{% if maintenance %}Đang bảo trì{% else %}Đang chạy{% endif %}</dd>
-        <dt>Địa chỉ máy này</dt><dd><a href="{{ access.localhost_url }}">{{ access.localhost_url }}</a></dd>
-      </dl>
-      {% if access.lan_urls %}
-        <div class="mb-3"><strong>Địa chỉ Wi-Fi/LAN</strong>{% for url in access.lan_urls %}<a class="d-block" href="{{ url }}">{{ url }}</a>{% endfor %}</div>
-      {% else %}
-        <div class="alert alert-warning">Chưa tìm thấy địa chỉ LAN riêng. Hãy kiểm tra kết nối mạng của máy chủ.</div>
-      {% endif %}
-      {% if access.tailscale_url %}<div class="mb-3"><strong>Tailscale</strong><a class="d-block" href="{{ access.tailscale_url }}">{{ access.tailscale_url }}</a></div>{% endif %}
-      <img class="border rounded p-2 bg-white" src="{{ qr_code }}" width="180" height="180" alt="Mã QR mở Shop Hoà Thuận trên điện thoại">
-      <div class="notice-box mt-3">Dùng điện thoại cùng Wi-Fi, quét QR hoặc mở một địa chỉ LAN ở trên. Không mở port router.</div>
+      <div id="device-access-live" data-refresh-url="{% url 'device-access-live' %}">
+        {% include "core/partials/device_access_live.html" %}
+      </div>
     </section>
   </div>
   <div class="col-12 col-xl-6">
@@ -72,5 +62,29 @@
 <script>
   const backupKey = document.getElementById("id_backup_idempotency_key");
   if (backupKey && window.crypto?.randomUUID) backupKey.value = window.crypto.randomUUID();
+
+  const deviceAccessLive = document.getElementById("device-access-live");
+  if (deviceAccessLive) {
+    let refreshing = false;
+    const refreshDeviceAccess = async () => {
+      if (refreshing || document.visibilityState !== "visible") return;
+      refreshing = true;
+      try {
+        const response = await fetch(
+          `${deviceAccessLive.dataset.refreshUrl}?t=${Date.now()}`,
+          {cache: "no-store", headers: {"X-Requested-With": "XMLHttpRequest"}},
+        );
+        if (response.ok) deviceAccessLive.innerHTML = await response.text();
+      } catch (_error) {
+        // A temporary network transition is expected while Wi-Fi changes.
+      } finally {
+        refreshing = false;
+      }
+    };
+    window.setInterval(refreshDeviceAccess, 15000);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") refreshDeviceAccess();
+    });
+  }
 </script>
 {% endblock %}

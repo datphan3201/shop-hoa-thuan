@@ -216,19 +216,36 @@ def security_action(request: HttpRequest) -> HttpResponse:
     return redirect("security-settings")
 
 
+@require_GET
+@never_cache
 def device_access_settings(request: HttpRequest) -> HttpResponse:
-    access = discover_device_access()
-    qr_target = access.lan_urls[0] if access.lan_urls else access.localhost_url
+    access_context = _device_access_context()
     return render(
         request,
         "core/device_access_settings.html",
         {
-            "access": access,
-            "qr_code": _qr_svg_data_uri(qr_target),
+            **access_context,
             "backups": list_backups(),
             "maintenance": maintenance_state(),
         },
     )
+
+
+@require_GET
+@never_cache
+def device_access_live(request: HttpRequest) -> HttpResponse:
+    return render(request, "core/partials/device_access_live.html", _device_access_context())
+
+
+def _device_access_context() -> dict[str, object]:
+    access = discover_device_access()
+    qr_target = access.lan_urls[0] if access.lan_urls else access.localhost_url
+    return {
+        "access": access,
+        "qr_code": _qr_svg_data_uri(qr_target),
+        "qr_target": qr_target,
+        "maintenance": maintenance_state(),
+    }
 
 
 def _qr_svg_data_uri(value: str) -> str:

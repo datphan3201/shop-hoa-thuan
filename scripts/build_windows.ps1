@@ -32,6 +32,7 @@ uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/launcher.spec"
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/update_gui.spec"
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/backup_gui.spec"
 uv run pyinstaller --noconfirm --clean "packaging/pyinstaller/restore_gui.spec"
+Copy-Item "packaging\installer\configure_firewall.ps1" "dist\ShopHoaThuan\configure_firewall.ps1" -Force
 
 $iscc = Get-Command iscc -ErrorAction SilentlyContinue
 if ($null -eq $iscc) {

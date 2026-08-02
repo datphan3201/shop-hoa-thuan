@@ -27,7 +27,8 @@ che PIN, secret, CSRF/session/authorization và cost price.
 `ShopHoaThuanBackup.exe` và `ShopHoaThuanRestore.exe` là GUI native; chúng khởi tạo cùng runtime
 config, lấy maintenance lock và không yêu cầu terminal. Restore validate ZIP trước khi tạo
 pre-restore backup. `ShopHoaThuanUpdate.exe` chỉ nhận package có manifest/checksum, thay toàn bộ
-application tree và dọn staging trong mọi exception path.
+application tree và dọn staging trong mọi exception path. Bản update 1.1.0 chạy worker từ bản sao
+ngoài `Program Files`, áp dụng lại firewall Private và cập nhật snapshot SSID/IP/QR trên UI.
 
 ## Giới hạn Windows
 

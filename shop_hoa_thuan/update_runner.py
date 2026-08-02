@@ -17,6 +17,8 @@ from shop_hoa_thuan.runtime import (
 )
 from shop_hoa_thuan.version import application_version
 
+_FIREWALL_RULE_NAME = "Shop Hoa Thuan LAN 2505"
+
 
 def _service_command(action: str) -> None:
     if os.name != "nt":
@@ -44,6 +46,70 @@ def _wait_service_health(timeout_seconds: int = 30) -> None:
     raise UpdateError("Service không đạt health sau update.")
 
 
+def _firewall_rule_exists() -> bool:
+    if os.name != "nt":
+        return False
+    command = (
+        "if (Get-NetFirewallRule -DisplayName "
+        f"'{_FIREWALL_RULE_NAME}' -ErrorAction SilentlyContinue) {{ exit 0 }} else {{ exit 1 }}"
+    )
+    result = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+        check=False,
+        capture_output=True,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    return result.returncode == 0
+
+
+def _remove_firewall_rule() -> None:
+    if os.name != "nt":
+        return
+    command = (
+        f"Get-NetFirewallRule -DisplayName '{_FIREWALL_RULE_NAME}' "
+        "-ErrorAction SilentlyContinue | "
+        "Remove-NetFirewallRule -ErrorAction SilentlyContinue"
+    )
+    subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+        check=False,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+
+
+def _configure_firewall(app_root: Path) -> None:
+    if os.name != "nt":
+        return
+    script = app_root / "configure_firewall.ps1"
+    server = app_root / "ShopHoaThuanServer.exe"
+    if not script.is_file() or not server.is_file():
+        raise UpdateError("Gói update thiếu cấu hình firewall hoặc server executable.")
+    result = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script),
+            "-Action",
+            "Install",
+            "-ProgramPath",
+            str(server),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        raise UpdateError(f"Không thể cấu hình firewall Private: {detail}")
+
+
 def perform_update(package_path: Path, app_root: Path) -> str:
     """Run a bounded update with app and database rollback on failure."""
     from apps.core.backup import BackupError, create_backup, restore_backup
@@ -67,6 +133,7 @@ def perform_update(package_path: Path, app_root: Path) -> str:
         runtime_paths = ensure_runtime_layout()
         rollback_app = runtime_paths.rollback / f"app-{application_version()}"
         rollback_app.parent.mkdir(parents=True, exist_ok=True)
+        firewall_was_present = _firewall_rule_exists()
         with maintenance_operation("update", timeout_seconds=60):
             pre_update_backup = create_backup()
             _service_command("stop")
@@ -86,6 +153,7 @@ def perform_update(package_path: Path, app_root: Path) -> str:
                 result = subprocess.run([str(migration_runner)], check=False)
                 if result.returncode != 0:
                     raise UpdateError("Migration update thất bại.")
+                _configure_firewall(app_root)
                 _service_command("start")
                 _wait_service_health()
             except Exception as error:
@@ -99,6 +167,8 @@ def perform_update(package_path: Path, app_root: Path) -> str:
                     raise UpdateError(
                         "Rollback update thất bại; cần giữ nguyên evidence để xử lý."
                     ) from restore_error
+                if not firewall_was_present:
+                    _remove_firewall_rule()
                 _service_command("start")
                 raise UpdateError("Update thất bại và đã rollback.") from error
         return manifest.target_version

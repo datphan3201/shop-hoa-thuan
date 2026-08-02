@@ -12,7 +12,7 @@ Cập nhật gần nhất: 2026-08-02
 - Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery PASS; production Private firewall fix cần rebuild và LAN device/reboot còn lại**.
 - Phase 10 — PyInstaller và installer: **install/service/health/database smoke PASS; installer Private firewall fix cần rebuild, reboot, reinstall và uninstall giữ dữ liệu còn lại**.
 - Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
-- Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
+- Phase 12 — Update/rollback: **đã bổ sung update device access/firewall và updater worker ngoài app tree; native 1.0.0→1.1.0/rollback chưa chạy**.
 - Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
 
 ### Trạng thái runtime và địa chỉ truy cập — 2026-08-01
@@ -46,7 +46,7 @@ Windows build evidence:
 - `ShopHoaThuanHealth.exe`: không có server trả `SHOP-HEALTH-001`, exit code 1 như thiết kế.
 - Installer `ShopHoaThuan-Setup-1.0.0.exe`: compile PASS; SHA-256 của build trước lỗi hostname là
   `45B6EF4CF272E020ECC220F1C207737B19B401F83579886515C6B57657C096C6`; hash rebuild cần bổ sung.
-- Kích thước artifact hiện tại: installer 195,550,176 bytes; server 7,599,613 bytes;
+- Kích thước artifact baseline 1.0.0: installer 195,550,176 bytes; server 7,599,613 bytes;
   migration 7,603,330 bytes; health 20,147,834 bytes; launcher 32,929,919 bytes;
   update 33,044,818 bytes; backup 33,046,256 bytes; restore 33,046,194 bytes.
 - SHA-256 native smoke set: server `B9C0EC6BA302016DFFBB8392FE91B9BE1C2E77AA07A6B68C990253789AB62120`;
@@ -55,9 +55,9 @@ Windows build evidence:
 - Standalone health/launcher/update/backup/restore specs đã nhúng runtime binaries; lỗi thiếu
   `python312.dll` đã được bắt bằng smoke test và sửa.
 
-WSL quality gate sau các thay đổi code/tài liệu: `ruff format --check` PASS (111 files), Ruff
+WSL quality gate sau các thay đổi code/tài liệu: `ruff format --check` PASS (112 files), Ruff
 PASS, mypy PASS (88 source files), Django system check PASS, migration check PASS và full pytest
-PASS: **126 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
+PASS: **131 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
 `override_settings(DATABASES=...)` trong restore test, không phải test fail.
 
 Django deployment check với production test env (`DEBUG=false`, secret test dài, hosts
@@ -81,7 +81,7 @@ Windows test evidence sau build cuối:
 - `tests/test_update.py tests/test_windows_service_assets.py`: **18 passed**.
 - `phase9_test_service.ps1` chạy elevated: **PASS** — WinSW install/start, `/health/`, kill PID
   recovery, stop/start và firewall Private; service/rule được cleanup, test data được giữ.
-- Full pytest WSL: **122 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
+- Full pytest WSL baseline: **122 passed, 1 warning**; sau network/update changes: **131 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
   WSL nhưng console bridge phát `KeyboardInterrupt` sau 101 test; không ghi nhận đó là full
   Windows PASS. Cần chạy lại trong PowerShell/Windows CI native ổn định trước release.
 - Output tiếng Việt của một số thông báo WinSW bị mojibake trong console hiện tại do code page;
@@ -105,6 +105,15 @@ Clean-install finding — 2026-08-02:
   executable, và gỡ rule khi uninstall. Cần rebuild installer rồi kiểm tra lại trên Windows.
 - Hash mới của installer cần được ghi lại từ output `Get-FileHash`; hash cũ ở phần artifact là
   build trước lỗi và không dùng làm release evidence.
+
+Update UI/network fix — 1.1.0:
+
+- Trang device access có endpoint live không cache và tự refresh mỗi 15 giây; QR được tạo lại từ
+  URL LAN snapshot mới.
+- Windows đọc SSID/adapter bằng `netsh` không mở shell và lấy IPv4 của adapter Wi-Fi hiện tại;
+  nếu không lấy được thì fallback về private IPv4 discovery.
+- Update package 1.0.0 → 1.1.0 phải được build từ frozen tree có `configure_firewall.ps1`; native
+  update và rollback chưa có evidence.
 
 ### Việc cần làm tiếp theo
 

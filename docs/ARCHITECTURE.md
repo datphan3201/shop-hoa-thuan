@@ -60,6 +60,11 @@ C:\ProgramData\Shop Hoa Thuan\          dữ liệu phải được giữ lại
 WSL development mặc định dùng `<repository>/.data`; `SHOP_DATA_DIR` đổi được vị trí runtime.
 Không dùng live database trên OneDrive/cloud sync, USB, NAS hay network share.
 
+Trang **Thiết bị và sao lưu** không lưu cố định địa chỉ LAN. Mỗi lần mở và mỗi 15 giây khi trang
+đang hiển thị, server đọc lại SSID/adapter Wi-Fi và IPv4 private hiện tại; endpoint live dùng
+`never_cache`, còn QR được tạo lại từ URL snapshot mới. Trên Windows, nếu không đọc được adapter
+thì dùng fallback private IPv4 discovery.
+
 ## Consistency và concurrency
 
 - Nhập, trừ, đặt lại tồn và hoàn tồn đều tạo `InventoryMovement`.
