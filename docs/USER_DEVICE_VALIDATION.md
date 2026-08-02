@@ -8,7 +8,8 @@ chạy code hoặc test tự động.
 - Chuẩn bị: xác nhận `C:\Projects\ShopHoaThuan` không chứa data thật; có native artifact.
 - Thao tác: mở PowerShell **Run as administrator**, chạy script được ghi trong
   `docs/WINDOWS_SERVICE.md`.
-- Mong đợi: service test chạy, `/health/` đạt trước/sau kill process, firewall chỉ Private,
+- Mong đợi: service test chạy, `/health/` đạt trước/sau kill process, firewall LAN-scoped trên
+  Private/Public,
   cleanup gỡ service/rule test.
 - Log: giữ `%ProgramData%\Shop Hoa Thuan Test\logs` nếu FAIL.
 - PASS/FAIL: chỉ PASS khi script tự xác nhận tất cả bước; không dùng data production.
@@ -25,7 +26,7 @@ chạy code hoặc test tự động.
 
 ## Điện thoại thật
 
-- Chuẩn bị: điện thoại cùng Wi-Fi Private với host; không dùng Wi-Fi khách.
+- Chuẩn bị: điện thoại cùng LAN với host; không dùng Wi-Fi khách/công cộng không kiểm soát.
 - Thao tác: mở URL từ trang Thiết bị, tạo/sửa sản phẩm, upload camera, điều chỉnh kho, bán
   hàng, khóa/mở PIN giá vốn và Add to Home Screen.
 - Mong đợi: không overflow ngang, touch target dùng được, double-submit không tạo giao dịch đôi,

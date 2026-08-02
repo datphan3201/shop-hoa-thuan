@@ -10,8 +10,9 @@ set wildcard trong XML; runtime thêm localhost, hostname và IPv4 LAN phát hi�
 host được cấu hình rõ ràng.
 
 Installer cấu hình firewall bằng helper PowerShell idempotent. Rule `Shop Hoa Thuan LAN 2505`
-chỉ cho phép `ShopHoaThuanServer.exe` trên profile `Private`; không mở profile `Public` và không
-mở port router. Uninstaller gỡ đúng rule này.
+chỉ cho phép `ShopHoaThuanServer.exe` trên profile `Private` và `Public`, nhưng giới hạn
+`RemoteAddress=LocalSubnet`; không mở toàn bộ Public ra Internet và không mở port router.
+Uninstaller gỡ đúng rule này.
 
 `ShopHoaThuanLauncher.exe` chỉ gọi health loopback, yêu cầu Service Control Manager khởi động
 service nếu cần, chờ hữu hạn và mở trình duyệt. Nó không spawn Waitress hoặc Python server.
@@ -20,7 +21,7 @@ service nếu cần, chờ hữu hạn và mở trình duyệt. Nó không spawn
 
 Native `ShopHoaThuanServer.exe` đã smoke-test `/health/`. Script integration đã chạy elevated
 trên test data và đạt WinSW install/start, health, kill-process recovery, stop/start lại và
-firewall Private; service/rule được cleanup thành công. Đây là PASS cho test data, chưa phải
+firewall LAN-scoped trên Private/Public; service/rule được cleanup thành công. Đây là PASS cho test data, chưa phải
 clean-install/reboot/production-data acceptance. Không dùng script này với
 `%ProgramData%\Shop Hoa Thuan` production.
 
@@ -36,7 +37,7 @@ mở PowerShell **Run as administrator** và chạy đúng một script:
 ```
 
 Script chỉ tạo `ShopHoaThuanTestServer`, firewall rule `Shop Hoa Thuan Test LAN 2505` trên
-profile Private và `%ProgramData%\Shop Hoa Thuan Test`. Nó explicit migrate database test bằng
+profile Private/Public với `LocalSubnet` và `%ProgramData%\Shop Hoa Thuan Test`. Nó explicit migrate database test bằng
 toolchain development (không phải service startup), kiểm tra health, kill process test để xác
 minh WinSW recovery, rồi tự gỡ service/rule. Nó không đụng service, firewall rule hay dữ liệu
 production. Data/log test được giữ để điều tra. Dọn thủ công khi cần bằng:
@@ -55,6 +56,6 @@ Cleanup giữ test data để điều tra; chỉ xóa sau khi đã xác minh đ�
 
 - `phase9_test_service.ps1`: PASS trên `C:\ProgramData\Shop Hoa Thuan Test`.
 - WinSW install/start, `/health/`, kill PID/recovery và stop/start: PASS.
-- Firewall rule `Shop Hoa Thuan Test LAN 2505` với profile Private: PASS; rule/service được gỡ.
+- Firewall rule `Shop Hoa Thuan Test LAN 2505` với profile Private/Public và `LocalSubnet`: PASS; rule/service được gỡ.
 - Một số dòng tiếng Việt hiển thị sai trong console do code page Windows; không ảnh hưởng
   exit status hoặc kết quả service. Dùng code page UTF-8 khi thu thập log đọc được.

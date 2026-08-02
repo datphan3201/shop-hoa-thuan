@@ -15,7 +15,7 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
 - Native server `/health/` đạt trên test data.
 - Native migration runner đạt, in được tiếng Việt và giải phóng maintenance lock.
 - WinSW/SCM test data đạt: install/start, health, kill-process recovery, stop/start lại và
-  firewall Private; service/rule được cleanup thành công.
+  firewall LAN-scoped trên Private/Public; service/rule được cleanup thành công.
 - Health executable trả mã `SHOP-HEALTH-001` khi server chưa sẵn sàng.
 - Installer `ShopHoaThuan-Setup-1.0.0.exe` build thành công.
 - Native installer smoke sau khi rebuild: service `ShopHoaThuanServer` chạy, `/health/` trả HTTP
@@ -44,8 +44,8 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
    giữ validation nghiêm ngặt cho cấu hình explicit và thêm regression test. Artifact Windows phải
    được rebuild trước khi lặp lại clean-install.
 7. Native inspection cho thấy installer chưa tạo production firewall rule. Đã bổ sung helper
-   idempotent tạo rule theo `ShopHoaThuanServer.exe`, chỉ profile `Private`, và cleanup khi
-   uninstall; cần rebuild và kiểm thử LAN để đóng finding.
+   idempotent tạo rule theo `ShopHoaThuanServer.exe`, profile `Private/Public` với `LocalSubnet`,
+   và cleanup khi uninstall; cần rebuild và kiểm thử LAN để đóng finding.
 
 ## Còn lại trước production
 

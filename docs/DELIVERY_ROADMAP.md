@@ -9,7 +9,7 @@
 | 9 | Service test data PASS, acceptance pending | Waitress, launcher source, WinSW XML, device page, native server/migration/health smoke, SCM/recovery/firewall test | Clean install, reboot/autostart, LAN phone và production ACL cần device validation. |
 | 10 | Build artifact PASS, acceptance pending | PyInstaller server + standalone utilities + Inno Setup installer build PASS | Clean install/reinstall/uninstall trên Windows sạch chưa chạy. |
 | 11 | Backend/GUI/WSL PASS, native acceptance pending | SQLite backup API, manifest/checksum/integrity, restore và GUI utility | Restore bằng installer/service thật và retention scheduler cần kiểm thử thêm. |
-| 12 | WSL validation PASS, native acceptance pending | Package validation, staging cleanup, complete tree replacement, rollback primitives | 1.0.0→1.1.0 với SCM/migration/health failure injection chưa chạy. |
+| 12 | WSL validation PASS, native acceptance pending | Package validation, staging cleanup, complete tree replacement, rollback primitives | 1.1.0→1.2.0 với SCM/migration/health failure injection chưa chạy. |
 | 13 | Evidence lập xong ở mức internal, chưa accepted | Traceability, acceptance, limitations, checklist và user validation docs | UAC, reboot, clean Windows, LAN phone và camera thật. |
 
 Không bắt đầu phase kế tiếp trước khi gate phase hiện tại đạt hoặc được ghi rõ `BLOCKED FOR
@@ -20,7 +20,8 @@ DEVICE VALIDATION`; không ghi PASS giả.
 Ứng dụng dùng trực tiếp trong LAN, không có account hoặc mật khẩu nghiệp vụ. Browser session
 chỉ phục vụ mở khóa PIN giá vốn và idempotency; nó không là cơ chế phân quyền. Vì vậy:
 
-- Phase 9 phải xác minh firewall chỉ profile Private, không public Internet/port-forward và
+- Phase 9 phải xác minh firewall cho profile Private/Public nhưng chỉ `LocalSubnet`, không public
+  Internet/port-forward và
   launcher không tạo server thứ hai.
 - Phase 10 không được tạo hay reset account; installer chỉ tạo runtime secret và hướng dẫn PIN
   khi chưa được thiết lập.
@@ -48,7 +49,7 @@ rule `Shop Hoa Thuan Test LAN 2505`. Nó explicit migrate data test (không ph�
 install/start service, health, kill PID để test recovery, stop/start lại và tự gỡ service/rule.
 Data/log test được giữ để điều tra.
 
-**Đã đạt:** health thành công trước/sau recovery; firewall chỉ Private; test service/rule đã
+**Đã đạt:** health thành công trước/sau recovery; firewall LAN-scoped trên Private/Public; test service/rule đã
 được cleanup. **Còn lại:** clean Windows, reboot/autostart và LAN phone. Không chạm
 `C:\ProgramData\Shop Hoa Thuan` production.
 
@@ -78,8 +79,9 @@ Data/log test được giữ để điều tra.
 
 ## Phase 12 — Update/rollback
 
-1. Tạo update 1.0.0 → 1.1.0 migration additive, validate package/version/checksum/disk/schema;
-   validation/staging/tree replacement đã đạt trong WSL.
+1. Tạo update 1.1.0 → 1.2.0 migration additive, validate package/version/checksum/disk/schema;
+   validation/staging/tree replacement đã đạt trong WSL. Installation 1.0.0 cần nâng qua 1.1.0
+   trước.
 2. Maintenance/drain/pre-backup → stop service → stage/swap → migration/deploy check → health.
 3. Tiêm lỗi migration/service/health/asset; rollback app/data/service/maintenance.
 

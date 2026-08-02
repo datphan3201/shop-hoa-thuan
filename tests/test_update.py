@@ -17,7 +17,7 @@ from shop_hoa_thuan.update_runner import _configure_firewall, perform_update
 from shop_hoa_thuan.version import application_version
 
 CURRENT_VERSION = application_version()
-TARGET_VERSION = "1.2.0"
+TARGET_VERSION = "1.3.0"
 
 
 def _package(path: Path, *, target: str = TARGET_VERSION, checksum: str | None = None) -> None:

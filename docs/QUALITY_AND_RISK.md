@@ -9,7 +9,7 @@
 | Pytest WSL | Nghiệp vụ, lock, maintenance, health, media, idempotency, backup/update, device access refresh | **PASS — 136 passed, 1 warning** (2026-08-02). |
 | Pytest Windows | Native compatibility/regression | Các nhóm runtime/operations/update/service assets pass; full process qua cầu WSL–Windows bị console interrupt, không ghi PASS giả. |
 | Native Windows smoke | Artifact không cần Python dev | `ShopHoaThuanServer.exe` và migration PASS; health utility trả mã 1 khi server không sẵn sàng. |
-| SCM/firewall | Service, recovery, Private LAN/cleanup | **PASS trên test data**; clean install/reboot/ACL còn lại. |
+| SCM/firewall | Service, recovery, LAN-scoped firewall trên Private/Public/cleanup | **PASS trên test data**; clean install/reboot/ACL còn lại. |
 | Clean machine/device | Reboot, LAN phone, camera/PWA, installer | Chưa chạy: Phase 13. |
 
 Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
@@ -22,7 +22,7 @@ Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
 | Sale/tồn | Double submit, race, partial commit | Atomic service, DB constraints, idempotency, movement audit | Multi-device LAN Phase 13. |
 | Runtime data | Hai server ghi DB, maintenance stuck | OS lease, write drain timeout/finally, stale tests, WinSW crash recovery | Windows reboot/ACL. |
 | Upload/media | Fake image, traversal, public file | Pillow decode/verify, limits, media root giới hạn đúng thư mục ảnh | Camera/browser thật. |
-| Network | Public exposure/host header/firewall | No port-forward, no wildcard host, Private firewall plan | LAN firewall inspection. |
+| Network | Public exposure/host header/firewall | No port-forward, no wildcard host, `LocalSubnet` firewall trên Private/Public | LAN firewall inspection. |
 | Backup/update | Snapshot/restore/update mất data | Maintenance + SQLite backup API + staged rollback tests | End-to-end Windows Phase 11–12. |
 
 ## Django deployment warnings
@@ -39,7 +39,7 @@ Chỉ report PASS khi lệnh đã chạy trên commit tương ứng.
 | Mức | Rủi ro | Điều kiện đóng |
 |---|---|---|
 | High | Chưa restore backup thật | Phase 11 restore DB/media/count/checksum và rollback failure PASS. |
-| High | Chưa update/rollback | Phase 12 1.0.0→1.1.0 và failure injection PASS. |
+| High | Chưa update/rollback | Phase 12 1.1.0→1.2.0 và failure injection PASS. |
 | High | Installer/service chưa clean Windows/reboot | Phase 9–10 + Phase 13 evidence. |
 | High | Mobile camera/PWA/LAN chưa thiết bị thật | Phase 13 device validation PASS. |
 | Medium | HTTP LAN không mã hóa transport | Chỉ LAN tin cậy; HTTPS/Tailscale theo cấu hình, không public Internet. |

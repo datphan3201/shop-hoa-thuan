@@ -112,7 +112,8 @@ bán hàng, hủy giao dịch, báo cáo và backup theo các ràng buộc PIN t
 chỉ giữ trạng thái mở khóa giá vốn và browser key chống gửi trùng; nó **không** đại diện danh tính
 hay quyền riêng theo người dùng.
 
-Vì vậy, biên bảo vệ vận hành là mạng tin cậy: chỉ firewall profile Private, không port-forward,
+Vì vậy, biên bảo vệ vận hành là mạng tin cậy: firewall chỉ cho `LocalSubnet` trên profile Private
+hoặc Public, không port-forward,
 không public tunnel và không dùng Wi-Fi khách/công cộng. PIN chỉ bảo vệ giá vốn, không thay thế
 kiểm soát truy cập cho dữ liệu bán hàng/tồn kho. Khi nghi ngờ một thiết bị đã truy cập trái phép,
 ngắt thiết bị khỏi LAN, kiểm tra log, khóa PIN giá vốn và thay PIN; không dựa vào việc xóa cookie

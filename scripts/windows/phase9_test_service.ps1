@@ -129,7 +129,7 @@ finally {
 
 try {
     & $Wrapper install
-    New-NetFirewallRule -DisplayName $RuleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2505 -Profile Private | Out-Null
+    New-NetFirewallRule -DisplayName $RuleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2505 -Profile @("Private", "Public") -RemoteAddress LocalSubnet | Out-Null
     & $Wrapper start
     Wait-Health
 
@@ -144,7 +144,7 @@ try {
     Start-Sleep -Seconds 2
     & $Wrapper start
     Wait-Health
-    Write-Output "PASS: service, health, controlled recovery và firewall Private đã được xác minh."
+    Write-Output "PASS: service, health, controlled recovery và firewall LAN trên Private/Public đã được xác minh."
 }
 finally {
     Remove-TestResources

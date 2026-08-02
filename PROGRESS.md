@@ -9,10 +9,10 @@ Cập nhật gần nhất: 2026-08-02
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
-- Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery PASS; production Private firewall fix cần rebuild và LAN device/reboot còn lại**.
-- Phase 10 — PyInstaller và installer: **install/service/health/database smoke PASS; installer Private firewall fix cần rebuild, reboot, reinstall và uninstall giữ dữ liệu còn lại**.
+- Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery PASS; LAN-scoped firewall cho profile Private/Public cần rebuild và LAN device/reboot còn lại**.
+- Phase 10 — PyInstaller và installer: **install/service/health/database smoke PASS; LAN-scoped firewall fix cần rebuild, reboot, reinstall và uninstall giữ dữ liệu còn lại**.
 - Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
-- Phase 12 — Update/rollback: **đã bổ sung update device access/firewall và updater worker ngoài app tree; native 1.0.0→1.1.0/rollback chưa chạy**.
+- Phase 12 — Update/rollback: **đã bổ sung update device access/firewall và updater worker ngoài app tree; native 1.1.0→1.2.0/rollback chưa chạy**.
 - Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
 
 ### Trạng thái runtime và địa chỉ truy cập — 2026-08-01
@@ -69,8 +69,9 @@ Deployment warning phân loại:
 
 - Phải sửa trước release: DEBUG production, `W009`, wildcard `ALLOWED_HOSTS`, secret ngắn,
   schema mismatch, migration ngoài ý muốn và warning build không giải thích được.
-- Chấp nhận có điều kiện cho HTTP LAN: `W004`, `W008`, `W012`, `W016`; chỉ dùng Private LAN
-  tin cậy hoặc bật `SHOP_USE_HTTPS=true` khi có HTTPS/Tailscale phù hợp.
+- Chấp nhận có điều kiện cho HTTP LAN: `W004`, `W008`, `W012`, `W016`; chỉ dùng LAN tin cậy,
+  firewall giới hạn `LocalSubnet` trên profile Private/Public, hoặc bật `SHOP_USE_HTTPS=true`
+  khi có HTTPS/Tailscale phù hợp.
 - Chỉ xác minh trên Windows/device: ACL production, reboot, clean install, LAN phone,
   camera, Add to Home Screen, native update/rollback.
 
@@ -80,7 +81,8 @@ Windows test evidence sau build cuối:
 - `tests/test_runner.py tests/test_runtime.py`: **6 passed**.
 - `tests/test_update.py tests/test_windows_service_assets.py`: **18 passed**.
 - `phase9_test_service.ps1` chạy elevated: **PASS** — WinSW install/start, `/health/`, kill PID
-  recovery, stop/start và firewall Private; service/rule được cleanup, test data được giữ.
+  recovery, stop/start và firewall LAN trên profile Private/Public; service/rule được cleanup,
+  test data được giữ.
 - Full pytest WSL baseline: **122 passed, 1 warning**; sau network/update/bootstrap changes: **136 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
   WSL nhưng console bridge phát `KeyboardInterrupt` sau 101 test; không ghi nhận đó là full
   Windows PASS. Cần chạy lại trong PowerShell/Windows CI native ổn định trước release.
@@ -101,8 +103,9 @@ Clean-install finding — 2026-08-02:
   `/health/` trả HTTP 200 với `status=ok`, `database=true`, `schema=true`, `version=1.0.0`,
   và `C:\ProgramData\Shop Hoa Thuan\data\db.sqlite3` tồn tại.
 - Đã phát hiện installer bản đó chưa tạo production firewall rule; source đã bổ sung script
-  idempotent tạo rule `Shop Hoa Thuan LAN 2505` chỉ trên profile `Private`, giới hạn theo server
-  executable, và gỡ rule khi uninstall. Cần rebuild installer rồi kiểm tra lại trên Windows.
+  idempotent tạo rule `Shop Hoa Thuan LAN 2505` trên profile `Private` và `Public`, giới hạn theo
+  server executable và `LocalSubnet`, rồi gỡ rule khi uninstall. Cần rebuild installer rồi kiểm tra
+  lại trên Windows.
 - Hash mới của installer cần được ghi lại từ output `Get-FileHash`; hash cũ ở phần artifact là
   build trước lỗi và không dùng làm release evidence.
 
@@ -119,14 +122,23 @@ Update UI/network fix — 1.1.0:
   hiện tại cho update worker. Vì vậy có thể nâng cài đặt 1.0.0 bằng updater mới mà không uninstall;
   cần native Windows test để đóng evidence.
 
+Firewall profile update — 1.2.0:
+
+- Version nguồn duy nhất đã tăng lên `1.2.0` để thay đổi firewall được phát hành qua updater,
+  không ghi đè silent cùng version.
+- Firewall helper cho phép profile `Private` và `Public`, nhưng chỉ nhận TCP `2505` từ
+  `LocalSubnet` và đúng `ShopHoaThuanServer.exe`; không mở toàn bộ Public ra Internet.
+- Gói update cần tạo từ frozen tree 1.2.0 với `current_version=1.1.0`, `target_version=1.2.0`;
+  native update và rollback chưa có evidence.
+
 ### Việc cần làm tiếp theo
 
 1. Trên Windows test hiện tại, reboot rồi kiểm tra service/health tự khởi động; sau đó kiểm tra
    reinstall/repair và
    uninstall mặc định; xác minh ProgramData, service, shortcut và không cần Python.
-2. Tạo test package 1.0.0 → 1.1.0, chạy restore và update/rollback trên data test độc lập;
-   failure injection phải chứng minh maintenance, database/media và application tree trở lại
-   trạng thái nhất quán.
+2. Tạo test package 1.1.0 → 1.2.0 (và nếu installation còn 1.0.0 thì chạy gói 1.0.0 → 1.1.0
+   trước), chạy restore và update/rollback trên data test độc lập; failure injection phải chứng
+   minh maintenance, database/media và application tree trở lại trạng thái nhất quán.
 3. Chạy checklist thiết bị thật trong `docs/USER_DEVICE_VALIDATION.md`: điện thoại LAN,
    camera, viewport, PWA Add to Home Screen và UX; không đưa dữ liệu thật vào failure injection.
 4. Chỉ sau khi các mục trên có evidence mới nâng kết luận Phase 13; nếu còn thiếu thì giữ
@@ -165,7 +177,7 @@ tại là `CONDITIONALLY ACCEPTED` cho internal build validation, không phải 
   frozen bundle.
 - WinSW portable 2.12.0.0 được tải từ winget/official GitHub và hash `05B82D…B3A0DA` đã xác minh;
   đây là build/test tool tạm, chưa được commit vào repository.
-- Administrator integration service/Private firewall/controlled recovery: **PASS** trên test
+- Administrator integration service/LAN firewall trên Private/Public/controlled recovery: **PASS** trên test
   data; reboot auto-start, LAN điện thoại và clean Windows vẫn là device validation.
 
 Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase tiếp theo ở
@@ -189,7 +201,8 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 - Truy cập LAN/Tailscale dùng HTTP ở bản đầu. CSRF, browser session và giới hạn host vẫn
   được bật; hướng dẫn thiết bị cảnh báo chỉ dùng mạng tin cậy vì không có lớp xác thực người dùng.
 - Browser session chỉ giữ cost-PIN unlock và idempotency client key, không biểu thị danh tính hay
-  quyền nghiệp vụ. Firewall Private, không port-forward và kỷ luật LAN tin cậy là biên truy cập;
+  quyền nghiệp vụ. Firewall chỉ cho `LocalSubnet` trên Private/Public, không port-forward và kỷ luật
+  LAN tin cậy là biên truy cập;
   PIN không thay thế kiểm soát truy cập cho sale/inventory.
 - Cổng production cố định mặc định là `2505`. Địa chỉ local ưu tiên là
   `http://shophoathuan.local:2505`; IP LAN và QR luôn là phương án dự phòng.
@@ -217,7 +230,7 @@ Chi tiết kiến trúc, schema, use case, risk và cách hoàn thành phase ti�
 | P0 | Database hiện là `%PROGRAMDATA%\Shop Hoa Thuan\shop-hoa-thuan.sqlite3`; media và log cũng chưa theo cây thư mục yêu cầu | Chuẩn hóa thành `data\db.sqlite3`, `data\media`, `backups`, `rollback`, `logs`, `config`; hỗ trợ chuyển dữ liệu cũ an toàn và không ghi đè |
 | P0 | Server tự chạy migration và seed ở mỗi lần service start | Tách migration thành utility có backup, log và exit code; service bình thường chỉ khởi động ứng dụng |
 | P0 | Chưa có maintenance mode, transaction drain hoặc khóa phối hợp backup/update/restore | Tạo cơ chế khóa liên tiến trình và trạng thái maintenance; chặn ghi mới, chờ ghi đang chạy hoàn tất trước khi dừng service |
-| P0 | Installer hiện chỉ copy file, đăng ký service và mở URL | Bổ sung thiết lập PIN, firewall Private, health verification, rollback cài đặt và chính sách giữ dữ liệu khi uninstall |
+| P0 | Installer hiện chỉ copy file, đăng ký service và mở URL | Bổ sung thiết lập PIN, firewall LAN-scoped trên Private/Public, health verification, rollback cài đặt và chính sách giữ dữ liệu khi uninstall |
 | P0 | Chưa có restore/update/rollback hoạt động end-to-end | Xây GUI utility, preflight, checksum, backup trước thao tác, migration kiểm soát và rollback nguyên tử |
 | P0 | Media chỉ được Django phục vụ khi `DEBUG=True` | Thêm cơ chế phục vụ ảnh production an toàn, không để lộ đường dẫn filesystem |
 | P1 | `/health/` mới trả boolean database, chưa có version và server time | Trả schema tối thiểu ổn định: status, database, version, server time; không trả path/secret/traceback |
@@ -507,10 +520,10 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 #### LAN, firewall và trang thiết bị
 
 - [x] Có installer/test helper tạo Windows Firewall inbound rule cho TCP `2505` ở profile
-  Private; mDNS chưa được tự động mở.
+  Private/Public, giới hạn `LocalSubnet`; mDNS chưa được tự động mở.
 - [x] Installer/launcher và trang thiết bị ghi rõ ứng dụng dùng trực tiếp trong LAN: không tạo
-  account, không quảng bá Internet, PIN chỉ bảo vệ giá vốn và firewall chỉ được phép Private.
-- [x] Chạy helper bằng Administrator; service, health, recovery và firewall Private đã PASS trên
+  account, không quảng bá Internet, PIN chỉ bảo vệ giá vốn và firewall chỉ cho `LocalSubnet`.
+- [x] Chạy helper bằng Administrator; service, health, recovery và firewall LAN trên Private/Public đã PASS trên
   test data, service/rule được cleanup.
 - [ ] Quảng bá hostname `shophoathuan.local` bằng mDNS trong LAN từ cùng server/service,
   không tạo thêm server ghi database và không phụ thuộc DNS Internet.
@@ -543,7 +556,7 @@ ngang toàn trang, double-submit không tạo bản ghi trùng, xung đột nhi�
 
 Điều kiện hoàn thành: reboot Windows tự có đúng một server instance; double-click shortcut
 mở ứng dụng mà không có terminal; điện thoại truy cập được bằng
-`shophoathuan.local:2505` hoặc fallback IP trên mạng Private; lỗi startup có thông báo/log
+`shophoathuan.local:2505` hoặc fallback IP trên LAN; lỗi startup có thông báo/log
 đủ chẩn đoán.
 
 ### Phase 10 — Đóng gói runtime và bộ cài Windows
@@ -568,7 +581,7 @@ mở ứng dụng mà không có terminal; điện thoại truy cập được b
   dẫn thiết lập PIN.
 - [x] Không tạo account hoặc mật khẩu trong installer/repair; chỉ hướng dẫn thiết lập PIN khi
   installation chưa có PIN.
-- [x] Đã có flow đăng ký/start WinSW, tạo firewall Private rule, health check, Desktop/Start Menu
+- [x] Đã có flow đăng ký/start WinSW, tạo firewall LAN-scoped cho Private/Public, health check, Desktop/Start Menu
   shortcut và URL khởi động; việc chạy thật cần Administrator.
 - [ ] Xác minh flow installer/service/firewall/health trên Windows sạch.
 - [ ] Nếu lỗi: dừng/gỡ service mới, rollback application files/rule/shortcut, giữ data,
@@ -656,7 +669,7 @@ trước restore.
 - [ ] Áp dụng expand-and-contract; migration destructive chỉ ở release sau khi code/data
   chuyển đổi đã được xác minh.
 - [ ] Phân loại migration rollback-safe và migration cần restore pre-update backup cho release
-  1.0.0 → 1.1.0 thực tế.
+  1.1.0 → 1.2.0 thực tế.
 - [x] Nếu migration/service/health lỗi: dừng app mới, phục hồi app cũ và database nếu cần,
   start app cũ và giải phóng maintenance; đã có WSL exception-path test.
 - [ ] Không để trạng thái nửa cũ/nửa mới; lưu journal từng bước để lần chạy sau biết tiếp

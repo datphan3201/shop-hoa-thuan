@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- Cho phép truy cập LAN khi Windows đang ở profile mạng `Public` hoặc `Private`.
+- Firewall chỉ cho `ShopHoaThuanServer.exe`, TCP `2505` và `LocalSubnet`; không mở toàn bộ Public
+  ra Internet.
+- Update runner áp dụng lại chính sách firewall LAN sau khi thay application tree.
+
 ## 1.1.0
 
 - Cập nhật trang **Thiết bị và sao lưu** tự động theo trạng thái Wi-Fi hiện tại.

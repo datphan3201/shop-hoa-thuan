@@ -19,12 +19,13 @@ def test_winsw_service_does_not_enable_host_wildcard_or_run_migrations() -> None
     assert "%ProgramData%\\Shop Hoa Thuan\\logs\\service" in xml
 
 
-def test_admin_service_script_is_scoped_to_test_service_and_private_firewall() -> None:
+def test_admin_service_script_is_scoped_to_test_service_and_lan_firewall() -> None:
     root = Path(__file__).resolve().parents[1]
     script = (root / "scripts" / "windows" / "phase9_test_service.ps1").read_text(encoding="utf-8")
 
     assert "ShopHoaThuanTestServer" in script
-    assert "-Profile Private" in script
+    assert '-Profile @("Private", "Public")' in script
+    assert "-RemoteAddress LocalSubnet" in script
     assert "Shop Hoa Thuan Test LAN 2505" in script
     assert "[switch]$Cleanup" in script
     assert "migrate --noinput" in script
@@ -114,7 +115,7 @@ def test_installer_contains_backup_and_restore_utilities() -> None:
     assert "ShopHoaThuanRestore.exe" in installer
 
 
-def test_installer_configures_only_private_firewall_for_packaged_server() -> None:
+def test_installer_configures_lan_firewall_for_packaged_server() -> None:
     root = Path(__file__).resolve().parents[1]
     installer = (root / "packaging" / "installer" / "ShopHoaThuan.iss").read_text(encoding="utf-8")
     firewall = (root / "packaging" / "installer" / "configure_firewall.ps1").read_text(
@@ -125,9 +126,10 @@ def test_installer_configures_only_private_firewall_for_packaged_server() -> Non
     assert "-Action Install" in installer
     assert "-Action Remove" in installer
     assert "Shop Hoa Thuan LAN 2505" in firewall
-    assert "-Profile Private" in firewall
+    assert '-Profile @("Private", "Public")' in firewall
+    assert "-RemoteAddress LocalSubnet" in firewall
     assert "-Program $ProgramPath" in firewall
-    assert "Public" not in firewall
+    assert "LAN only on Private/Public profiles" in firewall
     assert "-LocalPort $Port" in firewall
 
 

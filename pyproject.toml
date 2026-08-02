@@ -1,6 +1,6 @@
 [project]
 name = "shop-hoa-thuan"
-version = "1.1.0"
+version = "1.2.0"
 description = "Ứng dụng quản lý nội bộ Shop Hoà Thuận"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"

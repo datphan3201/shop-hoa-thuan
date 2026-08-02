@@ -107,7 +107,7 @@ def _configure_firewall(app_root: Path) -> None:
     )
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()
-        raise UpdateError(f"Không thể cấu hình firewall Private: {detail}")
+        raise UpdateError(f"Không thể cấu hình firewall LAN trên Public/Private: {detail}")
 
 
 def perform_update(

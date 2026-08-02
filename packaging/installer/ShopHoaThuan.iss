@@ -44,7 +44,7 @@ Name: "{group}\Cập nhật Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanUpd
 
 [Run]
 Filename: "{app}\ShopHoaThuanMigration\ShopHoaThuanMigration.exe"; Parameters: ""; Flags: runhidden waituntilterminated
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\configure_firewall.ps1"" -Action Install -ProgramPath ""{app}\ShopHoaThuanServer.exe"""; StatusMsg: "Đang cấu hình firewall cho mạng Private..."; Flags: runhidden waituntilterminated
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\configure_firewall.ps1"" -Action Install -ProgramPath ""{app}\ShopHoaThuanServer.exe"""; StatusMsg: "Đang cấu hình firewall LAN cho profile Private/Public..."; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "install"; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "start"; Flags: runhidden waituntilterminated
 Filename: "http://127.0.0.1:2505/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait

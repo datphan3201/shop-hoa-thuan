@@ -85,7 +85,7 @@ Xem [PROGRESS.md](PROGRESS.md) để biết checklist phase, evidence và trạn
 
 Khung phát hành nằm trong `packaging/` và `scripts/build_windows.ps1`. PyInstaller phải chạy
 native trên Windows, không cross-compile từ WSL. Bản build hiện tại đã tạo
-`dist/installer/ShopHoaThuan-Setup-1.1.0.exe` cùng server, migration, health, launcher,
+`dist/installer/ShopHoaThuan-Setup-1.2.0.exe` cùng server, migration, health, launcher,
 backup, restore và update utility. Máy đích không cần Python/uv/Git/Node; clean-install,
 service thật và acceptance cuối vẫn phải hoàn thành trước khi phát hành production.
 

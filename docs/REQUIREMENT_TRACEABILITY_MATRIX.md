@@ -13,5 +13,5 @@
 | Mobile/PWA/idempotency | templates, static worker, services | pytest mobile/idempotency/concurrency | PASS tự động trong WSL | viewport/camera/A2HS thật chưa có |
 | Backup/restore | `apps/core/backup.py`, backup/restore GUI | snapshot, checksum, integrity, restore tests | PASS nền tảng | restore qua installer/service thật chưa chạy |
 | Update/rollback | `apps/core/update.py`, `update_runner.py`, package builder | validation, tree replacement, maintenance tests | PASS nền tảng | Windows SCM failure injection chưa chạy |
-| Installer/service/LAN | Inno/WinSW/scripts, live device-access, Private firewall helper | Windows build + native server smoke, network refresh tests | PARTIAL | cần rebuild/update native, reboot và LAN device |
+| Installer/service/LAN | Inno/WinSW/scripts, live device-access, LAN-scoped Private/Public firewall helper | Windows build + native server smoke, network refresh tests | PARTIAL | cần rebuild/update native, reboot và LAN device |
 | Final acceptance | `docs/FINAL_ACCEPTANCE_REPORT.md` | gate ledger/evidence | BLOCKED | chưa phải release production |

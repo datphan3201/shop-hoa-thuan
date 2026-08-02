@@ -28,11 +28,12 @@ che PIN, secret, CSRF/session/authorization và cost price.
 config, lấy maintenance lock và không yêu cầu terminal. Restore validate ZIP trước khi tạo
 pre-restore backup. `ShopHoaThuanUpdate.exe` chỉ nhận package có manifest/checksum, thay toàn bộ
 application tree và dọn staging trong mọi exception path. Bản update 1.1.0 chạy worker từ bản sao
-ngoài `Program Files`, áp dụng lại firewall Private và cập nhật snapshot SSID/IP/QR trên UI.
+ngoài `Program Files`, áp dụng lại firewall LAN-scoped trên Private/Public và cập nhật snapshot
+SSID/IP/QR trên UI. Bản `1.2.0` áp dụng firewall LAN-scoped cho cả profile Public và Private.
 
 ## Giới hạn Windows
 
 Lease/maintenance đã có test WSL và test process native trong nhóm test Windows. Native server,
-migration, health, WinSW, shutdown/restart SCM, crash recovery và Private firewall đã đạt trên
+migration, health, WinSW, shutdown/restart SCM, crash recovery và LAN firewall trên Private/Public đã đạt trên
 test data Windows. ACL production, clean installer, reboot, restore/update native và LAN device
 vẫn cần evidence; không coi các mục này là PASS khi chưa có evidence.

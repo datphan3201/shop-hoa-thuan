@@ -24,11 +24,12 @@ if ($Action -eq "Install") {
 
     New-NetFirewallRule `
         -DisplayName $RuleName `
-        -Description "Shop Hoa Thuan - Private LAN only." `
+        -Description "Shop Hoa Thuan - LAN only on Private/Public profiles." `
         -Direction Inbound `
         -Action Allow `
         -Enabled True `
-        -Profile Private `
+        -Profile @("Private", "Public") `
+        -RemoteAddress LocalSubnet `
         -Protocol TCP `
         -LocalPort $Port `
         -Program $ProgramPath |

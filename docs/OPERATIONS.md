@@ -22,8 +22,9 @@ hóa đơn và kết quả tìm kiếm không nhận giá vốn hay lợi nhuậ
 
 Không có bước đăng nhập. Mọi thiết bị trong LAN tin cậy có thể dùng nghiệp vụ chung; PIN chỉ
 bảo vệ giá vốn và không hạn chế thao tác bán hàng hoặc tồn kho. Không mở port router, không dùng
-mạng Wi-Fi khách/công cộng và chỉ cho phép firewall profile Private. Nếu mất thiết bị hoặc nghi
-ngờ truy cập lạ, ngắt thiết bị khỏi mạng, kiểm tra log và đổi PIN giá vốn.
+mạng Wi-Fi khách/công cộng. Firewall chỉ cho `LocalSubnet` trên profile Private/Public; không mở
+toàn bộ profile Public ra Internet. Nếu mất thiết bị hoặc nghi ngờ truy cập lạ, ngắt thiết bị
+khỏi mạng, kiểm tra log và đổi PIN giá vốn.
 
 ## Báo cáo
 
