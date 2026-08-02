@@ -33,6 +33,7 @@ Source: "..\..\dist\ShopHoaThuanBackup.exe"; DestDir: "{app}"; Flags: ignorevers
 Source: "..\..\dist\ShopHoaThuanRestore.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\winsw\ShopHoaThuanService.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\vendor\WinSW-x64.exe"; DestDir: "{app}"; DestName: "ShopHoaThuanService.exe"; Flags: ignoreversion
+Source: "configure_firewall.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autodesktop}\Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanLauncher.exe"
@@ -42,6 +43,7 @@ Name: "{group}\Khôi phục Shop Hoà Thuận"; Filename: "{app}\ShopHoaThuanRes
 
 [Run]
 Filename: "{app}\ShopHoaThuanMigration\ShopHoaThuanMigration.exe"; Parameters: ""; Flags: runhidden waituntilterminated
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\configure_firewall.ps1"" -Action Install -ProgramPath ""{app}\ShopHoaThuanServer.exe"""; StatusMsg: "Đang cấu hình firewall cho mạng Private..."; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "install"; Flags: runhidden waituntilterminated
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "start"; Flags: runhidden waituntilterminated
 Filename: "http://127.0.0.1:2505/"; Description: "Mở Shop Hoà Thuận"; Flags: shellexec postinstall skipifsilent nowait
@@ -49,6 +51,7 @@ Filename: "http://127.0.0.1:2505/"; Description: "Mở Shop Hoà Thuận"; Flags
 [UninstallRun]
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "stop"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "ShopHoaThuanServiceStop"
 Filename: "{app}\ShopHoaThuanService.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "ShopHoaThuanServiceUninstall"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\configure_firewall.ps1"" -Action Remove -ProgramPath ""{app}\ShopHoaThuanServer.exe"""; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "ShopHoaThuanFirewallRemove"
 
 [Dirs]
 Name: "{commonappdata}\Shop Hoa Thuan"; Permissions: users-modify

@@ -9,8 +9,8 @@ Cập nhật gần nhất: 2026-08-02
 - Phase 5 — Dashboard và báo cáo: **hoàn thành**.
 - Phase 7 — Chuẩn hóa dữ liệu và deployment: **hoàn thành trong WSL**.
 - Phase 8 — mobile-first, PWA và chống gửi trùng: **hoàn thành trong WSL**.
-- Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery/firewall test data PASS; reboot, clean install và LAN device còn lại**.
-- Phase 10 — PyInstaller và installer: **install/service/health/database smoke PASS; reboot, reinstall và uninstall giữ dữ liệu còn lại**.
+- Phase 9 — Windows Service, launcher và LAN: **service/SCM/recovery PASS; production Private firewall fix cần rebuild và LAN device/reboot còn lại**.
+- Phase 10 — PyInstaller và installer: **install/service/health/database smoke PASS; installer Private firewall fix cần rebuild, reboot, reinstall và uninstall giữ dữ liệu còn lại**.
 - Phase 11 — Backup/restore: **backend, GUI source và WSL restore test PASS; Windows restore thật chưa chạy**.
 - Phase 12 — Update/rollback: **validation, staging, tree replacement và WSL exception tests PASS; native service rollback chưa chạy**.
 - Phase 13 — Final acceptance: **đang lập evidence; chưa được production accepted**.
@@ -100,6 +100,9 @@ Clean-install finding — 2026-08-02:
 - Đã rebuild và chạy lại trên Windows test: `ShopHoaThuanServer` ở trạng thái `Running`,
   `/health/` trả HTTP 200 với `status=ok`, `database=true`, `schema=true`, `version=1.0.0`,
   và `C:\ProgramData\Shop Hoa Thuan\data\db.sqlite3` tồn tại.
+- Đã phát hiện installer bản đó chưa tạo production firewall rule; source đã bổ sung script
+  idempotent tạo rule `Shop Hoa Thuan LAN 2505` chỉ trên profile `Private`, giới hạn theo server
+  executable, và gỡ rule khi uninstall. Cần rebuild installer rồi kiểm tra lại trên Windows.
 - Hash mới của installer cần được ghi lại từ output `Get-FileHash`; hash cũ ở phần artifact là
   build trước lỗi và không dùng làm release evidence.
 

@@ -9,6 +9,10 @@ directory và ghi log ở `%ProgramData%\Shop Hoa Thuan\logs`. `DJANGO_ALLOWED_H
 set wildcard trong XML; runtime thêm localhost, hostname và IPv4 LAN phát hiện được hoặc dùng
 host được cấu hình rõ ràng.
 
+Installer cấu hình firewall bằng helper PowerShell idempotent. Rule `Shop Hoa Thuan LAN 2505`
+chỉ cho phép `ShopHoaThuanServer.exe` trên profile `Private`; không mở profile `Public` và không
+mở port router. Uninstaller gỡ đúng rule này.
+
 `ShopHoaThuanLauncher.exe` chỉ gọi health loopback, yêu cầu Service Control Manager khởi động
 service nếu cần, chờ hữu hạn và mở trình duyệt. Nó không spawn Waitress hoặc Python server.
 

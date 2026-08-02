@@ -43,6 +43,9 @@ thiết bị thật vẫn chưa có bằng chứng trong môi trường hiện t
    `DJANGO_ALLOWED_HOSTS` và thoát trước khi bind cổng; đã lọc hostname tự phát hiện không hợp lệ,
    giữ validation nghiêm ngặt cho cấu hình explicit và thêm regression test. Artifact Windows phải
    được rebuild trước khi lặp lại clean-install.
+7. Native inspection cho thấy installer chưa tạo production firewall rule. Đã bổ sung helper
+   idempotent tạo rule theo `ShopHoaThuanServer.exe`, chỉ profile `Private`, và cleanup khi
+   uninstall; cần rebuild và kiểm thử LAN để đóng finding.
 
 ## Còn lại trước production
 

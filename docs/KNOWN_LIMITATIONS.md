@@ -6,6 +6,8 @@
   service/health/database smoke đã PASS trên Windows test.
 - Reboot/autostart, reinstall/repair/uninstall giữ dữ liệu, production ACL và clean Windows
   acceptance đầy đủ vẫn chưa có evidence.
+- Firewall production rule hiện mới có source fix; artifact Windows đang cài chưa chứa helper này.
+  Sau rebuild phải xác minh rule chỉ áp dụng cho `Private` và điện thoại truy cập được qua LAN.
 - Lần clean-install đầu tiên bị chặn bởi hostname Windows tự phát hiện có dấu gạch dưới; source
   đã sửa, rebuild và native health smoke sau sửa đã PASS.
 - Điện thoại thật: LAN, camera orientation, touch UX, PWA Add to Home Screen và mất mạng.

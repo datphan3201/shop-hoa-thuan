@@ -110,3 +110,20 @@ def test_installer_contains_backup_and_restore_utilities() -> None:
 
     assert "ShopHoaThuanBackup.exe" in installer
     assert "ShopHoaThuanRestore.exe" in installer
+
+
+def test_installer_configures_only_private_firewall_for_packaged_server() -> None:
+    root = Path(__file__).resolve().parents[1]
+    installer = (root / "packaging" / "installer" / "ShopHoaThuan.iss").read_text(encoding="utf-8")
+    firewall = (root / "packaging" / "installer" / "configure_firewall.ps1").read_text(
+        encoding="utf-8"
+    )
+
+    assert "configure_firewall.ps1" in installer
+    assert "-Action Install" in installer
+    assert "-Action Remove" in installer
+    assert "Shop Hoa Thuan LAN 2505" in firewall
+    assert "-Profile Private" in firewall
+    assert "-Program $ProgramPath" in firewall
+    assert "Public" not in firewall
+    assert "-LocalPort $Port" in firewall
