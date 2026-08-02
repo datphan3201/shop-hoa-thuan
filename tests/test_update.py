@@ -77,6 +77,19 @@ def test_update_package_builder_uses_application_prefix_and_atomic_output(tmp_pa
     assert manifest.files[0][0] == "application/ShopHoaThuanServer.exe"
 
 
+def test_update_package_can_target_current_release_from_older_install(tmp_path: Path) -> None:
+    source = tmp_path / "application"
+    source.mkdir()
+    (source / "ShopHoaThuanServer.exe").write_bytes(b"server")
+    package = tmp_path / "release" / "update.zip"
+
+    build_package(source, package, "1.0.0", "1.2.0")
+    manifest = validate_update_package(package, "1.0.0")
+
+    assert manifest.current_version == "1.0.0"
+    assert manifest.target_version == "1.2.0"
+
+
 @pytest.mark.django_db(transaction=True)
 def test_update_replaces_complete_tree_and_releases_maintenance(tmp_path: Path) -> None:
     package = tmp_path / "update.zip"

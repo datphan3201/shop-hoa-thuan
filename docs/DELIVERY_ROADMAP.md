@@ -79,9 +79,9 @@ Data/log test được giữ để điều tra.
 
 ## Phase 12 — Update/rollback
 
-1. Tạo update 1.1.0 → 1.2.0 migration additive, validate package/version/checksum/disk/schema;
-   validation/staging/tree replacement đã đạt trong WSL. Installation 1.0.0 cần nâng qua 1.1.0
-   trước.
+1. Tạo update 1.1.0 → 1.2.0 hoặc trực tiếp 1.0.0 → 1.2.0 với manifest khớp version hiện tại,
+   validate package/version/checksum/disk/schema; validation/staging/tree replacement đã đạt
+   trong WSL.
 2. Maintenance/drain/pre-backup → stop service → stage/swap → migration/deploy check → health.
 3. Tiêm lỗi migration/service/health/asset; rollback app/data/service/maintenance.
 

@@ -57,7 +57,7 @@ Windows build evidence:
 
 WSL quality gate sau các thay đổi code/tài liệu: `ruff format --check` PASS (112 files), Ruff
 PASS, mypy PASS (88 source files), Django system check PASS, migration check PASS và full pytest
-PASS: **136 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
+PASS: **137 passed, 1 warning**. Warning pytest còn lại là warning kỹ thuật của
 `override_settings(DATABASES=...)` trong restore test, không phải test fail.
 
 Django deployment check với production test env (`DEBUG=false`, secret test dài, hosts
@@ -83,7 +83,7 @@ Windows test evidence sau build cuối:
 - `phase9_test_service.ps1` chạy elevated: **PASS** — WinSW install/start, `/health/`, kill PID
   recovery, stop/start và firewall LAN trên profile Private/Public; service/rule được cleanup,
   test data được giữ.
-- Full pytest WSL baseline: **122 passed, 1 warning**; sau network/update/bootstrap changes: **136 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
+- Full pytest WSL baseline: **122 passed, 1 warning**; sau network/update/bootstrap changes: **137 passed, 1 warning**. Full pytest native Windows đã được thử qua cầu
   WSL nhưng console bridge phát `KeyboardInterrupt` sau 101 test; không ghi nhận đó là full
   Windows PASS. Cần chạy lại trong PowerShell/Windows CI native ổn định trước release.
 - Output tiếng Việt của một số thông báo WinSW bị mojibake trong console hiện tại do code page;
@@ -136,9 +136,9 @@ Firewall profile update — 1.2.0:
 1. Trên Windows test hiện tại, reboot rồi kiểm tra service/health tự khởi động; sau đó kiểm tra
    reinstall/repair và
    uninstall mặc định; xác minh ProgramData, service, shortcut và không cần Python.
-2. Tạo test package 1.1.0 → 1.2.0 (và nếu installation còn 1.0.0 thì chạy gói 1.0.0 → 1.1.0
-   trước), chạy restore và update/rollback trên data test độc lập; failure injection phải chứng
-   minh maintenance, database/media và application tree trở lại trạng thái nhất quán.
+2. Tạo test package `1.1.0 → 1.2.0` hoặc trực tiếp `1.0.0 → 1.2.0` với manifest khớp
+   `/health/`, chạy restore và update/rollback trên data test độc lập; failure injection phải
+   chứng minh maintenance, database/media và application tree trở lại trạng thái nhất quán.
 3. Chạy checklist thiết bị thật trong `docs/USER_DEVICE_VALIDATION.md`: điện thoại LAN,
    camera, viewport, PWA Add to Home Screen và UX; không đưa dữ liệu thật vào failure injection.
 4. Chỉ sau khi các mục trên có evidence mới nâng kết luận Phase 13; nếu còn thiếu thì giữ

@@ -35,6 +35,8 @@ Release update đang chuẩn bị:
 - Version đích: `1.2.0`, đọc từ `pyproject.toml`.
 - Update package: `ShopHoaThuan-Update-1.2.0.zip`, `current_version=1.1.0`,
   `target_version=1.2.0`.
+- Nếu máy test đang ở `1.0.0`, tạo lại cùng package với `current_version=1.0.0`; updater yêu cầu
+  manifest khớp chính xác version health hiện tại.
 - Package phải được tạo từ cây frozen mới sau khi build Windows; native update, health, LAN và
   rollback vẫn phải có evidence trước khi đánh dấu PASS.
 

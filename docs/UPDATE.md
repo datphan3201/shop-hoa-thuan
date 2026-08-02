@@ -27,8 +27,9 @@ Updater 1.2.0 có thể cập nhật bản cài 1.1.0: nó đọc version đang 
 `C:\Program Files\Shop Hoa Thuan` làm app root mặc định khi chạy từ thư mục tạm, và truyền rõ
 `current_version` vào transaction. Vì vậy không cần chạy updater cũ đang nằm trong application tree.
 
-Nếu installation còn ở `1.0.0`, chạy gói `1.0.0 → 1.1.0` trước, sau đó chạy gói `1.1.0 → 1.2.0`;
-manifest kiểm tra đúng version hiện tại để tránh cập nhật sai cây application.
+Manifest phải ghi đúng version đang chạy. Vì bản `1.2.0` không có migration phá dữ liệu, có thể
+tạo gói trực tiếp `1.0.0 → 1.2.0` hoặc `1.1.0 → 1.2.0`; không dùng một gói có
+`current_version` khác với `/health/`.
 
 Trên máy test không có `C:\Projects`, chỉ cần chép `ShopHoaThuanUpdate.exe` mới và ZIP update vào
 một thư mục tạm, ví dụ `C:\Temp\ShopHoaThuanUpdate`. Chạy updater mới bằng **Run as administrator**,
@@ -46,7 +47,7 @@ giải phóng bởi context manager.
 log hoặc backup vào gói.
 
 ```text
-uv run python scripts/build_update_package.py --source-root <frozen-application-directory> --output <release-directory>/ShopHoaThuan-Update-1.2.0.zip --current-version 1.1.0 --target-version 1.2.0
+uv run python scripts/build_update_package.py --source-root <frozen-application-directory> --output <release-directory>/ShopHoaThuan-Update-1.2.0.zip --current-version <health-version> --target-version 1.2.0
 ```
 
 `<frozen-application-directory>` phải chứa `configure_firewall.ps1`; build Windows tự copy file
